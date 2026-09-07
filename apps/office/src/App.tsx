@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import { useAuth } from './auth/AuthProvider'
 import { useAdminAuth } from './auth/AdminAuthProvider'
@@ -28,8 +29,9 @@ import { AdminNewTenantPage } from './pages/admin/AdminNewTenantPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
 function RequireAuth() {
-  const { me, loading } = useAuth()
+  const { me, loading, ensure } = useAuth()
   const location = useLocation()
+  useEffect(() => ensure(), [ensure])
   if (loading) return <Spinner />
   if (!me) return <Navigate to="/login" state={{ from: location.pathname }} replace />
   return <Shell />
@@ -41,7 +43,8 @@ function RequireRole({ roles }: { roles: Array<'owner' | 'office' | 'technician'
 }
 
 function RequireAdmin() {
-  const { admin, loading } = useAdminAuth()
+  const { admin, loading, ensure } = useAdminAuth()
+  useEffect(() => ensure(), [ensure])
   if (loading) return <Spinner />
   if (!admin) return <Navigate to="/admin/login" replace />
   return <AdminShell />
