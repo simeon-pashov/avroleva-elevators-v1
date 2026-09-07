@@ -1,0 +1,406 @@
+// Avroleva - Prisma schema (step 1: tenancy + registry + platform tables).
+// Conventions (ARCHITECTURE section 3): UUIDv7 ids generated in code; every tenant-owned table has
+// tenantId first in every index; money as integer cents; enums as Postgres enums; soft delete via deletedAt.
+// Table ownership: apps/api/src/platform/db/ownership.ts
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------- tenancy
+
+enum TenantStatus {
+  active
+  read_only
+  closed
+}
+
+enum UserRole {
+  owner
+  office
+  technician
+}
+
+enum SessionKind {
+  browser
+  device
+  admin
+}
+
+model Tenant {
+  id             String       @id @db.Uuid
+  name           String
+  legalForm      String?
+  eik            String
+  vatNo          String?
+  vatRegistered  Boolean      @default(false)
+  address        String
+  phone          String
+  emergencyPhone String
+  email          String?
+  locale         String       @default("bg")
+  timezone       String       @default("Europe/Sofia")
+  settings       Json         @default("{}")
+  features       Json         @default("{}")
+  status         TenantStatus @default(active)
+  createdAt      DateTime     @default(now()) @db.Timestamptz
+  updatedAt      DateTime     @updatedAt @db.Timestamptz
+  deletedAt      DateTime?    @db.Timestamptz
+
+  users     User[]
+  sessions  Session[]
+  customers Customer[]
+  contacts  Contact[]
+  buildings Building[]
+  elevators Elevator[]
+  contracts Contract[]
+
+  @@map("tenant")
+}
+
+model User {
+  id           String    @id @db.Uuid
+  tenantId     String    @db.Uuid
+  role         UserRole
+  name         String
+  // Login is username + password (no tenant picker), so usernames are globally unique.
+  username     String    @unique
+  email        String?
+  phone        String?
+  passwordHash String
+  locale       String?
+  isActive     Boolean   @default(true)
+  technician   Json?
+  lastLoginAt  DateTime? @db.Timestamptz
+  createdAt    DateTime  @default(now()) @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @db.Timestamptz
+  deletedAt    DateTime? @db.Timestamptz
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  sessions Session[]
+
+  @@index([tenantId, role])
+  @@map("user")
+}
+
+model PlatformAdmin {
+  id           String   @id @db.Uuid
+  username     String   @unique
+  email        String?
+  passwordHash String
+  totpSecret   String?
+  createdAt    DateTime @default(now()) @db.Timestamptz
+  updatedAt    DateTime @updatedAt @db.Timestamptz
+
+  sessions Session[]
+
+  @@map("platform_admin")
+}
+
+// One session table for tenant users (tenantId + userId) and platform admins (adminId, kind=admin).
+model Session {
+  id            String      @id @db.Uuid
+  tenantId      String?     @db.Uuid
+  userId        String?     @db.Uuid
+  adminId       String?     @db.Uuid
+  tokenHash     String      @unique
+  kind          SessionKind @default(browser)
+  deviceName    String?
+  clientVersion String?
+  ip            String?
+  createdAt     DateTime    @default(now()) @db.Timestamptz
+  lastSeenAt    DateTime    @default(now()) @db.Timestamptz
+  expiresAt     DateTime    @db.Timestamptz
+  revokedAt     DateTime?   @db.Timestamptz
+
+  tenant Tenant?        @relation(fields: [tenantId], references: [id])
+  user   User?          @relation(fields: [userId], references: [id])
+  admin  PlatformAdmin? @relation(fields: [adminId], references: [id])
+
+  @@index([tenantId, userId])
+  @@index([expiresAt])
+  @@map("session")
+}
+
+// ---------------------------------------------------------------- registry
+
+enum CustomerKind {
+  etazhna_sobstvenost
+  professional_manager
+  company
+  institution
+}
+
+enum ContactRole {
+  house_manager
+  cashier
+  manager
+  other
+}
+
+enum GeocodeStatus {
+  pending
+  ok
+  failed
+  manual
+}
+
+enum DriveType {
+  electric
+  hydraulic
+  mrl
+}
+
+enum DoorType {
+  manual
+  semi_auto
+  auto
+}
+
+enum ElevatorStatus {
+  active
+  stopped_by_firm
+  stopped_by_authority
+  out_of_contract
+  scrapped
+}
+
+enum ContractStatus {
+  draft
+  active
+  terminated
+}
+
+enum ImportStatus {
+  preview
+  committed
+  rolled_back
+}
+
+model Customer {
+  id             String       @id @db.Uuid
+  tenantId       String       @db.Uuid
+  kind           CustomerKind
+  name           String
+  eik            String?
+  vatNo          String?
+  billingAddress String?
+  invoiceEmail   String?
+  notes          String?
+  createdBy      String?      @db.Uuid
+  updatedBy      String?      @db.Uuid
+  createdAt      DateTime     @default(now()) @db.Timestamptz
+  updatedAt      DateTime     @updatedAt @db.Timestamptz
+  deletedAt      DateTime?    @db.Timestamptz
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  contacts  Contact[]
+  buildings Building[]
+  contracts Contract[]
+
+  @@index([tenantId, name])
+  @@map("customer")
+}
+
+model Contact {
+  id         String      @id @db.Uuid
+  tenantId   String      @db.Uuid
+  customerId String?     @db.Uuid
+  buildingId String?     @db.Uuid
+  name       String
+  role       ContactRole @default(house_manager)
+  phone      String?
+  hasViber   Boolean     @default(false)
+  email      String?
+  isPrimary  Boolean     @default(false)
+  notes      String?
+  createdAt  DateTime    @default(now()) @db.Timestamptz
+  updatedAt  DateTime    @updatedAt @db.Timestamptz
+  deletedAt  DateTime?   @db.Timestamptz
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  customer Customer? @relation(fields: [customerId], references: [id])
+  building Building? @relation(fields: [buildingId], references: [id])
+
+  @@index([tenantId, customerId])
+  @@index([tenantId, buildingId])
+  @@map("contact")
+}
+
+model Building {
+  id                String        @id @db.Uuid
+  tenantId          String        @db.Uuid
+  customerId        String?       @db.Uuid
+  address           Json
+  addressText       String
+  lat               Float?
+  lng               Float?
+  geocodeStatus     GeocodeStatus @default(pending)
+  geocodeConfidence Float?
+  geocodeProvider   String?
+  accessNotes       String?
+  keysLocation      String?
+  notes             String?
+  createdBy         String?       @db.Uuid
+  updatedBy         String?       @db.Uuid
+  createdAt         DateTime      @default(now()) @db.Timestamptz
+  updatedAt         DateTime      @updatedAt @db.Timestamptz
+  deletedAt         DateTime?     @db.Timestamptz
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  customer  Customer?  @relation(fields: [customerId], references: [id])
+  elevators Elevator[]
+  contacts  Contact[]
+  contracts Contract[]
+
+  @@index([tenantId, customerId])
+  @@index([tenantId, geocodeStatus])
+  @@index([tenantId, addressText])
+  @@map("building")
+}
+
+model Elevator {
+  id                String         @id @db.Uuid
+  tenantId          String         @db.Uuid
+  buildingId        String         @db.Uuid
+  internalNo        String
+  regNo             String?
+  regNoNormalized   String?
+  inspectionBody    String?
+  manufacturer      String?
+  year              Int?
+  driveType         DriveType      @default(electric)
+  doorType          DoorType       @default(manual)
+  stops             Int
+  loadKg            Int?
+  status            ElevatorStatus @default(active)
+  checkIntervalDays Int?
+  lastCheckAt       DateTime?      @db.Date
+  nextInspectionAt  DateTime?      @db.Date
+  alarmDevicePhone  String?
+  alarmSimOperator  String?
+  publicCode        String
+  notes             String?
+  createdBy         String?        @db.Uuid
+  updatedBy         String?        @db.Uuid
+  createdAt         DateTime       @default(now()) @db.Timestamptz
+  updatedAt         DateTime       @updatedAt @db.Timestamptz
+  deletedAt         DateTime?      @db.Timestamptz
+
+  tenant        Tenant             @relation(fields: [tenantId], references: [id])
+  building      Building           @relation(fields: [buildingId], references: [id])
+  contractLines ContractElevator[]
+
+  @@unique([tenantId, publicCode])
+  @@index([tenantId, buildingId])
+  @@index([tenantId, status])
+  @@index([tenantId, regNoNormalized])
+  @@index([tenantId, lastCheckAt])
+  @@map("elevator")
+}
+
+model Contract {
+  id               String         @id @db.Uuid
+  tenantId         String         @db.Uuid
+  customerId       String         @db.Uuid
+  buildingId       String         @db.Uuid
+  startDate        DateTime       @db.Date
+  endDate          DateTime?      @db.Date
+  status           ContractStatus @default(active)
+  paymentDay       Int?
+  notes            String?
+  terminatedReason String?
+  createdBy        String?        @db.Uuid
+  updatedBy        String?        @db.Uuid
+  createdAt        DateTime       @default(now()) @db.Timestamptz
+  updatedAt        DateTime       @updatedAt @db.Timestamptz
+  deletedAt        DateTime?      @db.Timestamptz
+
+  tenant   Tenant             @relation(fields: [tenantId], references: [id])
+  customer Customer           @relation(fields: [customerId], references: [id])
+  building Building           @relation(fields: [buildingId], references: [id])
+  lines    ContractElevator[]
+
+  @@index([tenantId, buildingId])
+  @@index([tenantId, customerId])
+  @@index([tenantId, status])
+  @@map("contract")
+}
+
+model ContractElevator {
+  id                String    @id @db.Uuid
+  tenantId          String    @db.Uuid
+  contractId        String    @db.Uuid
+  elevatorId        String    @db.Uuid
+  monthlyPriceCents Int
+  fromDate          DateTime? @db.Date
+  toDate            DateTime? @db.Date
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  elevator Elevator @relation(fields: [elevatorId], references: [id])
+
+  @@index([tenantId, contractId])
+  @@index([tenantId, elevatorId])
+  @@map("contract_elevator")
+}
+
+model ImportBatch {
+  id          String       @id @db.Uuid
+  tenantId    String       @db.Uuid
+  filename    String
+  status      ImportStatus @default(preview)
+  rowCount    Int          @default(0)
+  issues      Json         @default("[]")
+  rows        Json         @default("[]")
+  createdRows Json?
+  createdBy   String?      @db.Uuid
+  createdAt   DateTime     @default(now()) @db.Timestamptz
+  updatedAt   DateTime     @updatedAt @db.Timestamptz
+
+  @@index([tenantId, createdAt])
+  @@map("import_batch")
+}
+
+// ---------------------------------------------------------------- platform
+
+model DomainEvent {
+  id            String   @id @db.Uuid
+  tenantId      String?  @db.Uuid
+  type          String
+  version       Int      @default(1)
+  aggregateType String
+  aggregateId   String   @db.Uuid
+  payload       Json
+  occurredAt    DateTime @default(now()) @db.Timestamptz
+  causationId   String?  @db.Uuid
+  correlationId String?  @db.Uuid
+
+  @@index([tenantId, occurredAt])
+  @@index([aggregateType, aggregateId])
+  @@map("domain_event")
+}
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  tenantId   String?  @db.Uuid
+  at         DateTime @default(now()) @db.Timestamptz
+  actorType  String
+  actorId    String?  @db.Uuid
+  action     String
+  entityType String
+  entityId   String?
+  before     Json?
+  after      Json?
+  requestId  String?
+  ip         String?
+
+  @@index([tenantId, at])
+  @@index([entityType, entityId])
+  @@map("audit_log")
+}

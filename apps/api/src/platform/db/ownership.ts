@@ -1,0 +1,34 @@
+/**
+ * Table ownership map (ARCHITECTURE section 1.1, rule 3): exactly one module may read/write each
+ * Prisma model. `reporting` may SELECT anything; `audit_log`/`domain_event` are written through
+ * platform helpers only. A CI script that walks imports against this map is a later step.
+ */
+export const ownership = {
+  Tenant: 'tenancy',
+  User: 'tenancy',
+  PlatformAdmin: 'tenancy',
+  Session: 'tenancy',
+  Customer: 'registry',
+  Contact: 'registry',
+  Building: 'registry',
+  Elevator: 'registry',
+  Contract: 'registry',
+  ContractElevator: 'registry',
+  ImportBatch: 'registry',
+  DomainEvent: 'platform',
+  AuditLog: 'platform',
+} as const
+
+export type ModelName = keyof typeof ownership
+
+/** Models that carry a NOT NULL tenantId and must never be queried without it. */
+export const tenantOwnedModels: ReadonlySet<string> = new Set<ModelName>([
+  'User',
+  'Customer',
+  'Contact',
+  'Building',
+  'Elevator',
+  'Contract',
+  'ContractElevator',
+  'ImportBatch',
+])
