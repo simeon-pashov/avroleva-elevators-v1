@@ -63,6 +63,10 @@ model Tenant {
   visits    Visit[]
   invoices  Invoice[]
   payments  Payment[]
+  callbacks   Callback[]
+  defects     Defect[]
+  inspections Inspection[]
+  alarmTests  AlarmDeviceTest[]
 
   @@map("tenant")
 }
@@ -264,6 +268,8 @@ model Building {
   visits    Visit[]
   invoices  Invoice[]
   payments  Payment[]
+  callbacks Callback[]
+  defects   Defect[]
 
   @@index([tenantId, customerId])
   @@index([tenantId, geocodeStatus])
@@ -297,6 +303,11 @@ model Elevator {
   alarmDevicePhone    String?
   alarmSimOperator    String?
   publicCode          String
+  // Unguessable token of the public QR page (/p/:token); 128 bits hex, rotatable by the office.
+  // Globally unique because the public facade resolves the tenant from it.
+  publicToken         String         @unique
+  stoppedAt           DateTime?      @db.Timestamptz
+  stopReason          String?
   notes               String?
   createdBy           String?        @db.Uuid
   updatedBy           String?        @db.Uuid
@@ -308,6 +319,10 @@ model Elevator {
   building      Building           @relation(fields: [buildingId], references: [id])
   contractLines ContractElevator[]
   visits        Visit[]
+  callbacks     Callback[]
+  defects       Defect[]
+  inspections   Inspection[]
+  alarmTests    AlarmDeviceTest[]
 
   @@unique([tenantId, publicCode])
   @@index([tenantId, buildingId])
@@ -523,6 +538,223 @@ model Payment {
   @@index([tenantId, buildingId, paidAt(sort: Desc)])
   @@index([tenantId, paidAt(sort: Desc)])
   @@map("payment")
+}
+
+// ---------------------------------------------------------------- callbacks (L3)
+// The callback row is a projection of its events; every transition appends a callback_event with
+// timestamp provenance (at = when it happened per the source, receivedAt = server clock).
+
+enum CallbackChannel {
+  phone
+  public_page
+  office
+}
+
+enum CallbackClassification {
+  trapped_persons
+  breakdown
+  complaint
+  other
+}
+
+enum CallbackStatus {
+  open
+  dispatched
+  on_site
+  released
+  restored
+  closed
+}
+
+enum EventSource {
+  office
+  app
+  public
+}
+
+enum ChargeReason {
+  misuse
+  vandalism
+  water
+  out_of_hours
+  other
+}
+
+model Callback {
+  id              String                 @id @db.Uuid
+  tenantId        String                 @db.Uuid
+  elevatorId      String                 @db.Uuid
+  buildingId      String                 @db.Uuid
+  channel         CallbackChannel        @default(phone)
+  callerName      String?
+  callerPhone     String?
+  classification  CallbackClassification @default(breakdown)
+  trappedCount    Int?
+  description     String
+  status          CallbackStatus         @default(open)
+  receivedAt      DateTime               @db.Timestamptz
+  dispatchedAt    DateTime?              @db.Timestamptz
+  onSiteAt        DateTime?              @db.Timestamptz
+  releasedAt      DateTime?              @db.Timestamptz
+  restoredAt      DateTime?              @db.Timestamptz
+  closedAt        DateTime?              @db.Timestamptz
+  assignedUserId  String?                @db.Uuid
+  cause           String?
+  actionTaken     String?
+  chargeable      Boolean                @default(false)
+  chargeReason    ChargeReason?
+  notes           String?
+  /// Snapshot of tenant.settings.callbackSlaMinutes at intake.
+  slaMinutes      Int
+  closeoutVisitId String?                @db.Uuid
+  source          EventSource            @default(office)
+  createdByUserId String?                @db.Uuid
+  createdAt       DateTime               @default(now()) @db.Timestamptz
+  updatedAt       DateTime               @updatedAt @db.Timestamptz
+
+  tenant   Tenant          @relation(fields: [tenantId], references: [id])
+  elevator Elevator        @relation(fields: [elevatorId], references: [id])
+  building Building        @relation(fields: [buildingId], references: [id])
+  events   CallbackEvent[]
+
+  @@index([tenantId, status, receivedAt(sort: Desc)])
+  @@index([tenantId, elevatorId, receivedAt(sort: Desc)])
+  @@index([tenantId, receivedAt(sort: Desc)])
+  @@index([tenantId, assignedUserId, status])
+  @@map("callback")
+}
+
+model CallbackEvent {
+  id         String      @id @db.Uuid
+  tenantId   String      @db.Uuid
+  callbackId String      @db.Uuid
+  type       String
+  at         DateTime    @db.Timestamptz
+  receivedAt DateTime    @default(now()) @db.Timestamptz
+  source     EventSource @default(office)
+  byUserId   String?     @db.Uuid
+  data       Json        @default("{}")
+
+  callback Callback @relation(fields: [callbackId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, callbackId, at])
+  @@map("callback_event")
+}
+
+// ---------------------------------------------------------------- defects (L3)
+
+enum DefectStatus {
+  open
+  notified
+  awaiting_approval
+  scheduled
+  resolved
+}
+
+enum DefectSource {
+  visit
+  callback
+  office
+}
+
+enum DefectSeverity {
+  low
+  medium
+  high
+}
+
+model Defect {
+  id                  String         @id @db.Uuid
+  tenantId            String         @db.Uuid
+  elevatorId          String         @db.Uuid
+  buildingId          String         @db.Uuid
+  /// "1".."17" from packages/domain-data/defects/art10.v1.json, "other" or null (free text).
+  catalogCode         String?
+  description         String
+  severity            DefectSeverity @default(medium)
+  stopLift            Boolean        @default(false)
+  status              DefectStatus   @default(open)
+  recordedAt          DateTime       @db.Timestamptz
+  sourceType          DefectSource   @default(office)
+  sourceId            String?        @db.Uuid
+  noticeSentAt        DateTime?      @db.Timestamptz
+  customerRequestedAt DateTime?      @db.Timestamptz
+  followUpDueAt       DateTime       @db.Date
+  resolvedAt          DateTime?      @db.Timestamptz
+  resolvedVisitId     String?        @db.Uuid
+  notes               String?
+  createdByUserId     String?        @db.Uuid
+  createdAt           DateTime       @default(now()) @db.Timestamptz
+  updatedAt           DateTime       @updatedAt @db.Timestamptz
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  elevator Elevator @relation(fields: [elevatorId], references: [id])
+  building Building @relation(fields: [buildingId], references: [id])
+
+  @@index([tenantId, status, followUpDueAt])
+  @@index([tenantId, elevatorId, recordedAt(sort: Desc)])
+  @@index([tenantId, recordedAt(sort: Desc)])
+  @@map("defect")
+}
+
+// ---------------------------------------------------------------- calendar (L3)
+
+enum InspectionKind {
+  periodic
+  after_repair
+  after_stop
+  other
+}
+
+enum InspectionResult {
+  passed
+  passed_with_defects
+  failed
+  pending
+}
+
+model Inspection {
+  id              String           @id @db.Uuid
+  tenantId        String           @db.Uuid
+  elevatorId      String           @db.Uuid
+  kind            InspectionKind   @default(periodic)
+  requestedAt     DateTime?        @db.Date
+  scheduledAt     DateTime?        @db.Date
+  performedAt     DateTime?        @db.Date
+  result          InspectionResult @default(pending)
+  inspectionBody  String?
+  nextDueAt       DateTime?        @db.Date
+  notes           String?
+  /// [{text, deadline, closed}]
+  defects         Json             @default("[]")
+  createdByUserId String?          @db.Uuid
+  createdAt       DateTime         @default(now()) @db.Timestamptz
+  updatedAt       DateTime         @updatedAt @db.Timestamptz
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  elevator Elevator @relation(fields: [elevatorId], references: [id])
+
+  @@index([tenantId, elevatorId, performedAt(sort: Desc)])
+  @@index([tenantId, nextDueAt])
+  @@index([tenantId, scheduledAt])
+  @@map("inspection")
+}
+
+model AlarmDeviceTest {
+  id         String   @id @db.Uuid
+  tenantId   String   @db.Uuid
+  elevatorId String   @db.Uuid
+  testedAt   DateTime @db.Timestamptz
+  ok         Boolean  @default(true)
+  notes      String?
+  byUserId   String?  @db.Uuid
+  createdAt  DateTime @default(now()) @db.Timestamptz
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  elevator Elevator @relation(fields: [elevatorId], references: [id])
+
+  @@index([tenantId, elevatorId, testedAt(sort: Desc)])
+  @@map("alarm_device_test")
 }
 
 // ---------------------------------------------------------------- platform

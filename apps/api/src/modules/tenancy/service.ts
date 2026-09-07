@@ -4,6 +4,7 @@ import type {
   MeDto,
   RegisterTenantBody,
   TenantDto,
+  TenantFeatures,
   TenantSettings,
   UpdateMeBody,
   UpdateTenantBody,
@@ -18,7 +19,7 @@ import type { AuditActor } from '../../platform/audit.js'
 import { events } from '../../platform/events/bus.js'
 import { clock } from '../../platform/clock.js'
 import { hashPassword, verifyPassword, burnCompare } from './domain/password.js'
-import { parseSettings, toTenantDto, toUserDto } from './domain/mappers.js'
+import { parseFeatures, parseSettings, toTenantDto, toUserDto } from './domain/mappers.js'
 import * as users from './repo/users.js'
 import * as tenants from './repo/tenants.js'
 import * as sessions from './repo/sessions.js'
@@ -120,10 +121,17 @@ export async function getTenantSettings(tenantId: string): Promise<TenantSetting
   return parseSettings(t?.settings)
 }
 
+/** Feature flags (ARCHITECTURE A7) for the facades; a missing tenant reads as "everything off". */
+export async function getTenantFeatures(tenantId: string): Promise<TenantFeatures> {
+  const t = await tenants.findTenant(tenantId)
+  return parseFeatures(t?.features)
+}
+
 export async function updateTenant(ctx: Ctx, body: UpdateTenantBody): Promise<TenantDto> {
   const current = await tenants.findTenant(ctx.tenantId)
   if (!current) throw notFound()
   const settings = { ...parseSettings(current.settings), ...(body.settings ?? {}) }
+  const features = { ...parseFeatures(current.features), ...(body.features ?? {}) }
   const updated = await tenants.updateTenant(ctx.tenantId, {
     ...(body.name !== undefined ? { name: body.name } : {}),
     ...(body.eik !== undefined ? { eik: body.eik } : {}),
@@ -134,13 +142,14 @@ export async function updateTenant(ctx: Ctx, body: UpdateTenantBody): Promise<Te
     ...(body.email !== undefined ? { email: cleanEmail(body.email) } : {}),
     ...(body.locale !== undefined ? { locale: body.locale } : {}),
     settings,
+    features,
   })
   await audit(actorOfCtx(ctx), {
     action: 'tenant.update',
     entityType: 'tenant',
     entityId: ctx.tenantId,
-    before: { settings: current.settings, locale: current.locale },
-    after: { settings, locale: updated.locale },
+    before: { settings: current.settings, features: current.features, locale: current.locale },
+    after: { settings, features, locale: updated.locale },
   })
   if (
     body.settings &&

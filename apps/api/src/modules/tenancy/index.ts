@@ -17,6 +17,7 @@ export {
   me,
   getTenant,
   getTenantSettings,
+  getTenantFeatures,
   updateTenant,
   listUsers,
   findUsersByIds,

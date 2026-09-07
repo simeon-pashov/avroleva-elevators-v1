@@ -12,12 +12,18 @@ import { errorHandler, notFound } from './platform/http/errors.js'
 import { authenticate } from './modules/tenancy/index.js'
 import { useScheduleRules } from './modules/registry/index.js'
 import { scheduleRules } from './modules/maintenance/index.js'
+import { useVisitRecorder } from './modules/callbacks/index.js'
+import * as visits from './modules/visits/index.js'
+import { printRouter } from './http/print.js'
+import { publicRouter } from './http/public.js'
 import { apiV1 } from './http/router.js'
 import { mountOffice } from './http/static.js'
 
 // Composition root (ARCHITECTURE section 1.1 rule 2): the registry's schedule port gets the
 // maintenance module's cycle engine; nothing below L3 imports maintenance directly.
 useScheduleRules(scheduleRules)
+// callbacks (L3) records its close-out visit through a port; visits (L3) implements it here.
+useVisitRecorder({ record: visits.record })
 
 export interface AppOptions {
   /** Absolute path of the built office SPA; omitted = API only (dev, tests). */
@@ -77,6 +83,10 @@ export function createApp(opts: AppOptions = {}): Express {
   app.use('/api', apiLimiter, authenticate, csrfGuard)
   app.use('/api/v1', apiV1)
   app.use('/api', (_req, _res, next) => next(notFound('error.routeNotFound')))
+  // Server-rendered pages: printable documents for signed-in office users (cookie, GET only, so no
+  // CSRF header) and the public QR page + fault form (no auth, rate-limited, form-encoded).
+  app.use('/print', authenticate, printRouter)
+  app.use('/p', express.urlencoded({ extended: false, limit: '32kb' }), publicRouter)
 
   if (opts.officeDist) mountOffice(app, opts.officeDist)
 

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { TenantStatus, UserRole } from './enums.js'
-import { nullableText, optionalText, phone } from './common.js'
+import { nullableText, optionalText, patchOf, phone } from './common.js'
 
 export const username = z
   .string()
@@ -33,8 +33,24 @@ export const tenantSettings = z.object({
   vatRatePercent: z.number().int().min(0).max(27).default(20),
   showBgnReference: z.boolean().default(false),
   currencyDisplay: z.enum(['EUR', 'EUR_BGN']).default('EUR'),
+  /** Overrides of packages/domain-data/calendar-rules.json; null/absent = the shipped default. */
+  inspectionIntervalMonths: z.number().int().min(1).max(120).nullable().optional(),
+  firstInspectionIntervalMonths: z.number().int().min(1).max(120).nullable().optional(),
+  inspectionAlertDays: z.array(z.number().int().min(1).max(365)).max(8).nullable().optional(),
+  /** Alarm-device (voice link) test cadence; null = not tracked. */
+  alarmTestIntervalMonths: z.number().int().min(1).max(60).nullable().optional(),
 })
 export type TenantSettings = z.infer<typeof tenantSettings>
+
+/** Feature flags per tenant (ARCHITECTURE A7). Default off unless the seed / owner turns them on. */
+export const tenantFeatures = z.object({
+  /** The QR page `/p/:token` answers at all. */
+  publicQrPage: z.boolean().default(false),
+  /** The public page shows the fault-report form. */
+  publicFaultReport: z.boolean().default(false),
+})
+export type TenantFeatures = z.infer<typeof tenantFeatures>
+export const FEATURE_KEYS = Object.keys(tenantFeatures.shape) as Array<keyof TenantFeatures>
 
 export const updateTenantBody = z.object({
   name: z.string().trim().min(2).max(200).optional(),
@@ -45,7 +61,8 @@ export const updateTenantBody = z.object({
   emergencyPhone: phone.optional(),
   email: z.email().optional().or(z.literal('')),
   locale: locale.optional(),
-  settings: tenantSettings.partial().optional(),
+  settings: patchOf(tenantSettings).optional(),
+  features: patchOf(tenantFeatures).optional(),
 })
 export type UpdateTenantBody = z.infer<typeof updateTenantBody>
 
@@ -62,6 +79,7 @@ export interface TenantDto {
   timezone: string
   status: z.infer<typeof TenantStatus>
   settings: TenantSettings
+  features: TenantFeatures
   createdAt: string
 }
 

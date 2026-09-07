@@ -24,6 +24,17 @@ export function registerSubscribers(): void {
     'VisitAmended',
     'InvoiceIssued',
     'PaymentRecorded',
+    'CallbackOpened',
+    'CallbackDispatched',
+    'CallbackOnSite',
+    'CallbackReleased',
+    'CallbackRestored',
+    'CallbackClosed',
+    'DefectRecorded',
+    'StopLiftRequired',
+    'DefectResolved',
+    'InspectionRecorded',
+    'AlarmDeviceTested',
   ]) {
     events.subscribe(type, (e) => {
       logger.debug(

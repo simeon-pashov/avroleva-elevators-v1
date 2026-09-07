@@ -1,5 +1,8 @@
 import type { ElevatorStatus } from './enums.js'
 import type { DueState } from './maintenance.js'
+import type { CallbacksSummaryDto } from './callbacks.js'
+import type { DefectsSummaryDto } from './defects.js'
+import type { CalendarItemKind } from './calendar.js'
 
 export interface DashboardPinDto {
   elevatorId: string
@@ -13,6 +16,9 @@ export interface DashboardPinDto {
   status: ElevatorStatus
   state: DueState
   nextCheckDueAt: string | null
+  /** An open stop-lift defect is recorded for this elevator. */
+  stopLift: boolean
+  openCallbacks: number
 }
 
 export interface DashboardDto {
@@ -36,6 +42,15 @@ export interface DashboardDto {
     overdueCents: number
     overdueCount: number
     paidThisMonthCents: number
+  }
+  callbacks: CallbacksSummaryDto
+  defects: DefectsSummaryDto
+  /** Deadlines strip: items due in the next 30 days (and overdue) per kind. */
+  deadlines: {
+    days: number
+    overdue: number
+    total: number
+    byKind: Record<CalendarItemKind, number>
   }
   pins: DashboardPinDto[]
 }

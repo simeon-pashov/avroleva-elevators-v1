@@ -6,10 +6,13 @@ import { registryRouter } from '../modules/registry/index.js'
 import { maintenanceRouter } from '../modules/maintenance/index.js'
 import { visitsRouter } from '../modules/visits/index.js'
 import { billingRouter } from '../modules/billing/index.js'
+import { callbacksRouter } from '../modules/callbacks/index.js'
+import { defectsRouter } from '../modules/defects/index.js'
+import { calendarRouter } from '../modules/calendar/index.js'
 import { reportingRouter } from '../modules/reporting/index.js'
 import { adminRouter } from './admin.js'
 
-export const APP_VERSION = '0.2.0'
+export const APP_VERSION = '0.3.0'
 
 /** `/api/v1` - additive only; breaking changes go to `/api/v2` beside it (ARCHITECTURE A9). */
 export const apiV1 = Router()
@@ -41,4 +44,7 @@ apiV1.use(registryRouter)
 apiV1.use(maintenanceRouter)
 apiV1.use(visitsRouter)
 apiV1.use(billingRouter)
+apiV1.use(callbacksRouter)
+apiV1.use(defectsRouter)
+apiV1.use(calendarRouter)
 apiV1.use(reportingRouter)

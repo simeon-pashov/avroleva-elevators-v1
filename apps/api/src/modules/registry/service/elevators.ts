@@ -257,6 +257,88 @@ export async function recomputeSchedule(tenantId: string): Promise<number> {
   return changed
 }
 
+/**
+ * Command for the defects module (stop-lift defect recorded / resolved) and the office: sets the
+ * status with a reason, stamps stoppedAt, writes the audit entry and publishes
+ * ElevatorStatusChanged. Same transaction as the caller when `tx` is given.
+ */
+export async function setStatus(
+  ctx: Ctx,
+  elevatorId: string,
+  status: ElevatorStatus,
+  reason: string | null,
+  tx?: Tx,
+): Promise<void> {
+  const before = await repo.findElevator(ctx.tenantId, elevatorId, tx)
+  if (!before) throw notFound()
+  if (before.status === status) return
+  const stopped = status === 'stopped_by_firm' || status === 'stopped_by_authority'
+  await repo.updateElevator(
+    ctx.tenantId,
+    elevatorId,
+    {
+      status,
+      stoppedAt: stopped ? clock.now() : null,
+      stopReason: stopped ? reason : null,
+      updatedBy: ctx.userId,
+    },
+    tx,
+  )
+  await audit(
+    actorOf(ctx),
+    {
+      action: 'elevator.setStatus',
+      entityType: 'elevator',
+      entityId: elevatorId,
+      before: { status: before.status },
+      after: { status, reason },
+    },
+    tx,
+  )
+  await events.publish(
+    ctx,
+    {
+      type: 'ElevatorStatusChanged',
+      aggregateType: 'elevator',
+      aggregateId: elevatorId,
+      payload: { from: before.status, to: status, reason },
+    },
+    tx,
+  )
+}
+
+/** Command for the calendar module: the next inspection date follows the latest inspection. */
+export async function setNextInspection(
+  tenantId: string,
+  elevatorId: string,
+  date: string | null,
+  tx?: Tx,
+): Promise<void> {
+  const e = await repo.findElevator(tenantId, elevatorId, tx)
+  if (!e) throw notFound()
+  if (toDateOnly(e.nextInspectionAt) === date) return
+  await repo.updateElevator(tenantId, elevatorId, { nextInspectionAt: fromDateOnly(date) }, tx)
+}
+
+/** Public facade: the elevator (with tenantId) behind a QR token, or null. */
+export function findByPublicToken(token: string) {
+  if (!/^[0-9a-f]{32}$/.test(token)) return Promise.resolve(null)
+  return repo.findByPublicToken(token)
+}
+
+/** "Смени кода": the old QR label stops working immediately. */
+export async function rotateToken(ctx: Ctx, elevatorId: string): Promise<ElevatorDetailDto> {
+  const before = await repo.findElevator(ctx.tenantId, elevatorId)
+  if (!before) throw notFound()
+  await repo.rotatePublicToken(ctx.tenantId, elevatorId)
+  await audit(actorOf(ctx), {
+    action: 'elevator.rotateToken',
+    entityType: 'elevator',
+    entityId: elevatorId,
+  })
+  return get(ctx, elevatorId)
+}
+
 /** Warn-only duplicate check on registration number (ARCHITECTURE section 3). */
 export async function duplicateRegNo(
   ctx: Ctx,

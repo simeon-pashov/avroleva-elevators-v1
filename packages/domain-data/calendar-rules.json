@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "inspection": {
+    "periodicIntervalMonths": 12,
+    "firstIntervalMonths": 24,
+    "alertDaysBefore": [90, 60, 30, 7]
+  },
+  "defectFollowUpDays": 30,
+  "callbackSlaMinutes": 60,
+  "alarmTestIntervalMonths": null
+}

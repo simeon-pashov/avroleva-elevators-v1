@@ -18,7 +18,7 @@ export function mountOffice(app: Express, distDir: string): void {
     return
   }
   app.use(express.static(distDir, { index: false, maxAge: '1h' }))
-  app.get(/^(?!\/api\/).*/, (_req, res) => {
+  app.get(/^(?!\/api\/|\/print\/|\/p\/).*/, (_req, res) => {
     res.setHeader('Cache-Control', 'no-cache')
     res.sendFile(index)
   })

@@ -19,6 +19,7 @@ import {
   optionalText,
   phone,
   uuid,
+  patchOf,
 } from './common.js'
 
 // ---- Customer (ползвател) -----------------------------------------------------------------
@@ -33,7 +34,7 @@ export const createCustomerBody = z.object({
   notes: nullableText(4000),
 })
 export type CreateCustomerBody = z.infer<typeof createCustomerBody>
-export const updateCustomerBody = createCustomerBody.partial()
+export const updateCustomerBody = patchOf(createCustomerBody)
 export type UpdateCustomerBody = z.infer<typeof updateCustomerBody>
 
 export interface CustomerDto {
@@ -132,7 +133,7 @@ export const createBuildingBody = z.object({
   notes: nullableText(4000),
 })
 export type CreateBuildingBody = z.infer<typeof createBuildingBody>
-export const updateBuildingBody = createBuildingBody.partial()
+export const updateBuildingBody = patchOf(createBuildingBody)
 export type UpdateBuildingBody = z.infer<typeof updateBuildingBody>
 
 export const setBuildingLocationBody = z.object({ lat, lng })
@@ -197,7 +198,7 @@ export const createElevatorBody = z.object({
   notes: nullableText(4000),
 })
 export type CreateElevatorBody = z.infer<typeof createElevatorBody>
-export const updateElevatorBody = createElevatorBody.partial()
+export const updateElevatorBody = patchOf(createElevatorBody)
 export type UpdateElevatorBody = z.infer<typeof updateElevatorBody>
 
 export interface ElevatorDto {
@@ -230,6 +231,9 @@ export interface ElevatorDto {
   alarmDevicePhone: string | null
   alarmSimOperator: string | null
   publicCode: string
+  /** Set when status is stopped_by_firm / stopped_by_authority. */
+  stoppedAt: string | null
+  stopReason: string | null
   notes: string | null
   createdAt: string
   updatedAt: string
@@ -245,6 +249,10 @@ export interface ElevatorDetailDto extends ElevatorDto {
   contact: { id: string; name: string; phone: string | null; role: string } | null
   contractId: string | null
   monthlyPriceCents: number | null
+  /** Unguessable token of the public QR page (`/p/:token`); rotatable by the office. */
+  publicToken: string
+  /** Absolute public URL (PUBLIC_BASE_URL + BASE_PATH + /p/:token) for labels and links. */
+  publicUrl: string
 }
 
 export const elevatorListQuery = listQuery.extend({
@@ -273,7 +281,7 @@ export const createContractBody = z.object({
 })
 export type CreateContractBody = z.infer<typeof createContractBody>
 
-export const updateContractBody = createContractBody.partial()
+export const updateContractBody = patchOf(createContractBody)
 export type UpdateContractBody = z.infer<typeof updateContractBody>
 
 export const terminateContractBody = z.object({

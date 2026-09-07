@@ -1,0 +1,24 @@
+{
+  "key": "art10",
+  "version": 1,
+  "items": [
+    { "code": "1", "bg": "Кабината се движи при отворена шахтна врата", "en": "Car moves with a shaft door open", "stopLift": true, "ref": "т. 1" },
+    { "code": "2", "bg": "Кабината се движи при отворена кабинна врата", "en": "Car moves with the car door open", "stopLift": true, "ref": "т. 2" },
+    { "code": "3", "bg": "Шахтна врата се отваря или отключва при отсъстваща кабина", "en": "Shaft door opens or unlocks while the car is away", "stopLift": true, "ref": "т. 3" },
+    { "code": "4", "bg": "Счупено или липсващо стъкло на шахтна врата", "en": "Broken or missing shaft-door glass", "stopLift": true, "ref": "т. 4" },
+    { "code": "5", "bg": "Повредена ограда на кабината или на шахтата", "en": "Damaged car or shaft enclosure", "stopLift": true, "ref": "т. 5" },
+    { "code": "6", "bg": "Силен шум, вибрации или неравномерно движение", "en": "Strong noise, vibration or uneven travel", "stopLift": true, "ref": "т. 6" },
+    { "code": "7", "bg": "Неизправни крайни изключватели, ограничител на скоростта, захващащ механизъм, стоп-бутон, ключалки на вратите или предпазни контакти", "en": "Faulty limit switches, governor, safety gear, stop button, door locks or safety contacts", "stopLift": true, "ref": "т. 7" },
+    { "code": "8", "bg": "Шум в редуктора", "en": "Gearbox noise", "stopLift": true, "ref": "т. 8" },
+    { "code": "9", "bg": "Износени над допустимото въжета или канали на триещата шайба", "en": "Ropes or sheave grooves worn beyond the limits", "stopLift": true, "ref": "т. 9" },
+    { "code": "10", "bg": "Счупени водещи обувки или бандажи на водещите ролки", "en": "Broken guide shoes or roller bandages", "stopLift": true, "ref": "т. 10" },
+    { "code": "11", "bg": "Липсва осветление в кабината или осветеност под 50 lx", "en": "No car light or illumination below 50 lx", "stopLift": true, "ref": "т. 11" },
+    { "code": "12", "bg": "Вода в шахтната яма или в машинното помещение", "en": "Water in the pit or the machine room", "stopLift": true, "ref": "т. 12" },
+    { "code": "13", "bg": "Отклонение при спиране на етаж над ±50 mm", "en": "Levelling deviation beyond ±50 mm", "stopLift": true, "ref": "т. 13" },
+    { "code": "14", "bg": "Неработещ контрол на товара или сигнализация за претоварване", "en": "Non-working load control or overload signal", "stopLift": true, "ref": "т. 14" },
+    { "code": "15", "bg": "Теч на хидравлично масло", "en": "Hydraulic oil leak", "stopLift": true, "ref": "т. 15" },
+    { "code": "16", "bg": "Напукана външна изолация на гъвкавите кабели", "en": "Cracked outer insulation of the travelling cables", "stopLift": true, "ref": "т. 16" },
+    { "code": "17", "bg": "Неработеща двустранна гласова връзка", "en": "Non-functioning two-way voice link", "stopLift": true, "ref": "т. 17" },
+    { "code": "other", "bg": "Друг дефект (свободен текст)", "en": "Other defect (free text)", "stopLift": false, "ref": null }
+  ]
+}

@@ -53,3 +53,21 @@ export interface Problem {
   fields?: Array<{ path: string; code: string; message: string }>
   requestId?: string
 }
+
+/**
+ * PATCH body of a create schema. zod 4's `.partial()` keeps `.default()`s, so a partial body would
+ * silently reset every defaulted field (status, kind, settings...) to its default. This strips the
+ * defaults first: a missing key stays `undefined` and the service keeps the stored value.
+ */
+export function patchOf<T extends z.ZodRawShape>(
+  obj: z.ZodObject<T>,
+): z.ZodObject<{ [K in keyof T]: z.ZodOptional<T[K] extends z.ZodDefault<infer U> ? U : T[K]> }> {
+  const shape: Record<string, z.ZodTypeAny> = {}
+  for (const [key, schema] of Object.entries(obj.shape) as Array<[string, z.ZodTypeAny]>) {
+    const inner = (schema instanceof z.ZodDefault ? schema.removeDefault() : schema) as z.ZodTypeAny
+    shape[key] = inner.optional()
+  }
+  return z.object(shape) as unknown as z.ZodObject<{
+    [K in keyof T]: z.ZodOptional<T[K] extends z.ZodDefault<infer U> ? U : T[K]>
+  }>
+}

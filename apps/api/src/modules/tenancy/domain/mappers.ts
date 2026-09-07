@@ -1,10 +1,15 @@
-import { tenantSettings } from '@avroleva/contracts'
-import type { TenantDto, TenantSettings, UserDto } from '@avroleva/contracts'
+import { tenantFeatures, tenantSettings } from '@avroleva/contracts'
+import type { TenantDto, TenantFeatures, TenantSettings, UserDto } from '@avroleva/contracts'
 import type { Tenant, User } from '../../../generated/prisma/index.js'
 
 export function parseSettings(raw: unknown): TenantSettings {
   const parsed = tenantSettings.safeParse(raw ?? {})
   return parsed.success ? parsed.data : tenantSettings.parse({})
+}
+
+export function parseFeatures(raw: unknown): TenantFeatures {
+  const parsed = tenantFeatures.safeParse(raw ?? {})
+  return parsed.success ? parsed.data : tenantFeatures.parse({})
 }
 
 export function toTenantDto(t: Tenant): TenantDto {
@@ -21,6 +26,7 @@ export function toTenantDto(t: Tenant): TenantDto {
     timezone: t.timezone,
     status: t.status,
     settings: parseSettings(t.settings),
+    features: parseFeatures(t.features),
     createdAt: t.createdAt.toISOString(),
   }
 }

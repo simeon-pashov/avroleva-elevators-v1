@@ -33,6 +33,11 @@ registryRouter.use(requireAuth)
 
 const canEdit = requireRole('owner', 'office')
 
+// ---- public QR token (elevators; the rest of the elevator routes are below)
+registryRouter.post('/elevators/:id/rotate-token', canEdit, async (req, res) => {
+  res.json(await elevators.rotateToken(ctxOf(req), parseId(req)))
+})
+
 // ---- customers
 registryRouter.get('/customers', async (req, res) => {
   res.json(await customers.list(ctxOf(req), parseQuery(customerListQuery, req)))

@@ -11,6 +11,8 @@ export default defineConfig({
     port: 5175,
     proxy: {
       '/api': { target: 'http://127.0.0.1:3005', changeOrigin: true },
+      '/print': { target: 'http://127.0.0.1:3005', changeOrigin: true },
+      '/p': { target: 'http://127.0.0.1:3005', changeOrigin: true },
     },
   },
   build: { outDir: 'dist', sourcemap: false },

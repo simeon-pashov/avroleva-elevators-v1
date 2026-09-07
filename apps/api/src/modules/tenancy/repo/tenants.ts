@@ -55,6 +55,7 @@ export function updateTenant(
     email: string | null
     locale: string
     settings: Prisma.InputJsonValue
+    features: Prisma.InputJsonValue
     status: TenantStatus
   }>,
 ) {

@@ -248,3 +248,9 @@ async function publishRecorded(ctx: Ctx, v: VisitRow) {
     },
   })
 }
+
+/** Public facade: date of the last visit of any kind, or null. */
+export async function latestVisitAt(tenantId: string, elevatorId: string): Promise<Date | null> {
+  const v = await repo.latestVisit(tenantId, elevatorId)
+  return v?.startedAt ?? null
+}

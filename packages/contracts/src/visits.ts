@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { isoDate, isoDateTime, listQuery, nullableText, uuid } from './common.js'
+import { isoDate, isoDateTime, listQuery, nullableText, patchOf, uuid } from './common.js'
 
 // Values are the Postgres enum values (apps/api/prisma/schema.prisma) - keep them in sync.
 export const VisitKind = z.enum([
@@ -43,7 +43,7 @@ export const createVisitBody = z.object({
 export type CreateVisitBody = z.infer<typeof createVisitBody>
 
 /** Visits are append-only: an amendment creates a new visit that supersedes the old one. */
-export const amendVisitBody = createVisitBody.omit({ id: true, elevatorId: true }).partial()
+export const amendVisitBody = patchOf(createVisitBody.omit({ id: true, elevatorId: true }))
 export type AmendVisitBody = z.infer<typeof amendVisitBody>
 
 export interface VisitTechnicianDto {

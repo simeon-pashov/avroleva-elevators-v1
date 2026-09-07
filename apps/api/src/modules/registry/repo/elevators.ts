@@ -1,6 +1,6 @@
-import { prisma } from '../../../platform/db/prisma.js'
+import { prisma, prismaBase } from '../../../platform/db/prisma.js'
 import type { Tx } from '../../../platform/db/prisma.js'
-import { newId, newPublicCode } from '../../../platform/ids.js'
+import { newId, newPublicCode, newPublicToken } from '../../../platform/ids.js'
 import { pageArgs } from '../../../platform/http/pagination.js'
 import type { ElevatorStatus, Prisma } from '../../../generated/prisma/index.js'
 
@@ -112,7 +112,7 @@ export function listForRecompute(tenantId: string) {
 
 export type ElevatorData = Omit<
   Prisma.ElevatorUncheckedCreateInput,
-  'id' | 'tenantId' | 'publicCode'
+  'id' | 'tenantId' | 'publicCode' | 'publicToken'
 >
 
 export async function createElevator(tenantId: string, data: ElevatorData, tx?: Tx) {
@@ -121,7 +121,13 @@ export async function createElevator(tenantId: string, data: ElevatorData, tx?: 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       return await db.elevator.create({
-        data: { id: newId(), tenantId, publicCode: newPublicCode(), ...data },
+        data: {
+          id: newId(),
+          tenantId,
+          publicCode: newPublicCode(),
+          publicToken: newPublicToken(),
+          ...data,
+        },
         include: withBuilding,
       })
     } catch (err) {
@@ -167,6 +173,28 @@ export function findByRegNoNormalized(
       ...(excludeId ? { id: { not: excludeId } } : {}),
     },
     select: { id: true, internalNo: true },
+  })
+}
+
+/**
+ * The public facade resolves the TENANT from the token, so this is the one registry read that runs
+ * on the unscoped client (documented exemption, like tenancy's session lookup). The token carries
+ * 128 bits of entropy; a miss is a 404 like any other.
+ */
+export function findByPublicToken(token: string) {
+  return prismaBase.elevator.findFirst({
+    where: { publicToken: token, deletedAt: null },
+    include: {
+      building: { select: { id: true, addressText: true, address: true, tenantId: true } },
+    },
+  })
+}
+
+export function rotatePublicToken(tenantId: string, id: string) {
+  return prisma.elevator.update({
+    where: { id, tenantId },
+    data: { publicToken: newPublicToken() },
+    include: withBuilding,
   })
 }
 

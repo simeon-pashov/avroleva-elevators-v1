@@ -21,6 +21,7 @@ import type {
   ImportBatch,
 } from '../../../generated/prisma/index.js'
 import { toDateOnly, todayInSofia } from '../../../platform/clock.js'
+import { urls } from '../../../platform/urls.js'
 import { computeNextDue, dueStateOf, effectiveIntervalDays } from './due.js'
 import type { ScheduleSettings } from './due.js'
 import type { ElevatorDetailRow } from '../repo/elevators.js'
@@ -116,6 +117,8 @@ export function toElevatorDto(
     alarmDevicePhone: e.alarmDevicePhone,
     alarmSimOperator: e.alarmSimOperator,
     publicCode: e.publicCode,
+    stoppedAt: e.stoppedAt ? iso(e.stoppedAt) : null,
+    stopReason: e.stopReason,
     notes: e.notes,
     createdAt: iso(e.createdAt),
     updatedAt: iso(e.updatedAt),
@@ -142,6 +145,8 @@ export function toElevatorDetailDto(
       : null,
     contractId: line?.contractId ?? null,
     monthlyPriceCents: line?.monthlyPriceCents ?? null,
+    publicToken: e.publicToken,
+    publicUrl: urls.publicPage(e.publicToken),
   }
 }
 

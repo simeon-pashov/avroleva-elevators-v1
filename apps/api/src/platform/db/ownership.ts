@@ -20,6 +20,11 @@ export const ownership = {
   InvoiceSequence: 'billing',
   Invoice: 'billing',
   Payment: 'billing',
+  Callback: 'callbacks',
+  CallbackEvent: 'callbacks',
+  Defect: 'defects',
+  Inspection: 'calendar',
+  AlarmDeviceTest: 'calendar',
   DomainEvent: 'platform',
   AuditLog: 'platform',
 } as const
@@ -41,4 +46,9 @@ export const tenantOwnedModels: ReadonlySet<string> = new Set<ModelName>([
   'InvoiceSequence',
   'Invoice',
   'Payment',
+  'Callback',
+  'CallbackEvent',
+  'Defect',
+  'Inspection',
+  'AlarmDeviceTest',
 ])

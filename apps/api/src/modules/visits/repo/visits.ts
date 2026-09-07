@@ -124,6 +124,15 @@ export function markSuperseded(tenantId: string, id: string, at: Date, tx?: Tx) 
   return db.visit.update({ where: { id, tenantId }, data: { supersededAt: at } })
 }
 
+/** Latest visit of any kind (public page: "last visit date"). */
+export function latestVisit(tenantId: string, elevatorId: string) {
+  return prisma.visit.findFirst({
+    where: { tenantId, elevatorId, supersededAt: null },
+    orderBy: { startedAt: 'desc' },
+    select: { startedAt: true },
+  })
+}
+
 /** Latest check visit per elevator (history sanity checks, seeds). */
 export function latestCheckVisit(tenantId: string, elevatorId: string) {
   return prisma.visit.findFirst({

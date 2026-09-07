@@ -1,5 +1,5 @@
 import { prismaBase as db } from '../../src/platform/db/prisma.js'
-import { newId, newPublicCode } from '../../src/platform/ids.js'
+import { newId, newPublicCode, newPublicToken } from '../../src/platform/ids.js'
 import { addDays, fromDateOnly, todayInSofia } from '../../src/platform/clock.js'
 import { createT } from '../../src/platform/i18n.js'
 import type { Ctx } from '../../src/platform/http/ctx.js'
@@ -12,6 +12,7 @@ import {
 } from '../../src/modules/registry/index.js'
 import { nextDue, scheduleRules } from '../../src/modules/maintenance/index.js'
 import * as billing from '../../src/modules/billing/index.js'
+import { seedStep3 } from './step3.js'
 
 useScheduleRules(scheduleRules)
 import type {
@@ -681,6 +682,7 @@ export async function seedDemoTenant(): Promise<Record<string, number>> {
           buildingId,
           internalNo: e.internalNo,
           publicCode: newPublicCode(),
+          publicToken: newPublicToken(),
           ...data,
         },
       })
@@ -744,6 +746,17 @@ export async function seedDemoTenant(): Promise<Record<string, number>> {
   const billing = await seedBilling(tenantId, buildingIds, today)
   counts.invoices = billing.invoices
   counts.payments = billing.payments
+  const step3 = await seedStep3(
+    tenantId,
+    elevatorRows.map((r) => ({
+      id: r.row.id,
+      buildingId: r.row.buildingId,
+      internalNo: r.seed.internalNo,
+      status: r.row.status,
+    })),
+    today,
+  )
+  Object.assign(counts, step3)
 
   return { ...counts, tenantIdKnown: 1 }
 }
