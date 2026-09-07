@@ -161,7 +161,7 @@ describe('users & roles', () => {
     const dup = await request(server)
       .post('/api/v1/users')
       .set(bearer(A.ownerToken))
-      .send({ username: B.owner.username, password: 'password123', name: 'X', role: 'office' })
+      .send({ username: B.owner.username, password: 'password123', name: 'Xx', role: 'office' })
     expect(dup.status).toBe(409)
     const me = await request(server).get('/api/v1/auth/me').set(bearer(A.ownerToken))
     const demote = await request(server)
@@ -452,7 +452,7 @@ describe('tenant isolation (two tenants, cross access -> 404)', () => {
         await request(server)
           .patch(`/api/v1/contacts/${contact.body.id}`)
           .set(b)
-          .send({ name: 'Y' })
+          .send({ name: 'Yy' })
       ).status,
     ).toBe(404)
     expect(

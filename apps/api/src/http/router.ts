@@ -27,8 +27,10 @@ apiV1.get('/health', async (_req, res) => {
   res.status(body.ok ? 200 : 503).json(body)
 })
 
+// Admin facade first: its guard is path-scoped to /admin, while the tenant routers below
+// apply requireAuth at their root and would otherwise swallow /admin/auth/login with a 401.
+apiV1.use(adminRouter)
 apiV1.use(tenancy.authRouter)
 apiV1.use(tenancy.tenantRouter)
 apiV1.use(tenancy.usersRouter)
 apiV1.use(registryRouter)
-apiV1.use(adminRouter)
