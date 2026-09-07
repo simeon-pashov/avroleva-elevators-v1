@@ -1,0 +1,55 @@
+# Avroleva - production stack sketch for the VPS (UNTESTED in step 1; see VPS-GUIDE.md).
+# App on 127.0.0.1:3005 for nginx `location /avroleva/`, own Postgres on an internal network.
+#   docker compose -f docker-compose.prod.yml up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - avroleva_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [avroleva-net]
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        VITE_BASE: /avroleva/
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3005"
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public"
+      SESSION_SECRET: ${SESSION_SECRET}
+      COOKIE_SECURE: "true"
+      BASE_PATH: /avroleva
+      PUBLIC_BASE_URL: https://srv1662742.hstgr.cloud/avroleva
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      SEED_DEMO: ${SEED_DEMO:-false}
+      GEOCODER: nominatim
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3005:3005"
+    volumes:
+      - avroleva_uploads:/data/uploads
+    networks: [avroleva-net]
+
+volumes:
+  avroleva_db:
+  avroleva_uploads:
+
+networks:
+  avroleva-net:
+    driver: bridge
