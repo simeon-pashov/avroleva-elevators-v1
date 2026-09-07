@@ -1,17 +1,27 @@
-import type { CreateElevatorBody, ElevatorDto, Page, UpdateElevatorBody } from '@avroleva/contracts'
+import type {
+  CreateElevatorBody,
+  ElevatorDetailDto,
+  ElevatorDto,
+  Page,
+  UpdateElevatorBody,
+} from '@avroleva/contracts'
 import type { Ctx } from '../../../platform/http/ctx.js'
 import { actorOf } from '../../../platform/http/ctx.js'
 import { AppError, notFound } from '../../../platform/http/errors.js'
 import { toPage } from '../../../platform/http/pagination.js'
 import { audit } from '../../../platform/audit.js'
-import { clock, fromDateOnly } from '../../../platform/clock.js'
+import { clock, fromDateOnly, toDateOnly } from '../../../platform/clock.js'
 import { events } from '../../../platform/events/bus.js'
+import type { Tx } from '../../../platform/db/prisma.js'
 import { getTenantSettings } from '../../tenancy/index.js'
 import * as repo from '../repo/elevators.js'
 import * as buildings from '../repo/buildings.js'
-import { toElevatorDto } from '../domain/mappers.js'
+import { toElevatorDetailDto, toElevatorDto } from '../domain/mappers.js'
 import { normalizeRegNo, normalizePhone } from '../domain/address.js'
+import { computeNextDue } from '../domain/due.js'
 import type { ElevatorStatus } from '../../../generated/prisma/index.js'
+
+export type { ElevatorDetailRow } from '../repo/elevators.js'
 
 export async function list(
   ctx: Ctx,
@@ -23,15 +33,28 @@ export async function list(
   )
 }
 
-export async function get(ctx: Ctx, id: string): Promise<ElevatorDto> {
-  const e = await repo.findElevator(ctx.tenantId, id)
+/** Detail for the popup/side panel: identity + contact + customer + price. */
+export async function get(ctx: Ctx, id: string): Promise<ElevatorDetailDto> {
+  const e = await repo.findElevatorDetail(ctx.tenantId, id)
   if (!e) throw notFound()
-  return toElevatorDto(e, await getTenantSettings(ctx.tenantId))
+  return toElevatorDetailDto(e, await getTenantSettings(ctx.tenantId))
+}
+
+/** Existence check for other modules (visits, billing): the row or null, never a DTO. */
+export function find(tenantId: string, id: string, tx?: Tx) {
+  return repo.findElevator(tenantId, id, tx)
+}
+
+/** Read model for the due board and the map pins (maintenance, reporting). */
+export function listForSchedule(tenantId: string) {
+  return repo.listForSchedule(tenantId)
 }
 
 export async function create(ctx: Ctx, body: CreateElevatorBody): Promise<ElevatorDto> {
   if (!(await buildings.findBuilding(ctx.tenantId, body.buildingId))) throw notFound()
+  const settings = await getTenantSettings(ctx.tenantId)
   const regNoNormalized = normalizeRegNo(body.regNo)
+  const lastCheckAt = fromDateOnly(body.lastCheckAt)
   const e = await repo.createElevator(ctx.tenantId, {
     buildingId: body.buildingId,
     internalNo: body.internalNo,
@@ -46,7 +69,17 @@ export async function create(ctx: Ctx, body: CreateElevatorBody): Promise<Elevat
     loadKg: body.loadKg ?? null,
     status: body.status,
     checkIntervalDays: body.checkIntervalDays ?? null,
-    lastCheckAt: fromDateOnly(body.lastCheckAt),
+    lastCheckAt,
+    nextCheckDueAt: fromDateOnly(
+      computeNextDue(
+        {
+          checkIntervalDays: body.checkIntervalDays ?? null,
+          lastCheckAt,
+          nextCheckOverrideAt: null,
+        },
+        settings,
+      ),
+    ),
     nextInspectionAt: fromDateOnly(body.nextInspectionAt),
     alarmDevicePhone: normalizePhone(body.alarmDevicePhone),
     alarmSimOperator: body.alarmSimOperator ?? null,
@@ -65,7 +98,7 @@ export async function create(ctx: Ctx, body: CreateElevatorBody): Promise<Elevat
     aggregateId: e.id,
     payload: { buildingId: e.buildingId, status: e.status },
   })
-  return toElevatorDto(e, await getTenantSettings(ctx.tenantId))
+  return toElevatorDto(e, settings)
 }
 
 export async function update(ctx: Ctx, id: string, body: UpdateElevatorBody): Promise<ElevatorDto> {
@@ -73,6 +106,16 @@ export async function update(ctx: Ctx, id: string, body: UpdateElevatorBody): Pr
   if (!before) throw notFound()
   if (body.buildingId && !(await buildings.findBuilding(ctx.tenantId, body.buildingId)))
     throw notFound()
+  const settings = await getTenantSettings(ctx.tenantId)
+  const checkIntervalDays =
+    body.checkIntervalDays !== undefined ? body.checkIntervalDays : before.checkIntervalDays
+  const lastCheckAt =
+    body.lastCheckAt !== undefined ? fromDateOnly(body.lastCheckAt) : before.lastCheckAt
+  // Editing the last check date by hand is a correction; a pending reschedule no longer applies.
+  const nextCheckOverrideAt =
+    body.lastCheckAt !== undefined && body.lastCheckAt !== toDateOnly(before.lastCheckAt)
+      ? null
+      : before.nextCheckOverrideAt
   const e = await repo.updateElevator(ctx.tenantId, id, {
     ...(body.buildingId !== undefined ? { buildingId: body.buildingId } : {}),
     ...(body.internalNo !== undefined ? { internalNo: body.internalNo } : {}),
@@ -87,8 +130,12 @@ export async function update(ctx: Ctx, id: string, body: UpdateElevatorBody): Pr
     ...(body.stops !== undefined ? { stops: body.stops } : {}),
     ...(body.loadKg !== undefined ? { loadKg: body.loadKg } : {}),
     ...(body.status !== undefined ? { status: body.status } : {}),
-    ...(body.checkIntervalDays !== undefined ? { checkIntervalDays: body.checkIntervalDays } : {}),
-    ...(body.lastCheckAt !== undefined ? { lastCheckAt: fromDateOnly(body.lastCheckAt) } : {}),
+    checkIntervalDays,
+    lastCheckAt,
+    nextCheckOverrideAt,
+    nextCheckDueAt: fromDateOnly(
+      computeNextDue({ checkIntervalDays, lastCheckAt, nextCheckOverrideAt }, settings),
+    ),
     ...(body.nextInspectionAt !== undefined
       ? { nextInspectionAt: fromDateOnly(body.nextInspectionAt) }
       : {}),
@@ -125,7 +172,89 @@ export async function update(ctx: Ctx, id: string, body: UpdateElevatorBody): Pr
       payload: {},
     })
   }
-  return toElevatorDto(e, await getTenantSettings(ctx.tenantId))
+  return toElevatorDto(e, settings)
+}
+
+/**
+ * Command for the visits module: a functional check / technical maintenance was done on `date`.
+ * lastCheckAt never moves backwards (paper backfill of an older visit keeps the newer date); the
+ * one-off reschedule is cleared either way and nextCheckDueAt is recomputed.
+ */
+export async function recordCheck(
+  tenantId: string,
+  elevatorId: string,
+  date: string,
+  tx?: Tx,
+): Promise<void> {
+  const e = await repo.findElevator(tenantId, elevatorId, tx)
+  if (!e) throw notFound()
+  const settings = await getTenantSettings(tenantId)
+  const current = toDateOnly(e.lastCheckAt)
+  const lastCheckAt = fromDateOnly(current && current > date ? current : date)
+  await repo.updateElevator(
+    tenantId,
+    elevatorId,
+    {
+      lastCheckAt,
+      nextCheckOverrideAt: null,
+      nextCheckDueAt: fromDateOnly(
+        computeNextDue(
+          { checkIntervalDays: e.checkIntervalDays, lastCheckAt, nextCheckOverrideAt: null },
+          settings,
+        ),
+      ),
+    },
+    tx,
+  )
+}
+
+/** Command for the maintenance module: "Премести за утре" (or clear with null). */
+export async function setCheckOverride(
+  ctx: Ctx,
+  elevatorId: string,
+  toDate: string | null,
+): Promise<ElevatorDto> {
+  const before = await repo.findElevator(ctx.tenantId, elevatorId)
+  if (!before) throw notFound()
+  const settings = await getTenantSettings(ctx.tenantId)
+  const nextCheckOverrideAt = fromDateOnly(toDate)
+  const e = await repo.updateElevator(ctx.tenantId, elevatorId, {
+    nextCheckOverrideAt,
+    nextCheckDueAt: fromDateOnly(
+      computeNextDue(
+        {
+          checkIntervalDays: before.checkIntervalDays,
+          lastCheckAt: before.lastCheckAt,
+          nextCheckOverrideAt,
+        },
+        settings,
+      ),
+    ),
+    updatedBy: ctx.userId,
+  })
+  await audit(actorOf(ctx), {
+    action: 'elevator.reschedule',
+    entityType: 'elevator',
+    entityId: elevatorId,
+    before: { nextCheckDueAt: before.nextCheckDueAt, override: before.nextCheckOverrideAt },
+    after: { nextCheckDueAt: e.nextCheckDueAt, override: e.nextCheckOverrideAt },
+  })
+  return toElevatorDto(e, settings)
+}
+
+/** Recomputes nextCheckDueAt for every elevator (tenant interval / strategy changed). */
+export async function recomputeSchedule(tenantId: string): Promise<number> {
+  const settings = await getTenantSettings(tenantId)
+  const rows = await repo.listForRecompute(tenantId)
+  let changed = 0
+  for (const r of rows) {
+    const next = fromDateOnly(computeNextDue(r, settings))
+    if ((next?.getTime() ?? null) !== (r.nextCheckDueAt?.getTime() ?? null)) {
+      await repo.updateElevator(tenantId, r.id, { nextCheckDueAt: next })
+      changed++
+    }
+  }
+  return changed
 }
 
 /** Warn-only duplicate check on registration number (ARCHITECTURE section 3). */

@@ -49,6 +49,11 @@ export async function pins(ctx: Ctx): Promise<BuildingPinDto[]> {
   }))
 }
 
+/** Existence check for other modules (billing): the row or null. */
+export function find(tenantId: string, id: string) {
+  return repo.findBuilding(tenantId, id)
+}
+
 export async function get(ctx: Ctx, id: string): Promise<BuildingDetailDto> {
   const b = await repo.findBuilding(ctx.tenantId, id)
   if (!b) throw notFound()

@@ -5,6 +5,7 @@ import type {
   ContractDto,
   ContractLineDto,
   CustomerDto,
+  ElevatorDetailDto,
   ElevatorDto,
   ImportBatchDto,
   ImportPreviewRow,
@@ -19,8 +20,10 @@ import type {
   Elevator,
   ImportBatch,
 } from '../../../generated/prisma/index.js'
-import { toDateOnly } from '../../../platform/clock.js'
-import { effectiveIntervalDays, nextCheckDue } from './due.js'
+import { toDateOnly, todayInSofia } from '../../../platform/clock.js'
+import { computeNextDue, dueStateOf, effectiveIntervalDays } from './due.js'
+import type { ScheduleSettings } from './due.js'
+import type { ElevatorDetailRow } from '../repo/elevators.js'
 
 const iso = (d: Date) => d.toISOString()
 
@@ -81,10 +84,14 @@ export function toBuildingDto(
 
 export function toElevatorDto(
   e: Elevator & { building?: { addressText: string } | null },
-  settings: { checkIntervalDays: number },
+  settings: ScheduleSettings,
+  today: string = todayInSofia(),
 ): ElevatorDto {
   const interval = effectiveIntervalDays(e, settings)
   const lastCheckAt = toDateOnly(e.lastCheckAt)
+  // The stored column is authoritative; fall back to a fresh computation for rows written before
+  // the column existed (or by a seed that skipped it).
+  const nextCheckDue = toDateOnly(e.nextCheckDueAt) ?? computeNextDue(e, settings)
   return {
     id: e.id,
     buildingId: e.buildingId,
@@ -102,7 +109,9 @@ export function toElevatorDto(
     checkIntervalDays: e.checkIntervalDays,
     effectiveIntervalDays: interval,
     lastCheckAt,
-    nextCheckDue: nextCheckDue(lastCheckAt, interval),
+    nextCheckDue,
+    nextCheckOverrideAt: toDateOnly(e.nextCheckOverrideAt),
+    dueState: dueStateOf(nextCheckDue, e.status, today),
     nextInspectionAt: toDateOnly(e.nextInspectionAt),
     alarmDevicePhone: e.alarmDevicePhone,
     alarmSimOperator: e.alarmSimOperator,
@@ -110,6 +119,29 @@ export function toElevatorDto(
     notes: e.notes,
     createdAt: iso(e.createdAt),
     updatedAt: iso(e.updatedAt),
+  }
+}
+
+export function toElevatorDetailDto(
+  e: ElevatorDetailRow,
+  settings: ScheduleSettings,
+  today: string = todayInSofia(),
+): ElevatorDetailDto {
+  const contact =
+    e.building.contacts.find((c) => c.role === 'house_manager') ?? e.building.contacts[0] ?? null
+  const line = e.contractLines[0] ?? null
+  const address = e.building.address as Address
+  return {
+    ...toElevatorDto(e, settings, today),
+    buildingAddressText: e.building.addressText,
+    buildingEntrance: address?.entrance ?? null,
+    customerId: e.building.customerId,
+    customerName: e.building.customer?.name ?? null,
+    contact: contact
+      ? { id: contact.id, name: contact.name, phone: contact.phone, role: contact.role }
+      : null,
+    contractId: line?.contractId ?? null,
+    monthlyPriceCents: line?.monthlyPriceCents ?? null,
   }
 }
 

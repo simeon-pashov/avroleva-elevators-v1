@@ -10,8 +10,14 @@ import { requestId } from './platform/http/requestId.js'
 import { csrfGuard } from './platform/http/ctx.js'
 import { errorHandler, notFound } from './platform/http/errors.js'
 import { authenticate } from './modules/tenancy/index.js'
+import { useScheduleRules } from './modules/registry/index.js'
+import { scheduleRules } from './modules/maintenance/index.js'
 import { apiV1 } from './http/router.js'
 import { mountOffice } from './http/static.js'
+
+// Composition root (ARCHITECTURE section 1.1 rule 2): the registry's schedule port gets the
+// maintenance module's cycle engine; nothing below L3 imports maintenance directly.
+useScheduleRules(scheduleRules)
 
 export interface AppOptions {
   /** Absolute path of the built office SPA; omitted = API only (dev, tests). */

@@ -142,7 +142,28 @@ export async function updateTenant(ctx: Ctx, body: UpdateTenantBody): Promise<Te
     before: { settings: current.settings, locale: current.locale },
     after: { settings, locale: updated.locale },
   })
+  if (
+    body.settings &&
+    JSON.stringify(settings) !== JSON.stringify(parseSettings(current.settings))
+  ) {
+    // Registry (L2) recomputes nextCheckDueAt on this; it must not be called from here (L1).
+    await events.publish(ctx, {
+      type: 'TenantSettingsChanged',
+      aggregateType: 'tenant',
+      aggregateId: ctx.tenantId,
+      payload: { settings },
+    })
+  }
   return toTenantDto(updated)
+}
+
+/** Name lookup for other modules (visits snapshots the technician names). */
+export async function findUsersByIds(
+  tenantId: string,
+  ids: string[],
+): Promise<Array<{ id: string; name: string; role: string; isActive: boolean }>> {
+  if (ids.length === 0) return []
+  return users.findUsersByIds(tenantId, ids)
 }
 
 // ---- Users (owner) ---------------------------------------------------------------------------

@@ -9,6 +9,7 @@ import {
   GeocodeStatus,
 } from './enums.js'
 import type { ImportStatus } from './enums.js'
+import type { DueState } from './maintenance.js'
 import {
   isoDate,
   listQuery,
@@ -217,8 +218,14 @@ export interface ElevatorDto {
   /** Effective interval: elevator.checkIntervalDays ?? tenant.settings.checkIntervalDays. */
   effectiveIntervalDays: number
   lastCheckAt: string | null
-  /** lastCheckAt + effectiveIntervalDays (date only); null when never checked. */
+  /**
+   * Denormalised next due date (date only): the maintenance module's nextDue() over lastCheckAt,
+   * the interval, the tenant's cycle strategy and the one-off override; null when never checked.
+   */
   nextCheckDue: string | null
+  /** One-off reschedule ("Премести за утре"); cleared when a check visit is recorded. */
+  nextCheckOverrideAt: string | null
+  dueState: DueState
   nextInspectionAt: string | null
   alarmDevicePhone: string | null
   alarmSimOperator: string | null
@@ -226,6 +233,18 @@ export interface ElevatorDto {
   notes: string | null
   createdAt: string
   updatedAt: string
+}
+
+/** GET /elevators/:id - the popup/detail view: everything the office needs next to the map. */
+export interface ElevatorDetailDto extends ElevatorDto {
+  buildingAddressText: string
+  buildingEntrance: string | null
+  customerId: string | null
+  customerName: string | null
+  /** Primary building contact (домоуправител) for the tel: link. */
+  contact: { id: string; name: string; phone: string | null; role: string } | null
+  contractId: string | null
+  monthlyPriceCents: number | null
 }
 
 export const elevatorListQuery = listQuery.extend({

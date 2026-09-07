@@ -6,6 +6,34 @@ import type { ElevatorStatus, Prisma } from '../../../generated/prisma/index.js'
 
 const withBuilding = { building: { select: { addressText: true } } } as const
 
+/** Detail/popup view: building + house-manager contact + customer + active contract line. */
+const withDetail = {
+  building: {
+    select: {
+      id: true,
+      addressText: true,
+      address: true,
+      lat: true,
+      lng: true,
+      customerId: true,
+      customer: { select: { id: true, name: true } },
+      contacts: {
+        where: { deletedAt: null },
+        orderBy: [{ isPrimary: 'desc' }, { role: 'asc' }, { id: 'asc' }],
+        take: 5,
+        select: { id: true, name: true, phone: true, role: true, isPrimary: true },
+      },
+    },
+  },
+  contractLines: {
+    where: { toDate: null, contract: { status: 'active', deletedAt: null } },
+    select: { contractId: true, monthlyPriceCents: true },
+    take: 1,
+  },
+} satisfies Prisma.ElevatorInclude
+
+export type ElevatorDetailRow = Prisma.ElevatorGetPayload<{ include: typeof withDetail }>
+
 export function listElevators(
   tenantId: string,
   q: { cursor?: string; limit: number; q?: string; buildingId?: string; status?: ElevatorStatus },
@@ -41,9 +69,45 @@ export function findElevator(tenantId: string, id: string, tx?: Tx) {
   return db.elevator.findFirst({ where: { id, tenantId, deletedAt: null }, include: withBuilding })
 }
 
+export function findElevatorDetail(
+  tenantId: string,
+  id: string,
+): Promise<ElevatorDetailRow | null> {
+  return prisma.elevator.findFirst({
+    where: { id, tenantId, deletedAt: null },
+    include: withDetail,
+  })
+}
+
 export function findElevatorsByIds(tenantId: string, ids: string[], tx?: Tx) {
   const db = tx ?? prisma
   return db.elevator.findMany({ where: { tenantId, deletedAt: null, id: { in: ids } } })
+}
+
+/**
+ * Read model for the due board and the map: every non-scrapped elevator with its building,
+ * house-manager contact and current price. One query; ordered by building then internalNo.
+ */
+export function listForSchedule(tenantId: string): Promise<ElevatorDetailRow[]> {
+  return prisma.elevator.findMany({
+    where: { tenantId, deletedAt: null, status: { not: 'scrapped' } },
+    include: withDetail,
+    orderBy: [{ building: { addressText: 'asc' } }, { internalNo: 'asc' }],
+  })
+}
+
+/** Minimal rows for a full recompute of nextCheckDueAt (settings change). */
+export function listForRecompute(tenantId: string) {
+  return prisma.elevator.findMany({
+    where: { tenantId, deletedAt: null },
+    select: {
+      id: true,
+      checkIntervalDays: true,
+      lastCheckAt: true,
+      nextCheckOverrideAt: true,
+      nextCheckDueAt: true,
+    },
+  })
 }
 
 export type ElevatorData = Omit<
@@ -71,8 +135,10 @@ export function updateElevator(
   tenantId: string,
   id: string,
   data: Prisma.ElevatorUncheckedUpdateInput,
+  tx?: Tx,
 ) {
-  return prisma.elevator.update({ where: { id, tenantId }, data, include: withBuilding })
+  const db = tx ?? prisma
+  return db.elevator.update({ where: { id, tenantId }, data, include: withBuilding })
 }
 
 export function updateElevatorsStatus(

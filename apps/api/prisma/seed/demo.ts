@@ -1,12 +1,19 @@
 import { prismaBase as db } from '../../src/platform/db/prisma.js'
 import { newId, newPublicCode } from '../../src/platform/ids.js'
 import { addDays, fromDateOnly, todayInSofia } from '../../src/platform/clock.js'
+import { createT } from '../../src/platform/i18n.js'
+import type { Ctx } from '../../src/platform/http/ctx.js'
 import { hashPassword } from '../../src/modules/tenancy/index.js'
 import {
   buildAddressText,
   normalizePhone,
   normalizeRegNo,
+  useScheduleRules,
 } from '../../src/modules/registry/index.js'
+import { nextDue, scheduleRules } from '../../src/modules/maintenance/index.js'
+import * as billing from '../../src/modules/billing/index.js'
+
+useScheduleRules(scheduleRules)
 import type {
   ContractStatus,
   CustomerKind,
@@ -512,6 +519,9 @@ export async function seedDemoTenant(): Promise<Record<string, number>> {
     buildings: 0,
     elevators: 0,
     contracts: 0,
+    visits: 0,
+    invoices: 0,
+    payments: 0,
   }
 
   let tenant = await db.tenant.findFirst({ where: { eik: DEMO.tenant.eik } })
@@ -625,6 +635,12 @@ export async function seedDemoTenant(): Promise<Record<string, number>> {
     string,
     Array<{ elevatorId: string; monthlyPriceCents: number }>
   >()
+  const elevatorRows: Array<{
+    row: { id: string; buildingId: string; status: ElevatorStatus }
+    seed: ElevatorSeed
+    interval: number
+    lastCheckAt: string | null
+  }> = []
   for (const e of ELEVATORS) {
     const buildingId = buildingIds.get(e.building)!
     const interval = e.checkIntervalDays ?? DEFAULT_INTERVAL
@@ -645,6 +661,11 @@ export async function seedDemoTenant(): Promise<Record<string, number>> {
       status: e.status ?? 'active',
       checkIntervalDays: e.checkIntervalDays ?? null,
       lastCheckAt: fromDateOnly(lastCheckAt),
+      // Demo tenant uses the rolling strategy; a re-seed drops any "move to tomorrow" override.
+      nextCheckDueAt: fromDateOnly(
+        nextDue({ lastCheckAt, intervalDays: interval, overrideAt: null, strategy: 'rolling' }),
+      ),
+      nextCheckOverrideAt: null,
       nextInspectionAt:
         e.nextInspectionInDays != null
           ? fromDateOnly(addDays(today, e.nextInspectionInDays))
@@ -668,9 +689,15 @@ export async function seedDemoTenant(): Promise<Record<string, number>> {
       // Keep the due dates relative to "today" so the demo stays meaningful on every re-seed.
       row = await db.elevator.update({
         where: { id: row.id },
-        data: { lastCheckAt: data.lastCheckAt, nextInspectionAt: data.nextInspectionAt },
+        data: {
+          lastCheckAt: data.lastCheckAt,
+          nextCheckDueAt: data.nextCheckDueAt,
+          nextCheckOverrideAt: null,
+          nextInspectionAt: data.nextInspectionAt,
+        },
       })
     }
+    elevatorRows.push({ row, seed: e, interval, lastCheckAt })
     if (
       e.monthlyPriceCents > 0 &&
       (e.status ?? 'active') !== 'out_of_contract' &&
@@ -713,5 +740,202 @@ export async function seedDemoTenant(): Promise<Record<string, number>> {
     counts.contracts!++
   }
 
+  counts.visits = await seedVisits(tenantId, elevatorRows, today)
+  const billing = await seedBilling(tenantId, buildingIds, today)
+  counts.invoices = billing.invoices
+  counts.payments = billing.payments
+
   return { ...counts, tenantIdKnown: 1 }
+}
+
+// ---------------------------------------------------------------- visit history
+
+const TECHNICIANS = ['Иван Петров', 'Петър Иванов', 'Георги Димитров', 'Стоян Колев']
+const REPAIR_NOTES = [
+  'Смяна на ролки на кабинните врати.',
+  'Регулиране на спирачката; проверка на въжетата.',
+  'Подмяна на бутон на етажен пост, 3 ет.',
+  'Почистване на шахтата и смазване на водачите.',
+  'Смяна на осветление в кабината.',
+]
+
+/**
+ * 6-18 months of visits per elevator, walking backwards from lastCheckAt at the elevator's
+ * interval (with a little jitter), mostly functional checks, every 4th a technical maintenance
+ * and the odd repair. Idempotent: an elevator that already has visits only gets a check visit on
+ * its (re-seeded, today-relative) lastCheckAt when the newest visit is older than that.
+ */
+async function seedVisits(
+  tenantId: string,
+  rows: Array<{
+    row: { id: string; buildingId: string }
+    interval: number
+    lastCheckAt: string | null
+  }>,
+  today: string,
+): Promise<number> {
+  let created = 0
+  const ivan = await db.user.findUnique({ where: { username: 'ivan' }, select: { id: true } })
+  const userIdByName = new Map<string, string>()
+  if (ivan) userIdByName.set('Иван Петров', ivan.id)
+
+  for (const [i, r] of rows.entries()) {
+    if (!r.lastCheckAt) continue
+    const existing = await db.visit.count({ where: { tenantId, elevatorId: r.row.id } })
+    const latest = existing
+      ? await db.visit.findFirst({
+          where: { tenantId, elevatorId: r.row.id },
+          orderBy: { startedAt: 'desc' },
+          select: { startedAt: true },
+        })
+      : null
+    const monthsBack = 6 + ((i * 7) % 13) // 6..18
+    const horizon = addDays(r.lastCheckAt, -Math.round(monthsBack * 30.4))
+    const pair = [TECHNICIANS[i % 4]!, TECHNICIANS[(i + 1) % 4]!]
+
+    let date = r.lastCheckAt
+    let n = 0
+    while (date >= horizon && date <= today) {
+      if (latest && new Date(date + 'T00:00:00Z') <= latest.startedAt) break
+      const kind = n % 4 === 3 ? 'technical_maintenance' : 'functional_check'
+      const startedAt = new Date(
+        `${date}T${String(8 + ((i + n) % 9)).padStart(2, '0')}:${n % 2 ? '30' : '00'}:00+03:00`,
+      )
+      const endedAt = new Date(
+        startedAt.getTime() + (kind === 'functional_check' ? 25 : 55) * 60_000,
+      )
+      const techs = n % 5 === 4 ? [pair[0]!] : pair
+      await db.visit.create({
+        data: {
+          id: newId(),
+          tenantId,
+          elevatorId: r.row.id,
+          buildingId: r.row.buildingId,
+          kind,
+          startedAt,
+          endedAt,
+          notes: kind === 'technical_maintenance' ? 'Планово техническо обслужване.' : null,
+          source: 'paper',
+          qualityFlags: techs.length < 2 ? ['singleTechnician'] : [],
+          technicians: {
+            create: techs.map((name, p) => ({
+              id: newId(),
+              tenantId,
+              userId: userIdByName.get(name) ?? null,
+              position: p + 1,
+              name,
+            })),
+          },
+        },
+      })
+      created++
+      // An occasional repair a few days after a check.
+      if ((i + n) % 7 === 6) {
+        const repairDay = addDays(date, 3)
+        if (repairDay <= today) {
+          const at = new Date(`${repairDay}T14:00:00+03:00`)
+          await db.visit.create({
+            data: {
+              id: newId(),
+              tenantId,
+              elevatorId: r.row.id,
+              buildingId: r.row.buildingId,
+              kind: 'repair',
+              startedAt: at,
+              endedAt: new Date(at.getTime() + 90 * 60_000),
+              notes: REPAIR_NOTES[(i + n) % REPAIR_NOTES.length]!,
+              source: 'paper',
+              qualityFlags: [],
+              technicians: {
+                create: [{ id: newId(), tenantId, userId: null, position: 1, name: pair[1]! }],
+              },
+            },
+          })
+          created++
+        }
+      }
+      n++
+      date = addDays(date, -(r.interval + ((n % 3) - 1)))
+    }
+  }
+  return created
+}
+
+// ---------------------------------------------------------------- invoices & payments
+
+/**
+ * Invoices for the last 6 months for every active contract through the billing module (gapless
+ * numbering, idempotent per contract+period), then a realistic mix: older months paid, a few
+ * buildings behind (overdue), the current month mostly pending, plus two unallocated payments.
+ */
+async function seedBilling(
+  tenantId: string,
+  buildingIds: Map<string, string>,
+  today: string,
+): Promise<{ invoices: number; payments: number }> {
+  const owner = await db.user.findUnique({ where: { username: 'demo' }, select: { id: true } })
+  if (!owner) return { invoices: 0, payments: 0 }
+  const ctx: Ctx = {
+    tenantId,
+    userId: owner.id,
+    role: 'owner',
+    sessionId: 'seed',
+    requestId: 'seed',
+    locale: 'bg',
+    t: createT('bg'),
+  }
+  const periods: string[] = []
+  for (let k = 5; k >= 0; k--) periods.push(addMonthsToPeriod(today.slice(0, 7), -k))
+  let invoices = 0
+  for (const p of periods) invoices += (await billing.generate(ctx, p)).created
+
+  const keyOfBuilding = new Map([...buildingIds.entries()].map(([k, v]) => [v, k]))
+  const behind = new Set(['b3', 'b5', 'b9']) // overdue for the previous 1-2 months
+  const early = new Set(['b7', 'b12']) // already paid the current month
+  let payments = 0
+  const all = await billing.list(ctx, { limit: 200 })
+  for (const inv of all.items) {
+    if (inv.status === 'paid' || inv.status === 'void') continue
+    const key = keyOfBuilding.get(inv.buildingId) ?? 'b1'
+    const idx = Number(key.slice(1))
+    const k = periods.indexOf(inv.period) // 0 = oldest, 5 = current month
+    let pay = false
+    if (k <= 2) pay = true
+    else if (k === 3) pay = !behind.has(key) || key === 'b9'
+    else if (k === 4) pay = !behind.has(key)
+    else pay = early.has(key)
+    if (!pay) continue
+    const paidAt = addDays(inv.dueAt, (idx % 5) - 2)
+    await billing.pay(ctx, inv.id, {
+      paidAt: paidAt > today ? today : paidAt,
+      method: idx % 3 === 0 ? 'cash' : 'bank',
+      note: null,
+    })
+    payments++
+  }
+  // Two unallocated payments (advance / rounding), only once.
+  const extra = [
+    { key: 'b1', amountCents: 2000, method: 'cash' as const, note: 'Аванс от домоуправителя' },
+    { key: 'b7', amountCents: 10000, method: 'bank' as const, note: 'Превод без посочена фактура' },
+  ]
+  for (const x of extra) {
+    const buildingId = buildingIds.get(x.key)!
+    const exists = await db.payment.findFirst({ where: { tenantId, buildingId, invoiceId: null } })
+    if (exists) continue
+    await billing.createPayment(ctx, {
+      buildingId,
+      amountCents: x.amountCents,
+      paidAt: addDays(today, -4),
+      method: x.method,
+      note: x.note,
+    })
+    payments++
+  }
+  return { invoices, payments }
+}
+
+function addMonthsToPeriod(period: string, months: number): string {
+  const [y, m] = period.split('-').map(Number) as [number, number]
+  const d = new Date(Date.UTC(y, m - 1 + months, 1))
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
 }

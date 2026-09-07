@@ -60,6 +60,9 @@ model Tenant {
   buildings Building[]
   elevators Elevator[]
   contracts Contract[]
+  visits    Visit[]
+  invoices  Invoice[]
+  payments  Payment[]
 
   @@map("tenant")
 }
@@ -258,6 +261,9 @@ model Building {
   elevators Elevator[]
   contacts  Contact[]
   contracts Contract[]
+  visits    Visit[]
+  invoices  Invoice[]
+  payments  Payment[]
 
   @@index([tenantId, customerId])
   @@index([tenantId, geocodeStatus])
@@ -266,42 +272,49 @@ model Building {
 }
 
 model Elevator {
-  id                String         @id @db.Uuid
-  tenantId          String         @db.Uuid
-  buildingId        String         @db.Uuid
-  internalNo        String
-  regNo             String?
-  regNoNormalized   String?
-  inspectionBody    String?
-  manufacturer      String?
-  year              Int?
-  driveType         DriveType      @default(electric)
-  doorType          DoorType       @default(manual)
-  stops             Int
-  loadKg            Int?
-  status            ElevatorStatus @default(active)
-  checkIntervalDays Int?
-  lastCheckAt       DateTime?      @db.Date
-  nextInspectionAt  DateTime?      @db.Date
-  alarmDevicePhone  String?
-  alarmSimOperator  String?
-  publicCode        String
-  notes             String?
-  createdBy         String?        @db.Uuid
-  updatedBy         String?        @db.Uuid
-  createdAt         DateTime       @default(now()) @db.Timestamptz
-  updatedAt         DateTime       @updatedAt @db.Timestamptz
-  deletedAt         DateTime?      @db.Timestamptz
+  id                  String         @id @db.Uuid
+  tenantId            String         @db.Uuid
+  buildingId          String         @db.Uuid
+  internalNo          String
+  regNo               String?
+  regNoNormalized     String?
+  inspectionBody      String?
+  manufacturer        String?
+  year                Int?
+  driveType           DriveType      @default(electric)
+  doorType            DoorType       @default(manual)
+  stops               Int
+  loadKg              Int?
+  status              ElevatorStatus @default(active)
+  checkIntervalDays   Int?
+  lastCheckAt         DateTime?      @db.Date
+  // Denormalised by the registry from lastCheckAt + interval (+ strategy, + override) so that the
+  // map pins, the due board and the lists are one query. Recomputed on every change of its inputs.
+  nextCheckDueAt      DateTime?      @db.Date
+  // "Премести за утре": a one-off reschedule of the next check; cleared when a visit is recorded.
+  nextCheckOverrideAt DateTime?      @db.Date
+  nextInspectionAt    DateTime?      @db.Date
+  alarmDevicePhone    String?
+  alarmSimOperator    String?
+  publicCode          String
+  notes               String?
+  createdBy           String?        @db.Uuid
+  updatedBy           String?        @db.Uuid
+  createdAt           DateTime       @default(now()) @db.Timestamptz
+  updatedAt           DateTime       @updatedAt @db.Timestamptz
+  deletedAt           DateTime?      @db.Timestamptz
 
   tenant        Tenant             @relation(fields: [tenantId], references: [id])
   building      Building           @relation(fields: [buildingId], references: [id])
   contractLines ContractElevator[]
+  visits        Visit[]
 
   @@unique([tenantId, publicCode])
   @@index([tenantId, buildingId])
   @@index([tenantId, status])
   @@index([tenantId, regNoNormalized])
   @@index([tenantId, lastCheckAt])
+  @@index([tenantId, nextCheckDueAt])
   @@map("elevator")
 }
 
@@ -365,6 +378,151 @@ model ImportBatch {
 
   @@index([tenantId, createdAt])
   @@map("import_batch")
+}
+
+// ---------------------------------------------------------------- visits (L3)
+// The visit record is evidence: append-only, corrections create a superseding row.
+// Cross-module references (createdByUserId, supersedesVisitId) are plain ids; FKs only to identity
+// tables (tenant, building, elevator) per ARCHITECTURE section 1.1 rule 4.
+
+enum VisitKind {
+  functional_check
+  technical_maintenance
+  repair
+  callback
+  other
+}
+
+enum VisitSource {
+  office
+  paper
+  app
+}
+
+model Visit {
+  id                String      @id @db.Uuid
+  tenantId          String      @db.Uuid
+  elevatorId        String      @db.Uuid
+  buildingId        String      @db.Uuid
+  kind              VisitKind
+  startedAt         DateTime    @db.Timestamptz
+  endedAt           DateTime?   @db.Timestamptz
+  notes             String?
+  source            VisitSource @default(office)
+  qualityFlags      Json        @default("[]")
+  createdByUserId   String?     @db.Uuid
+  supersedesVisitId String?     @db.Uuid
+  supersededAt      DateTime?   @db.Timestamptz
+  createdAt         DateTime    @default(now()) @db.Timestamptz
+
+  tenant      Tenant            @relation(fields: [tenantId], references: [id])
+  elevator    Elevator          @relation(fields: [elevatorId], references: [id])
+  building    Building          @relation(fields: [buildingId], references: [id])
+  technicians VisitTechnician[]
+
+  @@index([tenantId, elevatorId, startedAt(sort: Desc)])
+  @@index([tenantId, startedAt(sort: Desc)])
+  @@index([tenantId, buildingId])
+  @@map("visit")
+}
+
+model VisitTechnician {
+  id       String  @id @db.Uuid
+  tenantId String  @db.Uuid
+  visitId  String  @db.Uuid
+  userId   String? @db.Uuid
+  position Int     @default(1)
+  /// Name as written on the paper page; kept even if the user is renamed or deleted.
+  name     String
+
+  visit Visit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, visitId])
+  @@index([tenantId, userId])
+  @@map("visit_technician")
+}
+
+// ---------------------------------------------------------------- billing (L3, light)
+
+enum InvoiceStatus {
+  draft
+  issued
+  paid
+  overdue
+  void
+}
+
+enum PaymentMethod {
+  cash
+  bank
+  other
+}
+
+/// Gapless per-tenant numbering: the row is locked (SELECT ... FOR UPDATE) while a number is taken.
+model InvoiceSequence {
+  tenantId   String @id @db.Uuid
+  nextNumber Int    @default(1)
+
+  @@map("invoice_sequence")
+}
+
+model Invoice {
+  id          String        @id @db.Uuid
+  tenantId    String        @db.Uuid
+  contractId  String        @db.Uuid
+  buildingId  String        @db.Uuid
+  customerId  String        @db.Uuid
+  number      Int
+  periodStart DateTime      @db.Date
+  periodEnd   DateTime      @db.Date
+  issuedAt    DateTime      @db.Date
+  dueAt       DateTime      @db.Date
+  amountCents Int
+  vatCents    Int
+  totalCents  Int
+  paidCents   Int           @default(0)
+  currency    String        @default("EUR")
+  status      InvoiceStatus @default(issued)
+  /// [{elevatorId, description, amountCents}]
+  lines       Json          @default("[]")
+  paidAt      DateTime?     @db.Date
+  voidedAt    DateTime?     @db.Timestamptz
+  voidReason  String?
+  createdAt   DateTime      @default(now()) @db.Timestamptz
+  updatedAt   DateTime      @updatedAt @db.Timestamptz
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  building Building  @relation(fields: [buildingId], references: [id])
+  payments Payment[]
+
+  @@unique([tenantId, number])
+  @@unique([tenantId, contractId, periodStart])
+  @@index([tenantId, status, dueAt])
+  @@index([tenantId, buildingId, periodStart(sort: Desc)])
+  @@index([tenantId, periodStart(sort: Desc)])
+  @@map("invoice")
+}
+
+model Payment {
+  id              String        @id @db.Uuid
+  tenantId        String        @db.Uuid
+  invoiceId       String?       @db.Uuid
+  buildingId      String        @db.Uuid
+  amountCents     Int
+  paidAt          DateTime      @db.Date
+  method          PaymentMethod @default(bank)
+  note            String?
+  createdByUserId String?       @db.Uuid
+  createdAt       DateTime      @default(now()) @db.Timestamptz
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  invoice  Invoice? @relation(fields: [invoiceId], references: [id])
+  building Building @relation(fields: [buildingId], references: [id])
+
+  @@index([tenantId, invoiceId])
+  @@index([tenantId, buildingId, paidAt(sort: Desc)])
+  @@index([tenantId, paidAt(sort: Desc)])
+  @@map("payment")
 }
 
 // ---------------------------------------------------------------- platform

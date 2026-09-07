@@ -17,7 +17,15 @@ export * as imports from './service/imports.js'
 export { parseImport } from './domain/import.js'
 export { parseCsv, toCsv } from './domain/csv.js'
 export { buildAddressText, normalizeRegNo, normalizePhone } from './domain/address.js'
-export { effectiveIntervalDays, nextCheckDue } from './domain/due.js'
+export {
+  effectiveIntervalDays,
+  nextCheckDue,
+  computeNextDue,
+  dueStateOf,
+  useScheduleRules,
+} from './domain/due.js'
+export type { ScheduleRules, DueInput, ScheduleSettings } from './domain/due.js'
+export type { ElevatorDetailRow } from './repo/elevators.js'
 
 /** Basic counts for the platform admin page (used by the admin facade). */
 export async function counts(tenantId: string) {

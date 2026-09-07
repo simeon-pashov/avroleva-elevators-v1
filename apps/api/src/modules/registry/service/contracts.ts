@@ -40,6 +40,17 @@ export async function get(ctx: Ctx, id: string): Promise<ContractDto> {
   return toContractDto(c)
 }
 
+/** For billing (L3): active contracts with lines, as DTOs. */
+export async function listActive(tenantId: string): Promise<ContractDto[]> {
+  return (await repo.activeContracts(tenantId)).map(toContractDto)
+}
+
+/** For billing (L3): one contract of the tenant (any status) or null. */
+export async function findDto(tenantId: string, id: string): Promise<ContractDto | null> {
+  const c = await repo.findContract(tenantId, id)
+  return c ? toContractDto(c) : null
+}
+
 async function assertLines(ctx: Ctx, buildingId: string, lines: CreateContractBody['lines']) {
   const ids = [...new Set(lines.map((l) => l.elevatorId))]
   if (ids.length !== lines.length) throw new AppError(400, 'contracts.duplicateElevator')

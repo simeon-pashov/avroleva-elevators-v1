@@ -8,6 +8,18 @@ export function todayInSofia(now: Date = clock.now()): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Sofia' }).format(now)
 }
 
+/** Calendar day (YYYY-MM-DD) of an instant as seen on the office wall clock in Sofia. */
+export function dateOnlyInSofia(at: Date | string): string {
+  return todayInSofia(typeof at === 'string' ? new Date(at) : at)
+}
+
+/** First and last day (YYYY-MM-DD) of a YYYY-MM period. */
+export function monthBounds(yearMonth: string): { start: string; end: string } {
+  const [y, m] = yearMonth.split('-').map(Number) as [number, number]
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate()
+  return { start: `${yearMonth}-01`, end: `${yearMonth}-${String(last).padStart(2, '0')}` }
+}
+
 export function addDays(dateOnly: string, days: number): string {
   const d = new Date(dateOnly + 'T00:00:00Z')
   d.setUTCDate(d.getUTCDate() + days)

@@ -42,6 +42,15 @@ export function listContracts(
   return prisma.contract.findMany({ ...pageArgs(q), where, include: withRelations })
 }
 
+/** Every active contract with its lines (billing period generation). */
+export function activeContracts(tenantId: string) {
+  return prisma.contract.findMany({
+    where: { tenantId, deletedAt: null, status: 'active' },
+    include: withRelations,
+    orderBy: { id: 'asc' },
+  })
+}
+
 export function contractsForBuilding(tenantId: string, buildingId: string) {
   return prisma.contract.findMany({
     where: { tenantId, buildingId, deletedAt: null },

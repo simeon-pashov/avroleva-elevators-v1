@@ -18,6 +18,8 @@ import { parseImport, templateExampleRows } from '../domain/import.js'
 import { toCsv } from '../domain/csv.js'
 import { toImportBatchDto } from '../domain/mappers.js'
 import { normalizeRegNo } from '../domain/address.js'
+import { computeNextDue } from '../domain/due.js'
+import { getTenantSettings } from '../../tenancy/index.js'
 
 export function templateCsv(): string {
   return toCsv([[...IMPORT_COLUMNS], ...templateExampleRows], ';')
@@ -91,6 +93,7 @@ export async function commit(ctx: Ctx, id: string): Promise<ImportBatchDto> {
     ids: { customers: [], contacts: [], buildings: [], elevators: [], contracts: [] },
   }
   const elevatorIds: string[] = []
+  const settings = await getTenantSettings(ctx.tenantId)
 
   const result = await transaction(async (tx) => {
     const customerCache = new Map<string, string>()
@@ -143,6 +146,16 @@ export async function commit(ctx: Ctx, id: string): Promise<ImportBatchDto> {
           loadKg: r.loadKg,
           status: 'active',
           lastCheckAt: fromDateOnly(r.lastCheckAt),
+          nextCheckDueAt: fromDateOnly(
+            computeNextDue(
+              {
+                checkIntervalDays: null,
+                lastCheckAt: r.lastCheckAt,
+                nextCheckOverrideAt: null,
+              },
+              settings,
+            ),
+          ),
           nextInspectionAt: fromDateOnly(r.nextInspectionAt),
           alarmDevicePhone: r.alarmDevicePhone,
           alarmSimOperator: r.alarmSimOperator,

@@ -23,6 +23,13 @@ export function findUser(tenantId: string, id: string) {
   return prisma.user.findFirst({ where: { id, tenantId, deletedAt: null } })
 }
 
+export function findUsersByIds(tenantId: string, ids: string[]) {
+  return prisma.user.findMany({
+    where: { tenantId, deletedAt: null, id: { in: ids } },
+    select: { id: true, name: true, role: true, isActive: true },
+  })
+}
+
 export interface CreateUserInput {
   tenantId: string
   username: string

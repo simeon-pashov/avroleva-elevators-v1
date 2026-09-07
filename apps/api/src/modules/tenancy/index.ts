@@ -19,6 +19,7 @@ export {
   getTenantSettings,
   updateTenant,
   listUsers,
+  findUsersByIds,
   createUser,
   updateUser,
   setUserPassword,

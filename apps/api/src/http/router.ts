@@ -3,9 +3,13 @@ import type { HealthDto } from '@avroleva/contracts'
 import { prismaBase } from '../platform/db/prisma.js'
 import * as tenancy from '../modules/tenancy/index.js'
 import { registryRouter } from '../modules/registry/index.js'
+import { maintenanceRouter } from '../modules/maintenance/index.js'
+import { visitsRouter } from '../modules/visits/index.js'
+import { billingRouter } from '../modules/billing/index.js'
+import { reportingRouter } from '../modules/reporting/index.js'
 import { adminRouter } from './admin.js'
 
-export const APP_VERSION = '0.1.0'
+export const APP_VERSION = '0.2.0'
 
 /** `/api/v1` - additive only; breaking changes go to `/api/v2` beside it (ARCHITECTURE A9). */
 export const apiV1 = Router()
@@ -34,3 +38,7 @@ apiV1.use(tenancy.authRouter)
 apiV1.use(tenancy.tenantRouter)
 apiV1.use(tenancy.usersRouter)
 apiV1.use(registryRouter)
+apiV1.use(maintenanceRouter)
+apiV1.use(visitsRouter)
+apiV1.use(billingRouter)
+apiV1.use(reportingRouter)

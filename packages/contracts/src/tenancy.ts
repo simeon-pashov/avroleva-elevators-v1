@@ -27,6 +27,10 @@ export const tenantSettings = z.object({
     .max(24 * 60)
     .default(60),
   defectFollowUpDays: z.number().int().min(1).max(365).default(30),
+  /** Invoice due date = issue date + N days, unless the contract has a paymentDay. */
+  invoiceDueDays: z.number().int().min(0).max(120).default(14),
+  /** Applied to generated invoices; 0 = not VAT-registered (чл. 113 ал. 9). */
+  vatRatePercent: z.number().int().min(0).max(27).default(20),
   showBgnReference: z.boolean().default(false),
   currencyDisplay: z.enum(['EUR', 'EUR_BGN']).default('EUR'),
 })
