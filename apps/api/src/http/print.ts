@@ -113,17 +113,15 @@ printRouter.get('/defect-notice/:id', async (req, res) => {
     </div>
     <div class="footer">${esc(t('print.notice.footer', { id: d.id.slice(-8) }))}</div>
   </div>`
-  res
-    .type('html')
-    .send(
-      page({
-        title: t('print.notice.subject'),
-        lang: locale,
-        css: DOC_CSS,
-        body,
-        script: '../assets/print.js',
-      }),
-    )
+  res.type('html').send(
+    page({
+      title: t('print.notice.subject'),
+      lang: locale,
+      css: DOC_CSS,
+      body,
+      script: '../assets/print.js',
+    }),
+  )
 })
 
 // ---- inspection request letter --------------------------------------------------------------
@@ -168,17 +166,15 @@ printRouter.get('/inspection-request/:elevatorId', async (req, res) => {
       <div><div class="line">${esc(tenant.name)}</div><div class="small muted">${esc(t('print.signature'))}</div></div>
     </div>
   </div>`
-  res
-    .type('html')
-    .send(
-      page({
-        title: t('print.request.subject'),
-        lang: locale,
-        css: DOC_CSS,
-        body,
-        script: '../assets/print.js',
-      }),
-    )
+  res.type('html').send(
+    page({
+      title: t('print.request.subject'),
+      lang: locale,
+      css: DOC_CSS,
+      body,
+      script: '../assets/print.js',
+    }),
+  )
 })
 
 // ---- QR labels -------------------------------------------------------------------------------
@@ -230,17 +226,15 @@ printRouter.get('/label/:elevatorId', async (req, res) => {
   const e = await elevators.get(ctx, parseId(req, 'elevatorId'))
   const tenant = await getTenant(ctx.tenantId)
   const body = `${toolbar(t)}<div class="sheet">${await labelHtml(t, tenant, e)}</div>`
-  res
-    .type('html')
-    .send(
-      page({
-        title: `${t('label.title')} · ${e.internalNo}`,
-        lang: locale,
-        css: LABEL_CSS,
-        body,
-        script: '../assets/print.js',
-      }),
-    )
+  res.type('html').send(
+    page({
+      title: `${t('label.title')} · ${e.internalNo}`,
+      lang: locale,
+      css: LABEL_CSS,
+      body,
+      script: '../assets/print.js',
+    }),
+  )
 })
 
 printRouter.get('/labels/building/:buildingId', async (req, res) => {
@@ -255,15 +249,13 @@ printRouter.get('/labels/building/:buildingId', async (req, res) => {
     labels.push(await labelHtml(t, tenant, await elevators.get(ctx, el.id)))
   }
   const body = `${toolbar(t, `<span class="small muted">${esc(b.addressText)} · ${labels.length}</span>`)}<div class="sheet">${labels.join('')}</div>`
-  res
-    .type('html')
-    .send(
-      page({
-        title: `${t('label.title')} · ${b.addressText}`,
-        lang: locale,
-        css: LABEL_CSS,
-        body,
-        script: '../../assets/print.js',
-      }),
-    )
+  res.type('html').send(
+    page({
+      title: `${t('label.title')} · ${b.addressText}`,
+      lang: locale,
+      css: LABEL_CSS,
+      body,
+      script: '../../assets/print.js',
+    }),
+  )
 })

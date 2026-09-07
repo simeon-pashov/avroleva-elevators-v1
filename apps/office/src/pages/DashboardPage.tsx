@@ -8,6 +8,8 @@ import { ElevatorPanel } from '../components/ElevatorPanel'
 import { DashboardMap } from './dashboard/DashboardMap'
 import { DueWidget } from './dashboard/DueWidget'
 import { PaymentsWidget } from './dashboard/PaymentsWidget'
+import { CallbacksWidget } from './dashboard/CallbacksWidget'
+import { DeadlinesStrip } from './dashboard/DeadlinesStrip'
 
 /**
  * "Табло": the map with one pin per elevator (colour = due state), the due today/tomorrow list
@@ -68,6 +70,8 @@ export function DashboardPage() {
         </div>
         <DashboardMap pins={dash?.pins ?? []} counts={dash?.counts ?? null} onOpen={setPanelId} />
       </div>
+      <CallbacksWidget summary={dash?.callbacks ?? null} onOpen={setPanelId} />
+      <DeadlinesStrip deadlines={dash?.deadlines ?? null} />
       <div className="dash-grid">
         <DueWidget
           counts={dash?.counts ?? null}

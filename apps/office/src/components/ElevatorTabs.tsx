@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import type {
   BuildingBillingDto,
+  CallbackDto,
+  DefectDto,
+  ElevatorDto,
   InvoiceDto,
   InvoiceStatus,
   Page,
@@ -13,6 +16,11 @@ import { get, qs } from '../lib/api'
 import { useI18n } from '../i18n/I18nProvider'
 import { useAuth } from '../auth/AuthProvider'
 import { Badge, Empty, ErrorBox, LoadMore, Spinner, useCursorList } from './ui'
+import { CallbackList } from './callbacks/CallbackList'
+import { CallbackIntakeForm } from './callbacks/CallbackIntakeForm'
+import { DefectList } from './defects/DefectList'
+import { RecordDefectForm } from './defects/RecordDefectForm'
+import { ElevatorInspections } from './inspections/ElevatorInspections'
 
 export function invoiceStatusBadge(status: InvoiceStatus): 'ok' | 'warn' | 'danger' | 'muted' {
   switch (status) {
@@ -229,40 +237,175 @@ export function ElevatorBilling({ elevatorId, version }: { elevatorId: string; v
   )
 }
 
-/** "История на поддръжката" / "Плащания" tabs; the payments tab exists only for owner/office. */
-export function ElevatorTabs({ elevatorId, version }: { elevatorId: string; version: number }) {
+/** Callbacks of one elevator with the intake form. */
+export function ElevatorCallbacks({
+  elevator,
+  version,
+  onChanged,
+}: {
+  elevator: ElevatorDto
+  version: number
+  onChanged: () => void
+}) {
+  const { t } = useI18n()
+  const [adding, setAdding] = useState(false)
+  const [local, setLocal] = useState(0)
+  const list = useCursorList<CallbackDto>(
+    (cursor) =>
+      get<Page<CallbackDto>>(`/elevators/${elevator.id}/callbacks${qs({ cursor, limit: 20 })}`),
+    [elevator.id, version, local],
+  )
+  const changed = () => {
+    setLocal((v) => v + 1)
+    onChanged()
+  }
+  return (
+    <div>
+      <div className="actions">
+        <button
+          type="button"
+          className="btn btn-small btn-primary"
+          onClick={() => setAdding((v) => !v)}
+        >
+          {t('callbacks.new')}
+        </button>
+      </div>
+      {adding ? (
+        <div className="inset">
+          <CallbackIntakeForm
+            elevator={elevator}
+            onDone={() => {
+              setAdding(false)
+              changed()
+            }}
+            onCancel={() => setAdding(false)}
+          />
+        </div>
+      ) : null}
+      <ErrorBox error={list.error} />
+      {list.loading && list.items.length === 0 ? (
+        <Spinner />
+      ) : (
+        <CallbackList items={list.items} onChanged={changed} showElevator={false} />
+      )}
+      <LoadMore hasMore={list.hasMore} loading={list.loading} onClick={list.loadMore} />
+    </div>
+  )
+}
+
+/** Defects of one elevator with the record form. */
+export function ElevatorDefects({
+  elevator,
+  version,
+  onChanged,
+}: {
+  elevator: ElevatorDto
+  version: number
+  onChanged: () => void
+}) {
+  const { t } = useI18n()
+  const [adding, setAdding] = useState(false)
+  const [local, setLocal] = useState(0)
+  const list = useCursorList<DefectDto>(
+    (cursor) =>
+      get<Page<DefectDto>>(`/elevators/${elevator.id}/defects${qs({ cursor, limit: 20 })}`),
+    [elevator.id, version, local],
+  )
+  const changed = () => {
+    setLocal((v) => v + 1)
+    onChanged()
+  }
+  return (
+    <div>
+      <div className="actions">
+        <button
+          type="button"
+          className="btn btn-small btn-primary"
+          onClick={() => setAdding((v) => !v)}
+        >
+          {t('defects.new')}
+        </button>
+      </div>
+      {adding ? (
+        <div className="inset">
+          <RecordDefectForm
+            elevator={elevator}
+            onDone={() => {
+              setAdding(false)
+              changed()
+            }}
+            onCancel={() => setAdding(false)}
+          />
+        </div>
+      ) : null}
+      <ErrorBox error={list.error} />
+      {list.loading && list.items.length === 0 ? (
+        <Spinner />
+      ) : (
+        <DefectList items={list.items} onChanged={changed} showElevator={false} />
+      )}
+      <LoadMore hasMore={list.hasMore} loading={list.loading} onClick={list.loadMore} />
+    </div>
+  )
+}
+
+type Tab = 'history' | 'callbacks' | 'defects' | 'inspections' | 'payments'
+
+/**
+ * "История" / "Аварии" / "Дефекти" / "Прегледи" / "Плащания" tabs of one elevator; the payments
+ * tab exists only for owner/office. `onChanged` lets the host refresh (status, dates, pins).
+ */
+export function ElevatorTabs({
+  elevator,
+  version,
+  onChanged,
+  initial,
+}: {
+  elevator: ElevatorDto
+  version: number
+  onChanged?: () => void
+  initial?: Tab
+}) {
   const { t } = useI18n()
   const { hasRole } = useAuth()
   const showBilling = hasRole('owner', 'office')
-  const [tab, setTab] = useState<'history' | 'payments'>('history')
+  const [tab, setTab] = useState<Tab>(initial ?? 'history')
+  const changed = onChanged ?? (() => undefined)
+  const tabs: Array<{ key: Tab; label: string; show?: boolean }> = [
+    { key: 'history', label: t('visits.history') },
+    { key: 'callbacks', label: t('elevators.callbacks') },
+    { key: 'defects', label: t('elevators.defects') },
+    { key: 'inspections', label: t('elevators.inspections') },
+    { key: 'payments', label: t('payments.title'), show: showBilling },
+  ]
   return (
     <div className="tabs-block">
       <div className="tabs" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'history'}
-          className={`tab${tab === 'history' ? ' active' : ''}`}
-          onClick={() => setTab('history')}
-        >
-          {t('visits.history')}
-        </button>
-        {showBilling ? (
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'payments'}
-            className={`tab${tab === 'payments' ? ' active' : ''}`}
-            onClick={() => setTab('payments')}
-          >
-            {t('payments.title')}
-          </button>
-        ) : null}
+        {tabs
+          .filter((x) => x.show !== false)
+          .map((x) => (
+            <button
+              key={x.key}
+              type="button"
+              role="tab"
+              aria-selected={tab === x.key}
+              className={`tab${tab === x.key ? ' active' : ''}`}
+              onClick={() => setTab(x.key)}
+            >
+              {x.label}
+            </button>
+          ))}
       </div>
       {tab === 'payments' && showBilling ? (
-        <ElevatorBilling elevatorId={elevatorId} version={version} />
+        <ElevatorBilling elevatorId={elevator.id} version={version} />
+      ) : tab === 'callbacks' ? (
+        <ElevatorCallbacks elevator={elevator} version={version} onChanged={changed} />
+      ) : tab === 'defects' ? (
+        <ElevatorDefects elevator={elevator} version={version} onChanged={changed} />
+      ) : tab === 'inspections' ? (
+        <ElevatorInspections elevator={elevator} version={version} onChanged={changed} />
       ) : (
-        <VisitHistory elevatorId={elevatorId} version={version} />
+        <VisitHistory elevatorId={elevator.id} version={version} />
       )}
     </div>
   )

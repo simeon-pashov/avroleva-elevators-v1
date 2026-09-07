@@ -11,6 +11,9 @@ export function Shell() {
 
   const items: Array<{ to: string; label: string; show?: boolean }> = [
     { to: '/', label: t('nav.dashboard') },
+    { to: '/callbacks', label: t('nav.callbacks') },
+    { to: '/defects', label: t('nav.defects') },
+    { to: '/calendar', label: t('nav.calendar') },
     { to: '/buildings', label: t('nav.buildings') },
     { to: '/elevators', label: t('nav.elevators') },
     { to: '/customers', label: t('nav.customers') },

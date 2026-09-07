@@ -11,5 +11,9 @@
     "declarationMap": false
   },
   "include": ["src"],
-  "references": [{ "path": "../../packages/i18n" }, { "path": "../../packages/contracts" }, { "path": "../../packages/domain-data" }]
+  "references": [
+    { "path": "../../packages/i18n" },
+    { "path": "../../packages/contracts" },
+    { "path": "../../packages/domain-data" }
+  ]
 }

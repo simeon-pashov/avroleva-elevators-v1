@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import type { ElevatorDetailDto } from '@avroleva/contracts'
-import { del, get } from '../../lib/api'
+import { BASE, del, get, post } from '../../lib/api'
 import { useI18n } from '../../i18n/I18nProvider'
 import { useAuth } from '../../auth/AuthProvider'
 import { Badge, ConfirmButton, ErrorBox, PageHeader, Spinner, toast } from '../../components/ui'
@@ -50,6 +50,9 @@ export function ElevatorDetailPage() {
             >
               {t('visits.record')}
             </button>
+            <a className="btn" href={`${BASE}/print/label/${e.id}`} target="_blank" rel="noopener">
+              {t('label.print')}
+            </a>
             {canEdit ? (
               <>
                 <Link className="btn" to={`/elevators/${e.id}/edit`}>
@@ -93,6 +96,13 @@ export function ElevatorDetailPage() {
               <Badge kind={elevatorStatusBadge(e.status)}>
                 {t(`enum.elevatorStatus.${e.status}`)}
               </Badge>
+              {e.stoppedAt ? (
+                <span className="muted small">
+                  {' '}
+                  {t('elevators.stoppedSince', { date: date(e.stoppedAt) })}
+                </span>
+              ) : null}
+              {e.stopReason ? <div className="small">{e.stopReason}</div> : null}
             </dd>
             <dt>{t('elevators.regNo')}</dt>
             <dd>{e.regNo ?? dash}</dd>
@@ -160,6 +170,27 @@ export function ElevatorDetailPage() {
             <dd>
               <code>{e.publicCode}</code>
             </dd>
+            <dt>{t('label.publicPage')}</dt>
+            <dd>
+              <a href={e.publicUrl} target="_blank" rel="noopener">
+                {e.publicUrl}
+              </a>
+              {canEdit ? (
+                <>
+                  {' '}
+                  <ConfirmButton
+                    className="btn btn-small"
+                    label={t('label.rotate')}
+                    confirmLabel={t('label.rotateConfirm')}
+                    onConfirm={async () => {
+                      await post(`/elevators/${e.id}/rotate-token`)
+                      toast(t('label.rotated'))
+                      await load()
+                    }}
+                  />
+                </>
+              ) : null}
+            </dd>
           </dl>
         </div>
         <div className="card">
@@ -191,7 +222,14 @@ export function ElevatorDetailPage() {
         </div>
       </div>
       <div className="card">
-        <ElevatorTabs elevatorId={e.id} version={version} />
+        <ElevatorTabs
+          elevator={e}
+          version={version}
+          onChanged={() => {
+            setVersion((v) => v + 1)
+            void load()
+          }}
+        />
       </div>
     </div>
   )

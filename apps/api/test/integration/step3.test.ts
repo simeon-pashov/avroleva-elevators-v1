@@ -8,7 +8,6 @@ import {
   CSRF,
   app,
   bearer,
-  createBuilding,
   createCustomer,
   createElevator,
   createTenant,
@@ -291,8 +290,8 @@ describe('callbacks', () => {
       ['post', `/api/v1/callbacks/${callbackId}/close`],
       ['get', `/api/v1/elevators/${elevatorId}/callbacks`],
     ] as const) {
-      const res = await request(server)
-        [method](path)
+      const agent = request(server)
+      const res = await agent[method](path)
         .set(bearer(B.ownerToken))
         .send(
           path.endsWith('dispatch')
@@ -356,15 +355,12 @@ describe('defects', () => {
       .set(bearer(A.ownerToken))
       .send({ elevatorId: elevator2Id })
     expect(bad.status).toBe(400)
-    const ok = await request(server)
-      .post('/api/v1/defects')
-      .set(bearer(A.ownerToken))
-      .send({
-        elevatorId: elevator2Id,
-        catalogCode: 'other',
-        description: 'Пукнато огледало',
-        severity: 'low',
-      })
+    const ok = await request(server).post('/api/v1/defects').set(bearer(A.ownerToken)).send({
+      elevatorId: elevator2Id,
+      catalogCode: 'other',
+      description: 'Пукнато огледало',
+      severity: 'low',
+    })
     expect(ok.status).toBe(201)
     expect(ok.body.stopLift).toBe(false)
     const e = await request(server)
@@ -486,16 +482,13 @@ describe('inspections, alarm tests and the calendar', () => {
   let inspectionId: string
 
   it('first performed inspection: next due +24 months, elevator.nextInspectionAt follows', async () => {
-    const res = await request(server)
-      .post('/api/v1/inspections')
-      .set(bearer(A.ownerToken))
-      .send({
-        elevatorId,
-        kind: 'periodic',
-        performedAt: '2026-03-10',
-        result: 'passed',
-        inspectionBody: 'ОТП Тест',
-      })
+    const res = await request(server).post('/api/v1/inspections').set(bearer(A.ownerToken)).send({
+      elevatorId,
+      kind: 'periodic',
+      performedAt: '2026-03-10',
+      result: 'passed',
+      inspectionBody: 'ОТП Тест',
+    })
     expect(res.status, res.text).toBe(201)
     inspectionId = res.body.id
     expect(res.body.nextDueAt).toBe('2028-03-10')
@@ -740,15 +733,12 @@ describe('public QR page and fault report', () => {
       .send({ website: 'http://spam', description: 'buy stuff' })
     expect(bot.status).toBe(200)
 
-    const ok = await request(server)
-      .post(`/p/${token}/report`)
-      .type('form')
-      .send({
-        name: 'Живущ',
-        phone: '0899 111 222',
-        description: 'Асансьорът не тръгва',
-        trapped: '1',
-      })
+    const ok = await request(server).post(`/p/${token}/report`).type('form').send({
+      name: 'Живущ',
+      phone: '0899 111 222',
+      description: 'Асансьорът не тръгва',
+      trapped: '1',
+    })
     expect(ok.status).toBe(200)
     expect(ok.text).toContain('Сигналът е получен')
 
@@ -817,14 +807,11 @@ describe('printable pages', () => {
   let defectId: string
 
   beforeAll(async () => {
-    const d = await request(server)
-      .post('/api/v1/defects')
-      .set(bearer(A.ownerToken))
-      .send({
-        elevatorId: elevator2Id,
-        catalogCode: '4',
-        notes: 'Стъклото е счупено от външната страна.',
-      })
+    const d = await request(server).post('/api/v1/defects').set(bearer(A.ownerToken)).send({
+      elevatorId: elevator2Id,
+      catalogCode: '4',
+      notes: 'Стъклото е счупено от външната страна.',
+    })
     defectId = d.body.id
   })
 

@@ -717,5 +717,7 @@
   "enum.calendarKind.check_overdue": "overdue checks",
   "enum.calendarKind.defect_follow_up": "defects without answer",
   "enum.calendarKind.callback_sla": "callbacks over limit",
-  "enum.calendarKind.alarm_test_due": "voice-link tests"
+  "enum.calendarKind.alarm_test_due": "voice-link tests",
+
+  "callbacks.hoursMinutes": "{hours} h {minutes} min"
 }

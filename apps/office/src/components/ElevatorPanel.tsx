@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import type { ElevatorDetailDto } from '@avroleva/contracts'
-import { get } from '../lib/api'
+import { BASE, get } from '../lib/api'
 import { useI18n } from '../i18n/I18nProvider'
 import { useAuth } from '../auth/AuthProvider'
 import { Badge, ErrorBox, Spinner } from './ui'
@@ -97,6 +97,14 @@ export function ElevatorPanel({
               <Link className="btn" to={`/elevators/${e.id}`} onClick={onClose}>
                 {t('elevators.goTo')}
               </Link>
+              <a
+                className="btn"
+                href={`${BASE}/print/label/${e.id}`}
+                target="_blank"
+                rel="noopener"
+              >
+                {t('label.print')}
+              </a>
             </div>
             {recording ? (
               <div className="inset">
@@ -117,6 +125,13 @@ export function ElevatorPanel({
                 <Badge kind={elevatorStatusBadge(e.status)}>
                   {t(`enum.elevatorStatus.${e.status}`)}
                 </Badge>
+                {e.stoppedAt ? (
+                  <span className="muted small">
+                    {' '}
+                    {t('elevators.stoppedSince', { date: date(e.stoppedAt) })}
+                  </span>
+                ) : null}
+                {e.stopReason ? <div className="small">{e.stopReason}</div> : null}
               </dd>
               <dt>{t('elevators.address')}</dt>
               <dd>
@@ -191,7 +206,14 @@ export function ElevatorPanel({
               <dt>{t('elevators.manufacturer')}</dt>
               <dd>{[e.manufacturer, e.year].filter(Boolean).join(', ') || dash}</dd>
             </dl>
-            <ElevatorTabs elevatorId={e.id} version={version} />
+            <ElevatorTabs
+              elevator={e}
+              version={version}
+              onChanged={() => {
+                setVersion((v) => v + 1)
+                onChanged?.()
+              }}
+            />
           </>
         )}
       </aside>

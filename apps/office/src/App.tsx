@@ -21,6 +21,9 @@ import { ContractFormPage } from './pages/contracts/ContractFormPage'
 import { UsersPage } from './pages/UsersPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { ImportPage } from './pages/ImportPage'
+import { CallbacksPage } from './pages/callbacks/CallbacksPage'
+import { DefectsPage } from './pages/defects/DefectsPage'
+import { CalendarPage } from './pages/calendar/CalendarPage'
 import { AdminLoginPage } from './pages/admin/AdminLoginPage'
 import { AdminShell } from './pages/admin/AdminShell'
 import { AdminTenantsPage } from './pages/admin/AdminTenantsPage'
@@ -78,6 +81,9 @@ export function App() {
         <Route path="/contracts/new" element={<ContractFormPage />} />
         <Route path="/contracts/:id" element={<ContractDetailPage />} />
         <Route path="/contracts/:id/edit" element={<ContractFormPage />} />
+        <Route path="/callbacks" element={<CallbacksPage />} />
+        <Route path="/defects" element={<DefectsPage />} />
+        <Route path="/calendar" element={<CalendarPage />} />
         <Route element={<RequireRole roles={['owner', 'office']} />}>
           <Route path="/import" element={<ImportPage />} />
         </Route>

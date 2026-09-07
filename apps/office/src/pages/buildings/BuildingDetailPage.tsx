@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import type { BuildingDetailDto, ContactDto, GeocodeResultDto } from '@avroleva/contracts'
-import { del, get, post, put } from '../../lib/api'
+import { BASE, del, get, post, put } from '../../lib/api'
 import { useI18n } from '../../i18n/I18nProvider'
 import { useAuth } from '../../auth/AuthProvider'
 import { Badge, ConfirmButton, ErrorBox, PageHeader, Spinner, toast } from '../../components/ui'
@@ -84,6 +84,14 @@ export function BuildingDetailPage() {
         actions={
           canEdit ? (
             <>
+              <a
+                className="btn"
+                href={`${BASE}/print/labels/building/${b.id}`}
+                target="_blank"
+                rel="noopener"
+              >
+                {t('label.printAll')}
+              </a>
               <Link className="btn" to={`/buildings/${b.id}/edit`}>
                 {t('common.edit')}
               </Link>

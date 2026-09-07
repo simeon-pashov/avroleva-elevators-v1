@@ -717,5 +717,7 @@
   "enum.calendarKind.check_overdue": "просрочени проверки",
   "enum.calendarKind.defect_follow_up": "дефекти без отговор",
   "enum.calendarKind.callback_sla": "аварии над лимита",
-  "enum.calendarKind.alarm_test_due": "тестове на връзката"
+  "enum.calendarKind.alarm_test_due": "тестове на връзката",
+
+  "callbacks.hoursMinutes": "{hours} ч {minutes} мин"
 }

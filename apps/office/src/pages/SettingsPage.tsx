@@ -4,7 +4,7 @@ import { get, patch } from '../lib/api'
 import { useI18n } from '../i18n/I18nProvider'
 import { useAuth } from '../auth/AuthProvider'
 import { ErrorBox, Field, PageHeader, Spinner, toast } from '../components/ui'
-import { useForm } from '../components/useForm'
+import { numOrNull, useForm } from '../components/useForm'
 
 interface FormValues {
   name: string
@@ -20,6 +20,11 @@ interface FormValues {
   callbackSlaMinutes: string
   defectFollowUpDays: string
   currencyDisplay: 'EUR' | 'EUR_BGN'
+  inspectionIntervalMonths: string
+  firstInspectionIntervalMonths: string
+  alarmTestIntervalMonths: string
+  publicQrPage: boolean
+  publicFaultReport: boolean
 }
 
 export function SettingsPage() {
@@ -39,6 +44,11 @@ export function SettingsPage() {
     callbackSlaMinutes: '60',
     defectFollowUpDays: '30',
     currencyDisplay: 'EUR',
+    inspectionIntervalMonths: '',
+    firstInspectionIntervalMonths: '',
+    alarmTestIntervalMonths: '',
+    publicQrPage: false,
+    publicFaultReport: false,
   })
   const [loaded, setLoaded] = useState(false)
   const [loadError, setLoadError] = useState<unknown>(null)
@@ -61,6 +71,12 @@ export function SettingsPage() {
           callbackSlaMinutes: String(tn.settings.callbackSlaMinutes),
           defectFollowUpDays: String(tn.settings.defectFollowUpDays),
           currencyDisplay: tn.settings.currencyDisplay,
+          inspectionIntervalMonths: tn.settings.inspectionIntervalMonths?.toString() ?? '',
+          firstInspectionIntervalMonths:
+            tn.settings.firstInspectionIntervalMonths?.toString() ?? '',
+          alarmTestIntervalMonths: tn.settings.alarmTestIntervalMonths?.toString() ?? '',
+          publicQrPage: tn.features.publicQrPage,
+          publicFaultReport: tn.features.publicFaultReport,
         })
         setLoaded(true)
       })
@@ -92,6 +108,13 @@ export function SettingsPage() {
           defectFollowUpDays: Number(values.defectFollowUpDays),
           currencyDisplay: values.currencyDisplay,
           showBgnReference: values.currencyDisplay === 'EUR_BGN',
+          inspectionIntervalMonths: numOrNull(values.inspectionIntervalMonths),
+          firstInspectionIntervalMonths: numOrNull(values.firstInspectionIntervalMonths),
+          alarmTestIntervalMonths: numOrNull(values.alarmTestIntervalMonths),
+        },
+        features: {
+          publicQrPage: values.publicQrPage,
+          publicFaultReport: values.publicFaultReport,
         },
       })
       toast(t('common.saved'))
@@ -222,6 +245,73 @@ export function SettingsPage() {
                 onChange={(e) => form.set('defectFollowUpDays', e.target.value)}
               />
             </Field>
+          </div>
+          <div className="row">
+            <Field
+              label={t('settings.inspectionIntervalMonths')}
+              error={err['settings.inspectionIntervalMonths']}
+              hint={t('settings.defaultsHint')}
+            >
+              <input
+                type="number"
+                min={1}
+                max={120}
+                value={v.inspectionIntervalMonths}
+                readOnly={ro}
+                onChange={(e) => form.set('inspectionIntervalMonths', e.target.value)}
+              />
+            </Field>
+            <Field
+              label={t('settings.firstInspectionIntervalMonths')}
+              error={err['settings.firstInspectionIntervalMonths']}
+              hint={t('settings.defaultsHint')}
+            >
+              <input
+                type="number"
+                min={1}
+                max={120}
+                value={v.firstInspectionIntervalMonths}
+                readOnly={ro}
+                onChange={(e) => form.set('firstInspectionIntervalMonths', e.target.value)}
+              />
+            </Field>
+            <Field
+              label={t('settings.alarmTestIntervalMonths')}
+              error={err['settings.alarmTestIntervalMonths']}
+              hint={t('settings.alarmTestHint')}
+            >
+              <input
+                type="number"
+                min={1}
+                max={60}
+                value={v.alarmTestIntervalMonths}
+                readOnly={ro}
+                onChange={(e) => form.set('alarmTestIntervalMonths', e.target.value)}
+              />
+            </Field>
+          </div>
+          <div className="field">
+            <span className="field-label">{t('settings.features')}</span>
+            <div className="check-list">
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={v.publicQrPage}
+                  disabled={ro}
+                  onChange={(e) => form.set('publicQrPage', e.target.checked)}
+                />
+                <span>{t('settings.publicQrPage')}</span>
+              </label>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={v.publicFaultReport}
+                  disabled={ro}
+                  onChange={(e) => form.set('publicFaultReport', e.target.checked)}
+                />
+                <span>{t('settings.publicFaultReport')}</span>
+              </label>
+            </div>
           </div>
           <Field
             label={t('settings.tenantLocale')}

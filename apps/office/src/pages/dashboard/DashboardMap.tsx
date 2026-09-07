@@ -43,9 +43,10 @@ function saveViewport(m: L.Map) {
   }
 }
 
-function pinIcon(state: DueState) {
+function pinIcon(p: DashboardPinDto) {
+  const extra = p.openCallbacks > 0 ? ' pin-alert' : p.stopLift ? ' pin-stoplift' : ''
   return L.divIcon({
-    className: `pin pin-${state}`,
+    className: `pin pin-${p.state}${extra}`,
     iconSize: [16, 16],
     iconAnchor: [8, 8],
     popupAnchor: [0, -8],
@@ -116,6 +117,18 @@ function popupContent(p: DashboardPinDto, i18n: I18n, open: () => void): HTMLEle
   state.className = `badge badge-${dueStateBadge(p.state)}`
   state.textContent = t(`enum.dueState.${p.state}`)
   badges.append(status, state)
+  if (p.stopLift) {
+    const stop = document.createElement('span')
+    stop.className = 'badge badge-danger'
+    stop.textContent = t('defects.stopped')
+    badges.append(stop)
+  }
+  if (p.openCallbacks > 0) {
+    const cb = document.createElement('span')
+    cb.className = 'badge badge-danger'
+    cb.textContent = t('elevators.openCallbacks', { count: p.openCallbacks })
+    badges.append(cb)
+  }
   const due = document.createElement('div')
   due.className = 'small'
   due.textContent = `${t('elevators.nextCheckDue')}: ${
@@ -192,7 +205,7 @@ export function DashboardMap({
     for (const group of byPoint.values()) {
       group.forEach((p, index) => {
         const center = L.latLng(p.lat, p.lng)
-        const marker = L.marker(center, { icon: pinIcon(p.state), title: p.label })
+        const marker = L.marker(center, { icon: pinIcon(p), title: p.label })
         marker.bindPopup(
           () => popupContent(p, i18nRef.current, () => onOpenRef.current(p.elevatorId)),
           { minWidth: 200 },
