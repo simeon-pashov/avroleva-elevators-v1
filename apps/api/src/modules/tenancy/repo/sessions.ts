@@ -1,6 +1,7 @@
 import { prismaBase } from '../../../platform/db/prisma.js'
 import { newId } from '../../../platform/ids.js'
 import { clock } from '../../../platform/clock.js'
+import { logger } from '../../../platform/logger.js'
 import { generateToken, hashToken, sessionTtlMs, shouldRenew } from '../domain/session.js'
 import type { SessionKind } from '../../../generated/prisma/index.js'
 
@@ -43,7 +44,12 @@ export function findSessionByToken(token: string) {
   })
 }
 
-/** Sliding expiry: extend at most once per hour. */
+/**
+ * Sliding expiry: extend at most once per hour. Best-effort by design: a page reload fires a burst
+ * of requests on the same aged session, and a logout may race with them, so the write is an
+ * `updateMany` (no P2025 when the row was revoked in between) and a failure is logged, never
+ * propagated - the request is already authenticated.
+ */
 export async function touchSession(s: {
   id: string
   lastSeenAt: Date
@@ -51,10 +57,14 @@ export async function touchSession(s: {
 }): Promise<void> {
   const now = clock.now()
   if (!shouldRenew(s, now)) return
-  await prismaBase.session.update({
-    where: { id: s.id },
-    data: { lastSeenAt: now, expiresAt: new Date(now.getTime() + sessionTtlMs(s.kind)) },
-  })
+  try {
+    await prismaBase.session.updateMany({
+      where: { id: s.id, revokedAt: null, lastSeenAt: { lt: new Date(now.getTime() - 1000) } },
+      data: { lastSeenAt: now, expiresAt: new Date(now.getTime() + sessionTtlMs(s.kind)) },
+    })
+  } catch (err) {
+    logger.warn({ err, sessionId: s.id }, 'session touch failed (ignored)')
+  }
 }
 
 export async function revokeSession(id: string): Promise<void> {
