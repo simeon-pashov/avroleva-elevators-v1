@@ -92,7 +92,14 @@ Deviations from ARCHITECTURE §3, and why:
 
 Technician PWA, offline sync, PDF/Chromium, pg-boss + outbox worker, notification providers (console only), file storage/attachments, QR label sheet + public page (`publicCode` is already on every elevator), CSV export endpoints, import rollback (`import_batch.createdRows` already records the ids per table), Docker/CI verified on the VPS, backups, encryption, hash-chained audit, `dependency-cruiser`. The office CSV upload reads UTF-8 (or falls back to windows-1251) client-side and posts the text — no multipart yet.
 
-## 7. Step 2 — dashboard: what to build and what the API still needs
+## 7. Verification status at handoff (2026-09-08)
+
+Verified on this PC: `npm install`, `npm run build:packages`, `prisma generate`, TypeScript typecheck of api + office, `npm run lint` (ESLint + Prettier clean), `vite build` of the office, i18n tests (12) and API unit tests (25) green.
+
+**Not yet verified — no Postgres was reachable:** Docker Desktop crashes at start (`initializing Inference manager: remove %LOCALAPPDATA%DockerundockerInference: The file cannot be accessed by the system`), so the shared dev container could not be started. Pending, in this order, once Postgres is up:
+`npm run db:migrate` (applies `prisma/migrations/20260908000000_init`, generated offline with `prisma migrate diff`), `npm run db:seed`, `npm test` (integration suite: auth, roles, registry CRUD, import, two-tenant isolation, admin), `npm run dev` + browser check of login -> buildings -> map. Fix anything these surface before starting step 2.
+
+## 8. Step 2 — dashboard: what to build and what the API still needs
 
 Target (from the brief): a dashboard with a **map of clickable elevator pins**, a **due today / tomorrow widget**, an **elevator popup with maintenance and payment history**, and a **payments widget**.
 
