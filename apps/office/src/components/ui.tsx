@@ -35,10 +35,12 @@ export function Empty({ text }: { text?: string }) {
 
 export function PageHeader({
   title,
+  subtitle,
   actions,
   back,
 }: {
   title: ReactNode
+  subtitle?: ReactNode
   actions?: ReactNode
   back?: ReactNode
 }) {
@@ -47,6 +49,7 @@ export function PageHeader({
       <div>
         {back}
         <h1>{title}</h1>
+        {subtitle ? <div className="page-subtitle muted">{subtitle}</div> : null}
       </div>
       {actions ? <div className="actions">{actions}</div> : null}
     </div>

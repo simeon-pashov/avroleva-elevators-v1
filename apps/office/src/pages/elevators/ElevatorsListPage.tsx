@@ -4,6 +4,7 @@ import type { ElevatorDto, ElevatorStatus, Page } from '@avroleva/contracts'
 import { ElevatorStatus as ElevatorStatusEnum } from '@avroleva/contracts'
 import type { T } from '@avroleva/i18n'
 import { get, qs } from '../../lib/api'
+import { daysUntil } from '../../lib/dates'
 import { useI18n } from '../../i18n/I18nProvider'
 import { useAuth } from '../../auth/AuthProvider'
 import {
@@ -31,19 +32,24 @@ export function elevatorStatusBadge(status: ElevatorStatus): 'ok' | 'warn' | 'da
   }
 }
 
-function todaySofia(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Sofia' }).format(new Date())
-}
-
-/** Due-date cell: overdue (red), today (orange), tomorrow (yellow), later (plain). */
+/** Due-date cell: overdue (red), today (orange), tomorrow (blue), later (plain). */
 export function dueBadge(nextCheckDue: string | null, t: T, date: (d: string | null) => string) {
   if (!nextCheckDue) return <span className="muted">{t('elevators.neverChecked')}</span>
-  const today = todaySofia()
-  const diff = Math.round((Date.parse(nextCheckDue) - Date.parse(today)) / 86_400_000)
+  const diff = daysUntil(nextCheckDue)
   if (diff < 0) return <Badge kind="danger">{t('elevators.overdueBy', { count: -diff })}</Badge>
   if (diff === 0) return <Badge kind="warn">{t('elevators.dueToday')}</Badge>
   if (diff === 1) return <Badge kind="info">{t('elevators.dueTomorrow')}</Badge>
   return <span>{date(nextCheckDue)}</span>
+}
+
+/** "преместена" marker when a one-off reschedule override is set. */
+export function overrideBadge(nextCheckOverrideAt: string | null, t: T) {
+  if (!nextCheckOverrideAt) return null
+  return (
+    <Badge kind="muted">
+      <span title={nextCheckOverrideAt}>{t('due.override')}</span>
+    </Badge>
+  )
 }
 
 export function ElevatorsListPage() {
@@ -122,7 +128,10 @@ export function ElevatorsListPage() {
                   </td>
                   <td>{t('elevators.days', { count: e.effectiveIntervalDays })}</td>
                   <td>{date(e.lastCheckAt)}</td>
-                  <td>{dueBadge(e.nextCheckDue, t, date)}</td>
+                  <td>
+                    {dueBadge(e.nextCheckDue, t, date)}
+                    {overrideBadge(e.nextCheckOverrideAt, t)}
+                  </td>
                 </tr>
               ))}
             </tbody>

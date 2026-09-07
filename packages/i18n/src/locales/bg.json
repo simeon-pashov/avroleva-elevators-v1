@@ -89,6 +89,7 @@
   "visits.kind": "Вид посещение",
   "visits.technicians": "Техници",
   "visits.technicianName": "Друг техник (име)",
+  "visits.technicianNameSelf": "Техник (име)",
   "visits.technicianNameHint": "По желание — за техник без потребителски профил.",
   "visits.techniciansRequired": "Посочете поне един техник.",
   "visits.source": "Източник",

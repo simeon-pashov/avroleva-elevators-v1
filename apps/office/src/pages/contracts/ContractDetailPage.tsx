@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import type { ContractDto } from '@avroleva/contracts'
+import type { BuildingBillingDto, ContractDto } from '@avroleva/contracts'
 import { del, get, post } from '../../lib/api'
 import { useI18n } from '../../i18n/I18nProvider'
 import { useAuth } from '../../auth/AuthProvider'
@@ -13,6 +13,37 @@ import {
   Spinner,
   toast,
 } from '../../components/ui'
+import { InvoicesTable } from '../../components/ElevatorTabs'
+
+/** Invoices issued under this contract (the building's billing filtered by contractId). */
+function ContractInvoices({ contractId, buildingId }: { contractId: string; buildingId: string }) {
+  const { t } = useI18n()
+  const [billing, setBilling] = useState<BuildingBillingDto | null>(null)
+  const [error, setError] = useState<unknown>(null)
+  useEffect(() => {
+    let cancelled = false
+    get<BuildingBillingDto>(`/buildings/${buildingId}/billing`)
+      .then((b) => !cancelled && setBilling(b))
+      .catch((e) => !cancelled && setError(e))
+    return () => {
+      cancelled = true
+    }
+  }, [buildingId])
+  const invoices = (billing?.invoices ?? []).filter((i) => i.contractId === contractId)
+  return (
+    <div className="card">
+      <h2>{t('contracts.invoices')}</h2>
+      <ErrorBox error={error} />
+      {!billing && !error ? (
+        <Spinner />
+      ) : invoices.length === 0 ? (
+        <p className="muted">{t('contracts.noInvoices')}</p>
+      ) : (
+        <InvoicesTable invoices={invoices} />
+      )}
+    </div>
+  )
+}
 
 export function ContractDetailPage() {
   const { id } = useParams()
@@ -175,9 +206,9 @@ export function ContractDetailPage() {
               </tr>
             </tfoot>
           </table>
-          <p className="muted small">{t('contracts.paymentsComingSoon')}</p>
         </div>
       </div>
+      {canEdit ? <ContractInvoices contractId={c.id} buildingId={c.buildingId} /> : null}
     </div>
   )
 }

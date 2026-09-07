@@ -7,8 +7,9 @@ import { useAuth } from '../../auth/AuthProvider'
 import { Badge, ConfirmButton, ErrorBox, PageHeader, Spinner, toast } from '../../components/ui'
 import { MapPicker } from '../../components/MapPicker'
 import { geocodeBadge } from './BuildingsListPage'
+import { ElevatorPanel } from '../../components/ElevatorPanel'
 import { ContactsPanel } from '../customers/ContactsPanel'
-import { elevatorStatusBadge, dueBadge } from '../elevators/ElevatorsListPage'
+import { elevatorStatusBadge, dueBadge, overrideBadge } from '../elevators/ElevatorsListPage'
 
 export function BuildingDetailPage() {
   const { id } = useParams()
@@ -19,6 +20,7 @@ export function BuildingDetailPage() {
   const [error, setError] = useState<unknown>(null)
   const [pin, setPin] = useState<{ lat: number; lng: number } | null>(null)
   const [busy, setBusy] = useState(false)
+  const [panelId, setPanelId] = useState<string | null>(null)
   const canEdit = hasRole('owner', 'office')
 
   const load = useCallback(async () => {
@@ -190,6 +192,7 @@ export function BuildingDetailPage() {
                   <th>{t('elevators.interval')}</th>
                   <th>{t('elevators.lastCheckAt')}</th>
                   <th>{t('elevators.nextCheckDue')}</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -206,7 +209,19 @@ export function BuildingDetailPage() {
                     </td>
                     <td>{t('elevators.days', { count: e.effectiveIntervalDays })}</td>
                     <td>{date(e.lastCheckAt)}</td>
-                    <td>{dueBadge(e.nextCheckDue, t, date)}</td>
+                    <td>
+                      {dueBadge(e.nextCheckDue, t, date)}
+                      {overrideBadge(e.nextCheckOverrideAt, t)}
+                    </td>
+                    <td className="num">
+                      <button
+                        type="button"
+                        className="btn btn-small"
+                        onClick={() => setPanelId(e.id)}
+                      >
+                        {t('dashboard.open')}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -255,6 +270,9 @@ export function BuildingDetailPage() {
           )}
         </div>
       </div>
+      {panelId ? (
+        <ElevatorPanel elevatorId={panelId} onClose={() => setPanelId(null)} onChanged={load} />
+      ) : null}
     </div>
   )
 }

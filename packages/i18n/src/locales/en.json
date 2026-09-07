@@ -89,6 +89,7 @@
   "visits.kind": "Visit kind",
   "visits.technicians": "Technicians",
   "visits.technicianName": "Other technician (name)",
+  "visits.technicianNameSelf": "Technician (name)",
   "visits.technicianNameHint": "Optional — for a technician without a user account.",
   "visits.techniciansRequired": "Name at least one technician.",
   "visits.source": "Source",
