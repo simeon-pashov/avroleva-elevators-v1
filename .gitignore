@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Env / secrets — only *.example files are tracked
+.env
+.env.*
+!.env.example
+apps/*/.env
+apps/*/.env.*
+!apps/*/.env.example
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Prisma generated client
+apps/api/src/generated/
+
+# Uploads / data
+data/
+uploads/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+coverage/
+.vite/
