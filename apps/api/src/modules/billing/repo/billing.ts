@@ -120,19 +120,17 @@ export function invoicesForBuilding(tenantId: string, buildingId: string, limit 
   })
 }
 
-/** issued -> overdue once dueAt is in the past. Called on read (no scheduler yet; see index.ts). */
-/** issued -> overdue for invoices past due; returns the rows that changed (once each). */
+/**
+ * issued -> overdue for invoices past due; returns the rows that changed (once each). One atomic
+ * UPDATE ... RETURNING: the roll runs before every billing read and from the daily job, so two
+ * concurrent callers must not both "see" the same issued invoice and emit InvoiceOverdue twice.
+ */
 export async function rollOverdue(tenantId: string, today: Date) {
-  const due = await prisma.invoice.findMany({
-    where: { tenantId, status: 'issued', dueAt: { lt: today } },
-    select: { id: true, number: true, buildingId: true, dueAt: true, totalCents: true },
-  })
-  if (due.length === 0) return due
-  await prisma.invoice.updateMany({
-    where: { tenantId, id: { in: due.map((d) => d.id) }, status: 'issued' },
-    data: { status: 'overdue' },
-  })
-  return due
+  return prisma.$queryRaw<
+    { id: string; number: number; buildingId: string; dueAt: Date; totalCents: number }[]
+  >`UPDATE "invoice" SET "status" = 'overdue'::"InvoiceStatus", "updatedAt" = now()
+    WHERE "tenantId" = ${tenantId}::uuid AND "status" = 'issued'::"InvoiceStatus" AND "dueAt" < ${today}
+    RETURNING "id", "number", "buildingId", "dueAt", "totalCents"`
 }
 
 export async function openTotals(tenantId: string, buildingId?: string) {

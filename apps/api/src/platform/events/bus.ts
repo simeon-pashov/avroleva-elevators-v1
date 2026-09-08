@@ -47,6 +47,14 @@ export interface EventBus {
   latest(type: string, aggregateId: string): Promise<PublishedEvent | null>
   /** Re-enqueues deliveries missing for events of the last `hours` (outbox catch-up). */
   sweep(hours?: number): Promise<{ enqueued: number }>
+  /**
+   * Marks every event of a tenant as delivered to the given handlers without running them
+   * (seeds write history, not news: nothing in it should reach an inbox). Returns rows written.
+   */
+  acknowledge(
+    tenantId: string,
+    handlers: ReadonlyArray<{ type: string; name: string }>,
+  ): Promise<number>
 }
 
 export const MAX_DELIVERY_ATTEMPTS = 5
@@ -209,6 +217,32 @@ class OutboxEventBus implements EventBus {
       }
     }
     return { enqueued }
+  }
+
+  async acknowledge(
+    tenantId: string,
+    handlers: ReadonlyArray<{ type: string; name: string }>,
+  ): Promise<number> {
+    const byType = new Map<string, string[]>()
+    for (const h of handlers) byType.set(h.type, [...(byType.get(h.type) ?? []), h.name])
+    if (byType.size === 0) return 0
+    const rows = await prismaBase.domainEvent.findMany({
+      where: { tenantId, type: { in: [...byType.keys()] } },
+      select: { id: true, type: true },
+    })
+    const data = rows.flatMap((r) =>
+      (byType.get(r.type) ?? []).map((handler) => ({
+        eventId: r.id,
+        handler,
+        status: 'done' as const,
+        attempts: 0,
+        processedAt: clock.now(),
+        lastError: 'acknowledged without delivery (seed)',
+      })),
+    )
+    if (data.length === 0) return 0
+    const res = await prismaBase.eventDelivery.createMany({ data, skipDuplicates: true })
+    return res.count
   }
 }
 

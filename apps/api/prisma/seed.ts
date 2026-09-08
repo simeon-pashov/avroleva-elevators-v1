@@ -4,6 +4,8 @@ import { disconnectDb } from '../src/platform/db/prisma.js'
 import { ensurePlatformAdmin } from '../src/modules/tenancy/index.js'
 import { checklists } from '../src/modules/maintenance/index.js'
 import * as notifications from '../src/modules/notifications/index.js'
+import { events } from '../src/platform/events/bus.js'
+import { SUBSCRIPTIONS } from '../src/subscribers.js'
 import { seedDemoTenant } from './seed/demo.js'
 
 /**
@@ -24,8 +26,13 @@ async function main() {
     logger.warn('ADMIN_PASSWORD not set - platform admin not seeded')
   }
   if (config.SEED_DEMO) {
-    const summary = await seedDemoTenant()
-    logger.info(summary, 'demo tenant seeded')
+    const { counts, tenantId } = await seedDemoTenant()
+    logger.info(counts, 'demo tenant seeded')
+    // The seed writes months of history through the same services as the app, so their domain
+    // events exist (audit, dedupe) but must never be delivered as news: without this, the outbox
+    // sweep would flood every inbox with "issued invoice" rows the moment the API starts.
+    const acknowledged = await events.acknowledge(tenantId, SUBSCRIPTIONS)
+    logger.info({ acknowledged }, 'seed events acknowledged (not delivered)')
   } else {
     logger.info('SEED_DEMO is not true - demo tenant skipped')
   }

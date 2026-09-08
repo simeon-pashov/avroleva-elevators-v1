@@ -513,7 +513,10 @@ const ELEVATORS: ElevatorSeed[] = [
 
 const DEFAULT_INTERVAL = 30
 
-export async function seedDemoTenant(): Promise<Record<string, number>> {
+export async function seedDemoTenant(): Promise<{
+  counts: Record<string, number>
+  tenantId: string
+}> {
   const today = todayInSofia()
   const counts: Record<string, number> = {
     users: 0,
@@ -762,7 +765,7 @@ export async function seedDemoTenant(): Promise<Record<string, number>> {
   Object.assign(counts, await seedStep4(tenantId))
   Object.assign(counts, await seedStep5(tenantId))
 
-  return { ...counts, tenantIdKnown: 1 }
+  return { counts, tenantId }
 }
 
 // ---------------------------------------------------------------- visit history

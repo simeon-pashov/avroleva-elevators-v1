@@ -14,6 +14,28 @@ import { getTenant } from './modules/tenancy/index.js'
  */
 let registered = false
 
+export const NOTIFIABLE_EVENTS = [
+  'VisitRecorded',
+  'CallbackOpened',
+  'CallbackClosed',
+  'CallbackSlaAtRisk',
+  'CallbackSlaBreached',
+  'InvoiceIssued',
+  'InvoiceOverdue',
+  'InspectionDueSoon',
+  'DefectFollowUpDue',
+  'CheckOverdue',
+  'StopLiftRequired',
+] as const
+
+/** Every (event type, handler name) pair registered below - the seed uses it to acknowledge history. */
+export const SUBSCRIPTIONS: ReadonlyArray<{ type: string; name: string }> = [
+  { type: 'TenantSettingsChanged', name: 'registry.recomputeSchedule' },
+  ...NOTIFIABLE_EVENTS.map((type) => ({ type, name: 'notifications.rules' })),
+  { type: 'TenantDeletionScheduled', name: 'notifications.tenantDeletion' },
+  { type: 'TenantDeletionCancelled', name: 'notifications.tenantDeletion' },
+]
+
 export function registerSubscribers(): void {
   if (registered) return
   registered = true
@@ -28,19 +50,7 @@ export function registerSubscribers(): void {
     'registry.recomputeSchedule',
   )
 
-  for (const type of [
-    'VisitRecorded',
-    'CallbackOpened',
-    'CallbackClosed',
-    'CallbackSlaAtRisk',
-    'CallbackSlaBreached',
-    'InvoiceIssued',
-    'InvoiceOverdue',
-    'InspectionDueSoon',
-    'DefectFollowUpDue',
-    'CheckOverdue',
-    'StopLiftRequired',
-  ]) {
+  for (const type of NOTIFIABLE_EVENTS) {
     events.subscribe(type, notifications.handleEvent, 'notifications.rules')
   }
 
