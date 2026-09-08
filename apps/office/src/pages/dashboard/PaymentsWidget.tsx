@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import type {
   BillingSummaryDto,
   BuildingDto,
+  GenerateInvoicesResultDto,
   InvoiceDto,
   Page,
   PaymentDto,
@@ -295,6 +296,24 @@ export function PaymentsWidget({ version, onChanged }: { version: number; onChan
   const [buildings, setBuildings] = useState<BuildingDto[]>([])
   const [summary, setSummary] = useState<BillingSummaryDto | null>(null)
   const [summaryError, setSummaryError] = useState<unknown>(null)
+  const [generating, setGenerating] = useState(false)
+
+  // Month-end: one invoice per active contract for the selected month (idempotent on the API).
+  const generate = async () => {
+    if (!window.confirm(t('payments.generateConfirm', { month }))) return
+    setGenerating(true)
+    try {
+      const r = await post<GenerateInvoicesResultDto>('/billing/invoices/generate', {
+        period: month,
+      })
+      toast(t('payments.generated', { created: r.created, skipped: r.skipped }))
+      onChanged()
+    } catch (err) {
+      setSummaryError(err)
+    } finally {
+      setGenerating(false)
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -374,6 +393,9 @@ export function PaymentsWidget({ version, onChanged }: { version: number; onChan
           onChange={(e) => e.target.value && setMonth(e.target.value)}
           aria-label={t('payments.month')}
         />
+        <button type="button" className="btn btn-small" onClick={generate} disabled={generating}>
+          {t('payments.generate')}
+        </button>
       </div>
       <div className="tabs" role="tablist">
         <button

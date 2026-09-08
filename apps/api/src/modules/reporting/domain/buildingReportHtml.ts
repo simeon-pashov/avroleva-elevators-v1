@@ -108,6 +108,7 @@ export function renderBuildingReportHtml(
 <html lang="${esc(locale)}">
 <head>
 <meta charset="utf-8">
+<link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(t('report.title', { month: label }))} – ${esc(r.building.addressText)}</title>
 <style>${CSS}</style>

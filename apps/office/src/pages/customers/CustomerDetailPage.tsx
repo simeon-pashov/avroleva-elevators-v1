@@ -11,6 +11,7 @@ export function CustomerDetailPage() {
   const { id } = useParams()
   const { t, date, money } = useI18n()
   const { hasRole } = useAuth()
+  const canSeeMoney = hasRole('owner', 'office')
   const navigate = useNavigate()
   const [c, setC] = useState<CustomerDto | null>(null)
   const [buildings, setBuildings] = useState<BuildingDto[]>([])
@@ -132,7 +133,10 @@ export function CustomerDetailPage() {
                     {t(`enum.contractStatus.${x.status}`)}
                   </Badge>{' '}
                   <span className="muted">
-                    {date(x.startDate)} · {money(x.monthlyTotalCents)} / {t('contracts.month')}
+                    {date(x.startDate)}
+                    {canSeeMoney
+                      ? ` · ${money(x.monthlyTotalCents)} / ${t('contracts.month')}`
+                      : ''}
                   </span>
                 </li>
               ))}

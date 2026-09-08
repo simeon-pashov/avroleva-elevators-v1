@@ -80,7 +80,7 @@ code {
   align-items: center;
   gap: 1.25rem;
   padding: 0 1.25rem;
-  height: 54px;
+  min-height: 54px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   position: sticky;
@@ -115,9 +115,10 @@ code {
 }
 .nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.15rem;
   flex: 1;
-  overflow-x: auto;
+  padding: 0.25rem 0;
 }
 .nav a {
   padding: 0.45rem 0.7rem;

@@ -17,6 +17,7 @@ export function BuildingDetailPage() {
   const { id } = useParams()
   const { t, date, money } = useI18n()
   const { hasRole } = useAuth()
+  const canSeeMoney = hasRole('owner', 'office')
   const navigate = useNavigate()
   const [b, setB] = useState<BuildingDetailDto | null>(null)
   const [error, setError] = useState<unknown>(null)
@@ -271,9 +272,11 @@ export function BuildingDetailPage() {
                   <Badge kind={c.status === 'active' ? 'ok' : 'muted'}>
                     {t(`enum.contractStatus.${c.status}`)}
                   </Badge>{' '}
-                  <span className="muted">
-                    {money(c.monthlyTotalCents)} / {t('contracts.month')}
-                  </span>
+                  {canSeeMoney ? (
+                    <span className="muted">
+                      {money(c.monthlyTotalCents)} / {t('contracts.month')}
+                    </span>
+                  ) : null}
                 </li>
               ))}
             </ul>

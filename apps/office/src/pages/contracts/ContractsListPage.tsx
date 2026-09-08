@@ -21,6 +21,7 @@ import { ExportCsvButton } from '../../components/ExportCsvButton'
 export function ContractsListPage() {
   const { t, date, moneyFull } = useI18n()
   const { hasRole } = useAuth()
+  const canSeeMoney = hasRole('owner', 'office')
   const [params, setParams] = useSearchParams()
   const q = params.get('q') ?? ''
   const [status, setStatus] = useState<ContractStatus | ''>('active')
@@ -73,7 +74,7 @@ export function ContractsListPage() {
                 <th>{t('contracts.period')}</th>
                 <th>{t('contracts.status')}</th>
                 <th className="num">{t('contracts.elevators')}</th>
-                <th className="num">{t('contracts.monthlyTotal')}</th>
+                {canSeeMoney ? <th className="num">{t('contracts.monthlyTotal')}</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -94,7 +95,7 @@ export function ContractsListPage() {
                     </Badge>
                   </td>
                   <td className="num">{c.lines.filter((l) => !l.toDate).length}</td>
-                  <td className="num">{moneyFull(c.monthlyTotalCents)}</td>
+                  {canSeeMoney ? <td className="num">{moneyFull(c.monthlyTotalCents)}</td> : null}
                 </tr>
               ))}
             </tbody>

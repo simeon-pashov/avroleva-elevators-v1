@@ -199,9 +199,7 @@ export function NotificationsLogPage() {
                     </td>
                     <td>
                       {link ? (
-                        <Link to={link}>
-                          {n.relatedType ? n.relatedType : t('notifications.openRelated')}
-                        </Link>
+                        <Link to={link}>{t('notifications.openRelated')}</Link>
                       ) : (
                         <span className="muted">—</span>
                       )}

@@ -49,6 +49,7 @@ export function ContractDetailPage() {
   const { id } = useParams()
   const { t, date, money, moneyFull } = useI18n()
   const { hasRole } = useAuth()
+  const canSeeMoney = hasRole('owner', 'office')
   const navigate = useNavigate()
   const [c, setC] = useState<ContractDto | null>(null)
   const [error, setError] = useState<unknown>(null)
@@ -181,7 +182,7 @@ export function ContractDetailPage() {
               <tr>
                 <th>{t('elevators.one')}</th>
                 <th>{t('contracts.period')}</th>
-                <th className="num">{t('contracts.monthlyPrice')}</th>
+                {canSeeMoney ? <th className="num">{t('contracts.monthlyPrice')}</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -195,16 +196,18 @@ export function ContractDetailPage() {
                   <td>
                     {date(l.fromDate)} – {l.toDate ? date(l.toDate) : '…'}
                   </td>
-                  <td className="num">{money(l.monthlyPriceCents)}</td>
+                  {canSeeMoney ? <td className="num">{money(l.monthlyPriceCents)}</td> : null}
                 </tr>
               ))}
             </tbody>
-            <tfoot>
-              <tr>
-                <th colSpan={2}>{t('contracts.monthlyTotal')}</th>
-                <th className="num">{moneyFull(c.monthlyTotalCents)}</th>
-              </tr>
-            </tfoot>
+            {canSeeMoney ? (
+              <tfoot>
+                <tr>
+                  <th colSpan={2}>{t('contracts.monthlyTotal')}</th>
+                  <th className="num">{moneyFull(c.monthlyTotalCents)}</th>
+                </tr>
+              </tfoot>
+            ) : null}
           </table>
         </div>
       </div>
