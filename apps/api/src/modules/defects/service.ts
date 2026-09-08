@@ -73,6 +73,10 @@ export function catalog(locale: string): DefectCatalogItemDto[] {
  * transaction, audit entry, ElevatorStatusChanged). Emits DefectRecorded (+ StopLiftRequired).
  */
 export async function record(ctx: Ctx, body: CreateDefectBody): Promise<DefectDto> {
+  if (body.id) {
+    const existing = await repo.findDefect(ctx.tenantId, body.id)
+    if (existing) return toDefectDto(existing)
+  }
   const elevator = await elevators.find(ctx.tenantId, body.elevatorId)
   if (!elevator) throw notFound()
   const now = clock.now()
@@ -93,6 +97,7 @@ export async function record(ctx: Ctx, body: CreateDefectBody): Promise<DefectDt
     const d = await repo.createDefect(
       ctx.tenantId,
       {
+        id: body.id,
         elevatorId: elevator.id,
         buildingId: elevator.buildingId,
         catalogCode: item?.code ?? null,
@@ -289,6 +294,12 @@ export async function openSummary(
     if (toDateOnly(d.followUpDueAt)! <= today) out.followUpDue++
   }
   return out
+}
+
+/** Sync pull for the technician app: open + changed since the watermark. */
+export async function listForSync(ctx: Ctx, since: Date | null): Promise<DefectDto[]> {
+  const today = todayInSofia()
+  return (await repo.listForSync(ctx.tenantId, since, 500)).map((d) => toDefectDto(d, today))
 }
 
 /** Open defects for the calendar (follow-up dates). */

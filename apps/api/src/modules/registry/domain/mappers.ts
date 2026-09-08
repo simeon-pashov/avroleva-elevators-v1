@@ -104,6 +104,7 @@ export function toElevatorDto(
     year: e.year,
     driveType: e.driveType,
     doorType: e.doorType,
+    goodsOnly: e.goodsOnly,
     stops: e.stops,
     loadKg: e.loadKg,
     status: e.status,

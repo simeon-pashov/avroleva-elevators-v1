@@ -10,9 +10,11 @@ import { callbacksRouter } from '../modules/callbacks/index.js'
 import { defectsRouter } from '../modules/defects/index.js'
 import { calendarRouter } from '../modules/calendar/index.js'
 import { reportingRouter } from '../modules/reporting/index.js'
+import { attachmentsRouter } from '../modules/documents/index.js'
 import { adminRouter } from './admin.js'
+import { syncRouter } from './sync.js'
 
-export const APP_VERSION = '0.3.0'
+export const APP_VERSION = '0.4.0'
 
 /** `/api/v1` - additive only; breaking changes go to `/api/v2` beside it (ARCHITECTURE A9). */
 export const apiV1 = Router()
@@ -48,3 +50,5 @@ apiV1.use(callbacksRouter)
 apiV1.use(defectsRouter)
 apiV1.use(calendarRouter)
 apiV1.use(reportingRouter)
+apiV1.use(attachmentsRouter)
+apiV1.use(syncRouter)

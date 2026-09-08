@@ -201,3 +201,11 @@ export function rotatePublicToken(tenantId: string, id: string) {
 export function countElevators(tenantId: string) {
   return prisma.elevator.count({ where: { tenantId, deletedAt: null } })
 }
+
+/** Sync pull: every elevator (incl. archived = tombstone) changed since `since`, or all. */
+export function listAllForSync(tenantId: string, since: Date | null) {
+  return prisma.elevator.findMany({
+    where: { tenantId, ...(since ? { updatedAt: { gte: since } } : {}) },
+    orderBy: [{ buildingId: 'asc' }, { internalNo: 'asc' }],
+  })
+}

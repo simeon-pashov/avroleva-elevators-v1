@@ -65,6 +65,7 @@ export async function create(ctx: Ctx, body: CreateElevatorBody): Promise<Elevat
     year: body.year ?? null,
     driveType: body.driveType,
     doorType: body.doorType,
+    goodsOnly: body.goodsOnly,
     stops: body.stops,
     loadKg: body.loadKg ?? null,
     status: body.status,
@@ -127,6 +128,7 @@ export async function update(ctx: Ctx, id: string, body: UpdateElevatorBody): Pr
     ...(body.year !== undefined ? { year: body.year } : {}),
     ...(body.driveType !== undefined ? { driveType: body.driveType } : {}),
     ...(body.doorType !== undefined ? { doorType: body.doorType } : {}),
+    ...(body.goodsOnly !== undefined ? { goodsOnly: body.goodsOnly } : {}),
     ...(body.stops !== undefined ? { stops: body.stops } : {}),
     ...(body.loadKg !== undefined ? { loadKg: body.loadKg } : {}),
     ...(body.status !== undefined ? { status: body.status } : {}),
@@ -357,4 +359,9 @@ export async function archive(ctx: Ctx, id: string): Promise<void> {
     throw new AppError(409, 'elevators.archiveOnlyInactive')
   await repo.updateElevator(ctx.tenantId, id, { deletedAt: clock.now(), updatedBy: ctx.userId })
   await audit(actorOf(ctx), { action: 'elevator.archive', entityType: 'elevator', entityId: id })
+}
+
+/** Sync facade read model (rows, not DTOs). */
+export function listAllForSync(tenantId: string, since: Date | null) {
+  return repo.listAllForSync(tenantId, since)
 }

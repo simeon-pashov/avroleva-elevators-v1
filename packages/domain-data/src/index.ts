@@ -38,8 +38,37 @@ export interface CalendarRules {
   alarmTestIntervalMonths: number | null
 }
 
+export interface ChecklistAppliesToData {
+  driveType?: Array<'electric' | 'hydraulic' | 'mrl'>
+  doorType?: Array<'manual' | 'semi_auto' | 'auto'>
+  goodsOnly?: boolean
+}
+
+export interface ChecklistItemData {
+  code: string
+  group: string
+  bg: string
+  en: string
+  appliesTo: ChecklistAppliesToData
+  resultType: 'ok_defect_na'
+}
+
+export interface ChecklistTemplateData {
+  key: string
+  version: number
+  name: { bg: string; en: string }
+  /** Item number of the ordinance appendix, for the office only (never shown to a technician). */
+  ref: string
+  groups: Array<{ code: string; bg: string; en: string }>
+  items: ChecklistItemData[]
+}
+
 export const defectCatalog: DefectCatalog = load('../defects/art10.v1.json')
 export const calendarRules: CalendarRules = load('../calendar-rules.json')
+/** System checklist templates, seeded as `checklist_template` rows with tenantId NULL. */
+export const checklistTemplates: ChecklistTemplateData[] = [
+  load('../checklists/functional-check.v1.json'),
+]
 
 export function defectCatalogItem(code: string | null | undefined): DefectCatalogItem | undefined {
   if (!code) return undefined

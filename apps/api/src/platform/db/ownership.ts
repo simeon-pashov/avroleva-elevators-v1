@@ -15,8 +15,12 @@ export const ownership = {
   Contract: 'registry',
   ContractElevator: 'registry',
   ImportBatch: 'registry',
+  DeviceEnrollmentToken: 'tenancy',
   Visit: 'visits',
   VisitTechnician: 'visits',
+  ChecklistTemplate: 'maintenance',
+  Attachment: 'documents',
+  VisitAttachment: 'documents',
   InvoiceSequence: 'billing',
   Invoice: 'billing',
   Payment: 'billing',
@@ -27,6 +31,7 @@ export const ownership = {
   AlarmDeviceTest: 'calendar',
   DomainEvent: 'platform',
   AuditLog: 'platform',
+  IdempotencyKey: 'platform',
 } as const
 
 export type ModelName = keyof typeof ownership
@@ -41,8 +46,12 @@ export const tenantOwnedModels: ReadonlySet<string> = new Set<ModelName>([
   'Contract',
   'ContractElevator',
   'ImportBatch',
+  'DeviceEnrollmentToken',
   'Visit',
   'VisitTechnician',
+  'Attachment',
+  'VisitAttachment',
+  'IdempotencyKey',
   'InvoiceSequence',
   'Invoice',
   'Payment',

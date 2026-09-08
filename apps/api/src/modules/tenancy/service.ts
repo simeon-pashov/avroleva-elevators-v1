@@ -1,7 +1,13 @@
+import { createHash, randomBytes } from 'node:crypto'
+import QRCode from 'qrcode'
 import type {
   AdminUpdateTenantBody,
   CreateUserBody,
+  EnrollBody,
+  EnrollResponse,
+  EnrollmentTokenDto,
   MeDto,
+  SessionDto,
   RegisterTenantBody,
   TenantDto,
   TenantFeatures,
@@ -11,8 +17,10 @@ import type {
   UpdateUserBody,
   UserDto,
 } from '@avroleva/contracts'
+import { ENROLLMENT_TOKEN_TTL_MS } from '@avroleva/contracts'
 import { resolveLocale } from '@avroleva/i18n'
 import { prismaBase, transaction } from '../../platform/db/prisma.js'
+import { urls } from '../../platform/urls.js'
 import { AppError, conflict, notFound, unauthorized } from '../../platform/http/errors.js'
 import { audit } from '../../platform/audit.js'
 import type { AuditActor } from '../../platform/audit.js'
@@ -24,6 +32,7 @@ import * as users from './repo/users.js'
 import * as tenants from './repo/tenants.js'
 import * as sessions from './repo/sessions.js'
 import * as admins from './repo/admins.js'
+import * as enrollment from './repo/enrollment.js'
 import type { Ctx } from '../../platform/http/ctx.js'
 
 const cleanEmail = (e: string | null | undefined) => (e ? e : null)
@@ -251,6 +260,136 @@ export async function setUserPassword(ctx: Ctx, id: string, password: string): P
   await users.updateUser(ctx.tenantId, id, { passwordHash: await hashPassword(password) })
   if (id !== ctx.userId) await sessions.revokeUserSessions(ctx.tenantId, id)
   await audit(actorOfCtx(ctx), { action: 'user.setPassword', entityType: 'user', entityId: id })
+}
+
+// ---- Device enrollment & sessions (technician app) -------------------------------------------
+
+const hashCode = (code: string) => createHash('sha256').update(code).digest('hex')
+
+/**
+ * One-time enrollment code for a technician (owner/office). 10 minutes, single use, shown as a QR
+ * that opens the tech app with `?enroll=<code>` - no typing on the phone (ARCHITECTURE section 5).
+ */
+export async function createEnrollmentToken(ctx: Ctx, userId: string): Promise<EnrollmentTokenDto> {
+  const user = await users.findUser(ctx.tenantId, userId)
+  if (!user || !user.isActive) throw notFound()
+  const code = randomBytes(24).toString('base64url')
+  const expiresAt = new Date(clock.now().getTime() + ENROLLMENT_TOKEN_TTL_MS)
+  await enrollment.createEnrollmentToken({
+    tenantId: ctx.tenantId,
+    userId: user.id,
+    codeHash: hashCode(code),
+    expiresAt,
+    createdByUserId: ctx.userId,
+  })
+  const url = urls.techEnroll(code)
+  const qrSvg = await QRCode.toString(url, { type: 'svg', margin: 1, errorCorrectionLevel: 'M' })
+  await audit(actorOfCtx(ctx), {
+    action: 'device.enrollToken',
+    entityType: 'user',
+    entityId: user.id,
+  })
+  return {
+    userId: user.id,
+    userName: user.name,
+    token: code,
+    expiresAt: expiresAt.toISOString(),
+    url,
+    qrSvg,
+  }
+}
+
+/** The phone exchanges the code for a device session (Bearer, 180 days sliding). */
+export async function enrollDevice(
+  body: EnrollBody,
+  meta: { ip?: string; requestId?: string },
+): Promise<EnrollResponse> {
+  const now = clock.now()
+  const row = await enrollment.findEnrollmentByHash(hashCode(body.token))
+  if (!row || row.usedAt || row.expiresAt.getTime() < now.getTime())
+    throw unauthorized('auth.enrollInvalid')
+  const user = row.user
+  if (
+    !user ||
+    user.deletedAt ||
+    !user.isActive ||
+    user.tenant.status === 'closed' ||
+    user.tenant.deletedAt
+  )
+    throw unauthorized('auth.enrollInvalid')
+  if (!(await enrollment.consumeEnrollment(row.tenantId, row.id, now)))
+    throw unauthorized('auth.enrollInvalid')
+  const session = await sessions.createSession({
+    kind: 'device',
+    tenantId: user.tenantId,
+    userId: user.id,
+    ip: meta.ip,
+    deviceName: body.deviceName,
+  })
+  if (body.clientVersion)
+    await enrollment.updateSessionClient(session.id, { clientVersion: body.clientVersion })
+  await users.updateUser(user.tenantId, user.id, { lastLoginAt: now })
+  await audit(
+    {
+      tenantId: user.tenantId,
+      actorType: 'user',
+      actorId: user.id,
+      requestId: meta.requestId,
+      ip: meta.ip,
+    },
+    {
+      action: 'device.enroll',
+      entityType: 'session',
+      entityId: session.id,
+      after: { deviceName: body.deviceName, clientVersion: body.clientVersion ?? null },
+    },
+  )
+  return {
+    user: toUserDto(user),
+    tenant: toTenantDto(user.tenant),
+    locale: resolveLocale(user.locale, user.tenant.locale),
+    token: session.token,
+    sessionId: session.id,
+    expiresAt: session.expiresAt.toISOString(),
+  }
+}
+
+/** Owner view: every live browser/device session of the firm (revoke = "sign out this phone"). */
+export async function listSessions(ctx: Ctx): Promise<SessionDto[]> {
+  const rows = await enrollment.listSessions(ctx.tenantId, clock.now())
+  return rows.map((s) => ({
+    id: s.id,
+    userId: s.userId ?? '',
+    userName: s.user?.name ?? '',
+    kind: s.kind === 'device' ? 'device' : 'browser',
+    deviceName: s.deviceName,
+    clientVersion: s.clientVersion,
+    createdAt: s.createdAt.toISOString(),
+    lastSeenAt: s.lastSeenAt.toISOString(),
+    expiresAt: s.expiresAt.toISOString(),
+    current: s.id === ctx.sessionId,
+  }))
+}
+
+export async function revokeSessionById(ctx: Ctx, id: string): Promise<void> {
+  const s = await enrollment.findSession(ctx.tenantId, id)
+  if (!s) throw notFound()
+  await sessions.revokeSession(id)
+  await audit(actorOfCtx(ctx), {
+    action: 'session.revoke',
+    entityType: 'session',
+    entityId: id,
+    before: { userId: s.userId, kind: s.kind, deviceName: s.deviceName },
+  })
+}
+
+/** Sync facade: remember the app version a device runs (X-Client-Version). Best effort. */
+export async function noteClientVersion(sessionId: string, version: string): Promise<void> {
+  try {
+    await enrollment.updateSessionClient(sessionId, { clientVersion: version })
+  } catch {
+    /* best effort */
+  }
 }
 
 // ---- Platform admin ---------------------------------------------------------------------------

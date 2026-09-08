@@ -1,5 +1,9 @@
 import { z } from 'zod'
 import { isoDate, isoDateTime, listQuery, nullableText, patchOf, uuid } from './common.js'
+import { checklistSnapshotInput } from './checklists.js'
+import type { ChecklistSnapshotDto } from './checklists.js'
+import { visitAttachmentLink } from './documents.js'
+import type { VisitAttachmentDto } from './documents.js'
 
 // Values are the Postgres enum values (apps/api/prisma/schema.prisma) - keep them in sync.
 export const VisitKind = z.enum([
@@ -29,6 +33,16 @@ export const visitTechnician = z
   })
 export type VisitTechnicianInput = z.infer<typeof visitTechnician>
 
+export const VisitTimestampSource = z.enum(['device', 'server', 'manual'])
+export type VisitTimestampSource = z.infer<typeof VisitTimestampSource>
+
+export const gpsPoint = z.object({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  accuracy: z.number().min(0).max(100_000).nullable().optional(),
+})
+export type GpsPoint = z.infer<typeof gpsPoint>
+
 export const createVisitBody = z.object({
   /** Client-generated UUID (idempotency key: a repeated POST with the same id returns the same visit). */
   id: uuid.optional(),
@@ -39,6 +53,14 @@ export const createVisitBody = z.object({
   technicians: z.array(visitTechnician).min(1).max(4),
   notes: nullableText(4000),
   source: VisitSource.default('office'),
+  /** Timestamp provenance (ARCHITECTURE A13): the phone sends device + its measured clock offset. */
+  timestampSource: VisitTimestampSource.default('server'),
+  clientOffsetMs: z.number().int().min(-86_400_000).max(86_400_000).default(0),
+  /** Answered checklist items; labels are snapshotted server-side from the template. */
+  checklist: checklistSnapshotInput.nullable().optional(),
+  /** Attachment ids the phone will upload (parent before child); max 20 per visit. */
+  attachments: z.array(visitAttachmentLink).max(20).default([]),
+  gps: gpsPoint.nullable().optional(),
 })
 export type CreateVisitBody = z.infer<typeof createVisitBody>
 
@@ -63,7 +85,15 @@ export interface VisitDto {
   technicians: VisitTechnicianDto[]
   notes: string | null
   source: VisitSource
+  timestampSource: VisitTimestampSource
+  clientOffsetMs: number
+  /** Server clock when the record arrived (= createdAt). */
+  receivedAt: string
+  /** singleTechnician | endBeforeStart | clockSuspect | pendingUploads */
   qualityFlags: string[]
+  checklist: ChecklistSnapshotDto | null
+  attachments: VisitAttachmentDto[]
+  gps: GpsPoint | null
   createdByUserId: string | null
   supersedesVisitId: string | null
   supersededAt: string | null

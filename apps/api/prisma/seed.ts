@@ -2,6 +2,7 @@ import { config } from '../src/platform/config.js'
 import { logger } from '../src/platform/logger.js'
 import { disconnectDb } from '../src/platform/db/prisma.js'
 import { ensurePlatformAdmin } from '../src/modules/tenancy/index.js'
+import { checklists } from '../src/modules/maintenance/index.js'
 import { seedDemoTenant } from './seed/demo.js'
 
 /**
@@ -9,6 +10,9 @@ import { seedDemoTenant } from './seed/demo.js'
  * demo tenant when SEED_DEMO=true. Safe to run repeatedly (upserts keyed by natural keys).
  */
 async function main() {
+  // System checklist templates (tenantId NULL) from packages/domain-data - every deployment.
+  const templates = await checklists.ensureSystemTemplates()
+  logger.info({ templates }, 'system checklist templates ensured')
   if (config.ADMIN_PASSWORD) {
     await ensurePlatformAdmin(config.ADMIN_USERNAME, config.ADMIN_PASSWORD)
     logger.info({ username: config.ADMIN_USERNAME }, 'platform admin ensured')

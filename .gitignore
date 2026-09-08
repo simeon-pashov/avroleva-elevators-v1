@@ -18,6 +18,7 @@ apps/api/src/generated/
 
 # Uploads / data
 data/
+data-test/
 uploads/
 
 # Logs

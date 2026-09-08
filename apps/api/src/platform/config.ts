@@ -39,6 +39,12 @@ const schema = z.object({
   EMAIL_PROVIDER: z.enum(['console']).default('console'),
   SMS_PROVIDER: z.enum(['console']).default('console'),
   OFFICE_DIST: z.string().optional(),
+  /** Built technician app (apps/tech/dist), served at /tech/. */
+  TECH_DIST: z.string().optional(),
+  /** Root of the local FileStorage adapter (attachments). Relative paths resolve from the cwd. */
+  DATA_DIR: z.string().default('./data'),
+  /** Lowest technician-app version still accepted; sent as X-Min-Client-Version on every API response. */
+  MIN_CLIENT_VERSION: z.string().default('0.4.0'),
 })
 
 export type Config = z.infer<typeof schema>

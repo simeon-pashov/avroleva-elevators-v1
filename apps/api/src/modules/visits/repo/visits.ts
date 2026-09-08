@@ -1,7 +1,8 @@
 import { prisma } from '../../../platform/db/prisma.js'
 import type { Tx } from '../../../platform/db/prisma.js'
 import { newId } from '../../../platform/ids.js'
-import type { Prisma, VisitKind } from '../../../generated/prisma/index.js'
+import { Prisma } from '../../../generated/prisma/index.js'
+import type { TimestampSource, VisitKind } from '../../../generated/prisma/index.js'
 
 const withRelations = {
   technicians: { orderBy: { position: 'asc' as const } },
@@ -83,6 +84,12 @@ export interface VisitInput {
   endedAt: Date | null
   notes: string | null
   source: 'office' | 'paper' | 'app'
+  timestampSource: TimestampSource
+  clientOffsetMs: number
+  templateKey: string | null
+  templateVersion: number | null
+  checklist: unknown | null
+  gps: unknown | null
   qualityFlags: string[]
   createdByUserId: string | null
   supersedesVisitId?: string | null
@@ -102,6 +109,12 @@ export function createVisit(tenantId: string, v: VisitInput, tx?: Tx): Promise<V
       endedAt: v.endedAt,
       notes: v.notes,
       source: v.source,
+      timestampSource: v.timestampSource,
+      clientOffsetMs: v.clientOffsetMs,
+      templateKey: v.templateKey,
+      templateVersion: v.templateVersion,
+      checklist: v.checklist == null ? Prisma.JsonNull : (v.checklist as object),
+      gps: v.gps == null ? Prisma.JsonNull : (v.gps as object),
       qualityFlags: v.qualityFlags,
       createdByUserId: v.createdByUserId,
       supersedesVisitId: v.supersedesVisitId ?? null,
@@ -116,6 +129,16 @@ export function createVisit(tenantId: string, v: VisitInput, tx?: Tx): Promise<V
       },
     },
     include: withRelations,
+  })
+}
+
+/** Sync pull: rows received (server clock) since the watermark, newest first. */
+export function listReceivedSince(tenantId: string, since: Date, limit: number) {
+  return prisma.visit.findMany({
+    where: { tenantId, createdAt: { gte: since } },
+    include: withRelations,
+    orderBy: [{ createdAt: 'desc' }],
+    take: limit,
   })
 }
 

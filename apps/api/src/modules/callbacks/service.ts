@@ -14,7 +14,7 @@ import type { Ctx } from '../../platform/http/ctx.js'
 import { AppError, notFound } from '../../platform/http/errors.js'
 import { audit } from '../../platform/audit.js'
 import type { AuditActor } from '../../platform/audit.js'
-import { addDays, clock, fromDateOnly } from '../../platform/clock.js'
+import { addDays, clock, clockSuspect, fromDateOnly } from '../../platform/clock.js'
 import { events } from '../../platform/events/bus.js'
 import { logger } from '../../platform/logger.js'
 import { transaction } from '../../platform/db/prisma.js'
@@ -126,6 +126,11 @@ async function namesFor(tenantId: string, ids: Array<string | null | undefined>)
   const unique = [...new Set(ids.filter((x): x is string => !!x))]
   const users = await findUsersByIds(tenantId, unique)
   return new Map(users.map((u) => [u.id, u.name]))
+}
+
+/** Device provenance flags for a callback event (platform rule, shared with visits). */
+export function clockFlags(at: Date, receivedAt: Date, clientOffsetMs?: number): string[] {
+  return clockSuspect(at, receivedAt, clientOffsetMs) ? ['clockSuspect'] : []
 }
 
 function parseAt(at: string | undefined, now: Date, code: string): Date {
@@ -329,10 +334,21 @@ export async function transition(
   actor: CallbackActor,
   id: string,
   type: 'on_site' | 'released' | 'restored',
-  body: { at?: string; notes?: string | null },
+  body: {
+    at?: string
+    notes?: string | null
+    clientOffsetMs?: number
+    timestampSource?: 'device' | 'server' | 'manual'
+  },
 ): Promise<CallbackDto> {
   const now = clock.now()
   const at = parseAt(body.at, now, 'callbacks.timeInFuture')
+  // A13: the event keeps how it knows what time it was; the phone's clock is flagged, never fixed.
+  const provenance: Record<string, unknown> = {}
+  if (body.timestampSource) provenance.timestampSource = body.timestampSource
+  if (body.clientOffsetMs !== undefined) provenance.clientOffsetMs = body.clientOffsetMs
+  const flags = body.timestampSource === 'device' ? clockFlags(at, now, body.clientOffsetMs) : []
+  if (flags.length) provenance.qualityFlags = flags
   const updated = await transaction(async (tx) => {
     const c = await load(actor, id, tx)
     assertTransition(c, type)
@@ -355,7 +371,7 @@ export async function transition(
         at,
         source: actor.source,
         byUserId: actor.userId,
-        data: body.notes ? { notes: body.notes } : {},
+        data: { ...(body.notes ? { notes: body.notes } : {}), ...provenance },
       },
       tx,
     )
@@ -449,6 +465,9 @@ export async function close(
         technicians: [{ userId: technicianId }],
         notes: `${body.cause} — ${body.actionTaken}`,
         source: actor.source === 'app' ? 'app' : 'office',
+        timestampSource: 'server',
+        clientOffsetMs: 0,
+        attachments: [],
       })
       final = await repo.updateCallback(actor.tenantId, updated.id, { closeoutVisitId: visit.id })
     } catch (err) {
@@ -502,6 +521,21 @@ export async function listForElevator(
     visibleToUserId: ctx.role === 'technician' ? ctx.userId : undefined,
   })
   return page(ctx.tenantId, rows, q.limit)
+}
+
+/** Sync pull for the technician app: open + changed since the watermark (see repo.listForSync). */
+export async function listForSync(ctx: Ctx, since: Date | null): Promise<CallbackDto[]> {
+  const rows = await repo.listForSync(ctx.tenantId, {
+    visibleToUserId: ctx.role === 'technician' ? ctx.userId : undefined,
+    since,
+    limit: 500,
+  })
+  const names = await namesFor(
+    ctx.tenantId,
+    rows.map((c) => c.assignedUserId),
+  )
+  const now = clock.now()
+  return rows.map((c) => toCallbackDto(c, now, names))
 }
 
 async function page(tenantId: string, rows: CallbackRow[], limit: number) {

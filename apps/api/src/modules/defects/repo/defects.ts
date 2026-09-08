@@ -98,6 +98,7 @@ export function countOpenStopLift(tenantId: string, elevatorId: string, tx?: Tx)
 }
 
 export interface DefectInput {
+  id?: string
   elevatorId: string
   buildingId: string
   catalogCode: string | null
@@ -114,7 +115,11 @@ export interface DefectInput {
 
 export function createDefect(tenantId: string, d: DefectInput, tx?: Tx): Promise<DefectRow> {
   const db = tx ?? prisma
-  return db.defect.create({ data: { id: newId(), tenantId, ...d }, include: withRelations })
+  const { id, ...rest } = d
+  return db.defect.create({
+    data: { id: id ?? newId(), tenantId, ...rest },
+    include: withRelations,
+  })
 }
 
 export function updateDefect(
@@ -125,4 +130,21 @@ export function updateDefect(
 ): Promise<DefectRow> {
   const db = tx ?? prisma
   return db.defect.update({ where: { id, tenantId }, data, include: withRelations })
+}
+
+/** Sync pull: every open defect plus every defect changed since the watermark (resolved = tombstone). */
+export function listForSync(
+  tenantId: string,
+  since: Date | null,
+  limit: number,
+): Promise<DefectRow[]> {
+  return prisma.defect.findMany({
+    where: {
+      tenantId,
+      OR: [{ status: { not: 'resolved' } }, ...(since ? [{ updatedAt: { gte: since } }] : [])],
+    },
+    include: withRelations,
+    orderBy: [{ recordedAt: 'desc' }],
+    take: limit,
+  })
 }

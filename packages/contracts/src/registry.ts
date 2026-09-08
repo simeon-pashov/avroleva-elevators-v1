@@ -187,6 +187,8 @@ export const createElevatorBody = z.object({
   year: nullableNumber(z.number().int().min(1900).max(2100)),
   driveType: DriveType.default('electric'),
   doorType: DoorType.default('manual'),
+  /** Goods-only lift (no attendant) - changes which checklist items apply. */
+  goodsOnly: z.boolean().default(false),
   stops: z.number().int().min(2).max(60),
   loadKg: nullableNumber(z.number().int().min(50).max(10000)),
   status: ElevatorStatus.default('active'),
@@ -212,6 +214,7 @@ export interface ElevatorDto {
   year: number | null
   driveType: z.infer<typeof DriveType>
   doorType: z.infer<typeof DoorType>
+  goodsOnly: boolean
   stops: number
   loadKg: number | null
   status: z.infer<typeof ElevatorStatus>

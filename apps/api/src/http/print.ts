@@ -3,8 +3,8 @@ import type { Request, Response } from 'express'
 import QRCode from 'qrcode'
 import { z } from 'zod'
 import { isoDate } from '@avroleva/contracts'
-import type { DefectDto, ElevatorDetailDto, TenantDto } from '@avroleva/contracts'
-import { formatDate } from '@avroleva/i18n'
+import type { DefectDto, ElevatorDetailDto, TenantDto, VisitDto } from '@avroleva/contracts'
+import { formatDate, formatDateTime } from '@avroleva/i18n'
 import type { T } from '@avroleva/i18n'
 import { addDays, monthBounds, todayInSofia } from '../platform/clock.js'
 import { config } from '../platform/config.js'
@@ -14,6 +14,7 @@ import { parseId, parseQuery } from '../platform/http/validate.js'
 import { getTenant } from '../modules/tenancy/index.js'
 import { buildings, elevators } from '../modules/registry/index.js'
 import * as defects from '../modules/defects/index.js'
+import * as visits from '../modules/visits/index.js'
 import { DOC_CSS, esc, page, paragraphs } from './templates/html.js'
 
 /**
@@ -256,6 +257,104 @@ printRouter.get('/labels/building/:buildingId', async (req, res) => {
       css: LABEL_CSS,
       body,
       script: '../../assets/print.js',
+    }),
+  )
+})
+
+// ---- logbook page (страница за дневника) ----------------------------------------------------
+
+const LOGBOOK_CSS = `
+  .lb-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 10px; }
+  .lb-title { font-size: 1.3em; font-weight: 700; }
+  .lb-kind { display: inline-block; border: 1px solid #111; border-radius: 4px; padding: 2px 8px; font-weight: 600; }
+  table.cl { border-collapse: collapse; width: 100%; margin: 10px 0 14px; font-size: .95em; }
+  table.cl th, table.cl td { border: 1px solid #333; padding: 4px 8px; vertical-align: top; text-align: left; }
+  table.cl th { background: #f1f1f1; font-weight: 600; }
+  table.cl tr.group td { background: #f7f7f7; font-weight: 600; }
+  table.cl tr.defect td { background: #fde8e8; font-weight: 600; }
+  table.cl td.res { white-space: nowrap; width: 9em; text-align: center; }
+  .techs { display: flex; gap: 24px; margin-top: 26px; }
+  .techs div { flex: 1; }
+  .techs .line { border-top: 1px solid #111; margin-top: 34px; padding-top: 4px; }
+  .photos { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .photos img { width: 44mm; height: 33mm; object-fit: cover; border: 1px solid #999; }
+  .flag { display: inline-block; border: 1px solid #b45309; color: #b45309; border-radius: 4px; padding: 1px 6px; font-size: .8em; margin-right: 4px; }
+  .hash { font-family: ui-monospace, Consolas, monospace; }
+`
+
+/**
+ * One visit as a page matching a logbook entry (the paper дневник stays the legal book; this is
+ * the office record in the same layout): lift identity, date/time, kind, technicians with
+ * signature lines, the checked items (defects highlighted; not-applicable items omitted), notes,
+ * photo thumbnails, a short record id so paper and office record can be matched.
+ */
+printRouter.get('/logbook/:visitId', async (req, res) => {
+  const ctx = guard(req, res)
+  if (!ctx) return
+  const { t, locale } = ctx
+  const v: VisitDto = await visits.get(ctx, parseId(req, 'visitId'))
+  const [e, tenant] = await Promise.all([elevators.get(ctx, v.elevatorId), getTenant(ctx.tenantId)])
+  const lang = locale === 'en' ? 'en' : 'bg'
+  const checked = (v.checklist?.items ?? []).filter((i) => i.result !== 'na')
+  const groups = new Map<string, typeof checked>()
+  for (const i of checked) groups.set(i.group, [...(groups.get(i.group) ?? []), i])
+  const groupLabel = (code: string) => {
+    const key = `checklist.group.${code}`
+    const label = t(key)
+    return label === key ? code : label
+  }
+  const rows: string[] = []
+  for (const [g, items] of groups) {
+    rows.push(`<tr class="group"><td colspan="3">${esc(groupLabel(g))}</td></tr>`)
+    for (const i of items) {
+      rows.push(
+        `<tr class="${i.result === 'defect' ? 'defect' : ''}"><td>${esc(i.code)}</td><td>${esc(i.label[lang])}${i.note ? `<div class="small muted">${esc(i.note)}</div>` : ''}</td><td class="res">${esc(t(`enum.checklistResult.${i.result}`))}</td></tr>`,
+      )
+    }
+  }
+  const photos = v.attachments.filter((a) => a.uploaded && a.attachment)
+  const flags = v.qualityFlags.filter((f) => f !== 'pendingUploads')
+  const body = `
+  ${toolbar(t)}
+  <div class="doc">
+    ${letterhead(tenant)}
+    <div class="lb-head">
+      <div>
+        <div class="lb-title">${esc(t('logbook.title'))}</div>
+        <div class="small muted">${esc(t('logbook.subtitle'))}</div>
+      </div>
+      <div style="text-align:right"><span class="lb-kind">${esc(t(`enum.visitKind.${v.kind}`))}</span></div>
+    </div>
+    ${elevatorRows(t, e)}
+    <table class="kv">
+      <tr><th>${esc(t('logbook.date'))}</th><td>${esc(formatDateTime(v.startedAt, locale))}${v.endedAt ? ` – ${esc(formatDateTime(v.endedAt, locale))}` : ''}</td></tr>
+      <tr><th>${esc(t('logbook.technicians'))}</th><td>${esc(v.technicians.map((x) => x.name).join(', '))}</td></tr>
+      ${flags.length ? `<tr><th>${esc(t('logbook.flags'))}</th><td>${flags.map((f) => `<span class="flag">${esc(t(`visits.flag.${f}`))}</span>`).join('')}</td></tr>` : ''}
+    </table>
+    ${
+      checked.length
+        ? `<table class="cl"><thead><tr><th>№</th><th>${esc(t('logbook.item'))}</th><th>${esc(t('logbook.result'))}</th></tr></thead><tbody>${rows.join('')}</tbody></table>`
+        : `<p class="muted small">${esc(t('logbook.noChecklist'))}</p>`
+    }
+    ${v.notes ? `<div><strong>${esc(t('common.notes'))}</strong>${paragraphs(v.notes)}</div>` : ''}
+    ${
+      photos.length
+        ? `<div class="screen-only small muted">${esc(t('logbook.photos', { count: photos.length }))}</div><div class="photos">${photos.map((p) => `<img src="${esc(p.attachment!.thumbUrl)}" alt="">`).join('')}</div>`
+        : ''
+    }
+    <div class="techs">
+      ${v.technicians.map((x) => `<div><div class="line">${esc(x.name)}</div><div class="small muted">${esc(t('logbook.signature'))}</div></div>`).join('')}
+      ${v.technicians.length < 2 ? `<div><div class="line">&nbsp;</div><div class="small muted">${esc(t('logbook.signature'))}</div></div>` : ''}
+    </div>
+    <div class="footer">${esc(t('logbook.footer'))} <span class="hash">${esc(v.id.slice(-12))}</span> · ${esc(t('logbook.received', { at: formatDateTime(v.receivedAt, locale) }))}</div>
+  </div>`
+  res.type('html').send(
+    page({
+      title: `${t('logbook.title')} · ${e.internalNo}`,
+      lang: locale,
+      css: DOC_CSS + LOGBOOK_CSS,
+      body,
+      script: '../assets/print.js',
     }),
   )
 })

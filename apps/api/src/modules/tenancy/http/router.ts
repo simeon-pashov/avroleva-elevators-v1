@@ -3,6 +3,7 @@ import type { CookieOptions, Response } from 'express'
 import rateLimit from 'express-rate-limit'
 import {
   createUserBody,
+  enrollBody,
   loginBody,
   setPasswordBody,
   updateMeBody,
@@ -68,6 +69,24 @@ authRouter.post('/auth/logout', async (req, res) => {
   res.status(204).end()
 })
 
+/** Technician phone: one-time QR code -> device session (Bearer). No session required. */
+authRouter.post('/auth/enroll', loginLimiter, async (req, res) => {
+  const result = await service.enrollDevice(parseBody(enrollBody, req), {
+    ip: req.ip,
+    requestId: req.requestId,
+  })
+  res.status(201).json(result)
+})
+
+authRouter.get('/auth/sessions', requireRole('owner'), async (req, res) => {
+  res.json({ items: await service.listSessions(ctxOf(req)) })
+})
+
+authRouter.post('/auth/sessions/:id/revoke', requireRole('owner'), async (req, res) => {
+  await service.revokeSessionById(ctxOf(req), parseId(req))
+  res.status(204).end()
+})
+
 authRouter.get('/auth/me', requireAuth, async (req, res) => {
   res.json(await service.me(ctxOf(req)))
 })
@@ -103,4 +122,9 @@ usersRouter.patch('/users/:id', requireRole('owner'), async (req, res) => {
 usersRouter.post('/users/:id/password', requireRole('owner'), async (req, res) => {
   await service.setUserPassword(ctxOf(req), parseId(req), parseBody(setPasswordBody, req).password)
   res.status(204).end()
+})
+
+/** "Connect a phone": a 10-minute one-time code for this technician, rendered as a QR in the office. */
+usersRouter.post('/users/:id/enroll-token', requireRole('owner', 'office'), async (req, res) => {
+  res.status(201).json(await service.createEnrollmentToken(ctxOf(req), parseId(req)))
 })

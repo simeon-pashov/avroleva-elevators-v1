@@ -39,6 +39,22 @@ export const tenantSettings = z.object({
   inspectionAlertDays: z.array(z.number().int().min(1).max(365)).max(8).nullable().optional(),
   /** Alarm-device (voice link) test cadence; null = not tracked. */
   alarmTestIntervalMonths: z.number().int().min(1).max(60).nullable().optional(),
+  /** Fewer technicians on a visit than this flags it `singleTechnician` (the office sees a badge). */
+  minTechnicians: z
+    .object({
+      functional_check: z.number().int().min(1).max(4).default(2),
+      technical_maintenance: z.number().int().min(1).max(4).default(2),
+      repair: z.number().int().min(1).max(4).default(2),
+      callback: z.number().int().min(1).max(4).default(1),
+      other: z.number().int().min(1).max(4).default(1),
+    })
+    .default({
+      functional_check: 2,
+      technical_maintenance: 2,
+      repair: 2,
+      callback: 1,
+      other: 1,
+    }),
 })
 export type TenantSettings = z.infer<typeof tenantSettings>
 
@@ -48,6 +64,8 @@ export const tenantFeatures = z.object({
   publicQrPage: z.boolean().default(false),
   /** The public page shows the fault-report form. */
   publicFaultReport: z.boolean().default(false),
+  /** Technician app records a GPS point at submit (off by default: technicians read it as surveillance). */
+  gpsCapture: z.boolean().default(false),
 })
 export type TenantFeatures = z.infer<typeof tenantFeatures>
 export const FEATURE_KEYS = Object.keys(tenantFeatures.shape) as Array<keyof TenantFeatures>
@@ -138,6 +156,50 @@ export interface LoginResponse extends MeDto {
   /** Same token that is set as the httpOnly cookie, for Bearer clients. */
   token: string
 }
+
+// ---- Device enrollment & sessions (technician app) ------------------------------------------
+
+/** POST /users/:id/enroll-token (owner/office): one-time, 10 minutes, shown as a QR. */
+export interface EnrollmentTokenDto {
+  userId: string
+  userName: string
+  token: string
+  expiresAt: string
+  /** URL the phone opens (the tech app with `?enroll=<token>`), also the QR payload. */
+  url: string
+  /** Inline SVG of the QR (server-rendered, safe to inject). */
+  qrSvg: string
+}
+
+export const enrollBody = z.object({
+  token: z.string().trim().min(16).max(120),
+  deviceName: z.string().trim().min(1).max(80),
+  clientVersion: z.string().trim().max(40).optional(),
+})
+export type EnrollBody = z.infer<typeof enrollBody>
+
+export interface EnrollResponse extends MeDto {
+  /** Device session token (Bearer), 180 days sliding. */
+  token: string
+  sessionId: string
+  expiresAt: string
+}
+
+export interface SessionDto {
+  id: string
+  userId: string
+  userName: string
+  kind: 'browser' | 'device'
+  deviceName: string | null
+  clientVersion: string | null
+  createdAt: string
+  lastSeenAt: string
+  expiresAt: string
+  /** The session making the request. */
+  current: boolean
+}
+
+export const ENROLLMENT_TOKEN_TTL_MS = 10 * 60 * 1000
 
 // ---- Platform admin -------------------------------------------------------------------------
 

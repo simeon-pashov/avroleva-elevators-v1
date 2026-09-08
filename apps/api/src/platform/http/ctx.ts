@@ -51,12 +51,18 @@ export function adminActorOf(admin: AdminCtx): AuditActor {
   }
 }
 
+export const CLIENT_HEADER = 'x-client'
+export const CLIENT_APP = 'app'
+
 /**
  * CSRF (ARCHITECTURE section 5): a cookie-authenticated request of any method, and any mutating
- * request without a Bearer token, must carry `X-Requested-With: avroleva`. Bearer requests are exempt.
+ * request without a Bearer token, must carry `X-Requested-With: avroleva`. Bearer requests are
+ * exempt. The technician app's `X-Client: app` counts as the custom header too (a cross-site form
+ * cannot set either), which is what lets `POST /auth/enroll` work before the phone has a token.
  */
 export const csrfGuard: RequestHandler = (req, _res, next) => {
-  const hasHeader = req.header(CSRF_HEADER) === CSRF_VALUE
+  const hasHeader =
+    req.header(CSRF_HEADER) === CSRF_VALUE || req.header(CLIENT_HEADER) === CLIENT_APP
   const mutating = !['GET', 'HEAD', 'OPTIONS'].includes(req.method)
   const bearer = typeof req.header('authorization') === 'string'
   if (req.authVia === 'cookie' && !hasHeader) return next(forbidden('auth.csrf'))

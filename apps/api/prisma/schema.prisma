@@ -67,6 +67,8 @@ model Tenant {
   defects     Defect[]
   inspections Inspection[]
   alarmTests  AlarmDeviceTest[]
+  attachments      Attachment[]
+  enrollmentTokens DeviceEnrollmentToken[]
 
   @@map("tenant")
 }
@@ -91,6 +93,7 @@ model User {
 
   tenant   Tenant    @relation(fields: [tenantId], references: [id])
   sessions Session[]
+  enrollmentTokens DeviceEnrollmentToken[]
 
   @@index([tenantId, role])
   @@map("user")
@@ -133,6 +136,24 @@ model Session {
   @@index([tenantId, userId])
   @@index([expiresAt])
   @@map("session")
+}
+
+/// One-time code shown as a QR on the owner's screen; the phone exchanges it for a device session.
+model DeviceEnrollmentToken {
+  id              String    @id @db.Uuid
+  tenantId        String    @db.Uuid
+  userId          String    @db.Uuid
+  codeHash        String    @unique
+  expiresAt       DateTime  @db.Timestamptz
+  usedAt          DateTime? @db.Timestamptz
+  createdByUserId String?   @db.Uuid
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, userId])
+  @@map("device_enrollment_token")
 }
 
 // ---------------------------------------------------------------- registry
@@ -289,6 +310,7 @@ model Elevator {
   year                Int?
   driveType           DriveType      @default(electric)
   doorType            DoorType       @default(manual)
+  goodsOnly           Boolean        @default(false)
   stops               Int
   loadKg              Int?
   status              ElevatorStatus @default(active)
@@ -414,6 +436,12 @@ enum VisitSource {
   app
 }
 
+enum TimestampSource {
+  device
+  server
+  manual
+}
+
 model Visit {
   id                String      @id @db.Uuid
   tenantId          String      @db.Uuid
@@ -424,6 +452,14 @@ model Visit {
   endedAt           DateTime?   @db.Timestamptz
   notes             String?
   source            VisitSource @default(office)
+  /// A13: which clock produced startedAt/endedAt and the phone's measured offset at the time.
+  timestampSource   TimestampSource @default(server)
+  clientOffsetMs    Int         @default(0)
+  /// Checklist snapshot: template key/version + every answered item with its label (JSONB).
+  templateKey       String?
+  templateVersion   Int?
+  checklist         Json?
+  gps               Json?
   qualityFlags      Json        @default("[]")
   createdByUserId   String?     @db.Uuid
   supersedesVisitId String?     @db.Uuid
@@ -455,6 +491,79 @@ model VisitTechnician {
   @@index([tenantId, visitId])
   @@index([tenantId, userId])
   @@map("visit_technician")
+}
+
+// ---------------------------------------------------------------- maintenance (L3)
+
+/// Checklist templates: a system row (tenantId NULL) per key/version plus optional tenant clones
+/// that shadow it. Items are JSONB [{code, group, bg, en, appliesTo, resultType}].
+model ChecklistTemplate {
+  id        String    @id @db.Uuid
+  tenantId  String?   @db.Uuid
+  key       String
+  version   Int
+  name      Json
+  groups    Json      @default("[]")
+  items     Json
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @db.Timestamptz
+  updatedAt DateTime  @updatedAt @db.Timestamptz
+  deletedAt DateTime? @db.Timestamptz
+
+  @@unique([tenantId, key, version])
+  @@index([tenantId, key, active])
+  @@map("checklist_template")
+}
+
+// ---------------------------------------------------------------- documents (L2)
+
+enum AttachmentKind {
+  photo
+  document
+}
+
+enum AttachmentRole {
+  photo
+  logbook_page
+}
+
+/// Uploaded file (photo re-encoded by sharp, EXIF stripped). id is client-generated (UUIDv7).
+model Attachment {
+  id              String         @id @db.Uuid
+  tenantId        String         @db.Uuid
+  kind            AttachmentKind @default(photo)
+  /// sha256 of the bytes as uploaded (the client's hash), verified before re-encoding.
+  sha256          String
+  mime            String
+  bytes           Int
+  width           Int?
+  height          Int?
+  takenAt         DateTime?      @db.Timestamptz
+  storageKey      String
+  thumbKey        String?
+  createdByUserId String?        @db.Uuid
+  createdAt       DateTime       @default(now()) @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([tenantId, sha256])
+  @@map("attachment")
+}
+
+/// Link visit -> attachment. Plain ids on both sides (rule 4): the visit arrives before its photos.
+model VisitAttachment {
+  id           String         @id @db.Uuid
+  tenantId     String         @db.Uuid
+  visitId      String         @db.Uuid
+  attachmentId String         @db.Uuid
+  role         AttachmentRole @default(photo)
+  position     Int            @default(0)
+  createdAt    DateTime       @default(now()) @db.Timestamptz
+
+  @@unique([tenantId, visitId, attachmentId])
+  @@index([tenantId, attachmentId])
+  @@map("visit_attachment")
 }
 
 // ---------------------------------------------------------------- billing (L3, light)
@@ -774,6 +883,20 @@ model DomainEvent {
   @@index([tenantId, occurredAt])
   @@index([aggregateType, aggregateId])
   @@map("domain_event")
+}
+
+/// Stored response of a mutating request under an Idempotency-Key (7-day TTL, ARCHITECTURE section 5).
+model IdempotencyKey {
+  tenantId       String   @db.Uuid
+  key            String
+  requestHash    String
+  responseStatus Int
+  responseBody   Json
+  createdAt      DateTime @default(now()) @db.Timestamptz
+
+  @@id([tenantId, key])
+  @@index([createdAt])
+  @@map("idempotency_key")
 }
 
 model AuditLog {

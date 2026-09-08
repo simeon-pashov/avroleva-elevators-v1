@@ -190,3 +190,39 @@ export function appendEvent(tenantId: string, e: EventInput, tx?: Tx) {
 export function countCallbacks(tenantId: string, where: Prisma.CallbackWhereInput = {}) {
   return prisma.callback.count({ where: { tenantId, ...where } })
 }
+
+/**
+ * Sync pull: every open callback the user may see plus every callback changed since the
+ * watermark (closed ones arrive as tombstones for the phone). Capped, newest first.
+ */
+export function listForSync(
+  tenantId: string,
+  q: { visibleToUserId?: string; since: Date | null; limit: number },
+): Promise<CallbackRow[]> {
+  const visible: Prisma.CallbackWhereInput = q.visibleToUserId
+    ? {
+        OR: [
+          { assignedUserId: q.visibleToUserId },
+          { createdByUserId: q.visibleToUserId },
+          { assignedUserId: null },
+        ],
+      }
+    : {}
+  return prisma.callback.findMany({
+    where: {
+      tenantId,
+      AND: [
+        visible,
+        {
+          OR: [
+            { status: { not: 'closed' } },
+            ...(q.since ? [{ updatedAt: { gte: q.since } }] : []),
+          ],
+        },
+      ],
+    },
+    include: withRelations,
+    orderBy: [{ receivedAt: 'desc' }],
+    take: q.limit,
+  })
+}

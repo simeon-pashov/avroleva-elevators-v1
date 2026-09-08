@@ -12,13 +12,13 @@
   ],
   "scripts": {
     "build:packages": "npm run build -w packages/i18n -w packages/contracts -w packages/domain-data",
-    "build": "npm run build:packages && npm run build -w apps/api && npm run build -w apps/office",
-    "dev": "npm run build:packages && concurrently -k -n pkg,api,office -c gray,blue,green \"npm:dev:packages\" \"npm:dev -w apps/api\" \"npm:dev -w apps/office\"",
+    "build": "npm run build:packages && npm run build -w apps/api && npm run build -w apps/office && npm run build -w apps/tech",
+    "dev": "npm run build:packages && concurrently -k -n pkg,api,office,tech -c gray,blue,green,magenta \"npm:dev:packages\" \"npm:dev -w apps/api\" \"npm:dev -w apps/office\" \"npm:dev -w apps/tech\"",
     "dev:packages": "tsc -b packages/i18n packages/contracts packages/domain-data --watch --preserveWatchOutput",
     "test": "npm run build:packages && npm test -w packages/i18n -w apps/api",
     "lint": "eslint . && prettier --check \"**/*.{ts,tsx,json,css,md}\"",
     "format": "prettier --write \"**/*.{ts,tsx,json,css,md}\"",
-    "typecheck": "npm run build:packages && tsc -p apps/api/tsconfig.json --noEmit && tsc -p apps/office/tsconfig.json --noEmit",
+    "typecheck": "npm run build:packages && tsc -p apps/api/tsconfig.json --noEmit && tsc -p apps/office/tsconfig.json --noEmit && tsc -p apps/tech/tsconfig.json --noEmit",
     "db:migrate": "npm run db:migrate -w apps/api",
     "db:seed": "npm run db:seed -w apps/api",
     "db:generate": "npm run db:generate -w apps/api"

@@ -59,6 +59,9 @@ export type DispatchCallbackBody = z.infer<typeof dispatchCallbackBody>
 export const callbackTransitionBody = z.object({
   at: isoDateTime.optional(),
   notes: nullableText(2000),
+  /** Device provenance from the technician app; stored in the event's data (A13). */
+  clientOffsetMs: z.number().int().min(-86_400_000).max(86_400_000).optional(),
+  timestampSource: z.enum(['device', 'server', 'manual']).optional(),
 })
 export type CallbackTransitionBody = z.infer<typeof callbackTransitionBody>
 

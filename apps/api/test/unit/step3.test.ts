@@ -155,6 +155,10 @@ describe('public token', () => {
   })
 
   it('feature flags default off', () => {
-    expect(tenantFeatures.parse({})).toEqual({ publicQrPage: false, publicFaultReport: false })
+    expect(tenantFeatures.parse({})).toEqual({
+      publicQrPage: false,
+      publicFaultReport: false,
+      gpsCapture: false,
+    })
   })
 })

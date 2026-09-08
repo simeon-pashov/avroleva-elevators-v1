@@ -21,7 +21,7 @@ export function app(): Express {
 /** Truncates every table (order-independent thanks to CASCADE). */
 export async function resetDb(): Promise<void> {
   await prismaBase.$executeRawUnsafe(
-    'TRUNCATE TABLE "audit_log", "domain_event", "alarm_device_test", "inspection", "defect", "callback_event", "callback", "payment", "invoice", "invoice_sequence", "visit_technician", "visit", "import_batch", "contract_elevator", "contract", "elevator", "contact", "building", "customer", "session", "user", "tenant", "platform_admin" CASCADE',
+    'TRUNCATE TABLE "audit_log", "domain_event", "idempotency_key", "visit_attachment", "attachment", "device_enrollment_token", "checklist_template", "alarm_device_test", "inspection", "defect", "callback_event", "callback", "payment", "invoice", "invoice_sequence", "visit_technician", "visit", "import_batch", "contract_elevator", "contract", "elevator", "contact", "building", "customer", "session", "user", "tenant", "platform_admin" CASCADE',
   )
 }
 

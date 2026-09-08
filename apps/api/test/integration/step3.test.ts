@@ -701,7 +701,11 @@ describe('public QR page and fault report', () => {
       .set(bearer(A.ownerToken))
       .send({ features: { publicQrPage: true } })
     expect(set.status).toBe(200)
-    expect(set.body.features).toEqual({ publicQrPage: true, publicFaultReport: false })
+    expect(set.body.features).toEqual({
+      publicQrPage: true,
+      publicFaultReport: false,
+      gpsCapture: false,
+    })
     const res = await request(server).get(`/p/${token}`)
     expect(res.status).toBe(200)
     expect(res.headers['content-type']).toContain('text/html')

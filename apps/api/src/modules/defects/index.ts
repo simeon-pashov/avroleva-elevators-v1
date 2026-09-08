@@ -12,6 +12,7 @@ export {
   get,
   list,
   listForElevator,
+  listForSync,
   catalog,
   openSummary,
   listOpenRows,

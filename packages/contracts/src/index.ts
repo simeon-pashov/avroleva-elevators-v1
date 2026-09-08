@@ -9,6 +9,9 @@ export * from './callbacks.js'
 export * from './defects.js'
 export * from './calendar.js'
 export * from './reporting.js'
+export * from './checklists.js'
+export * from './documents.js'
+export * from './sync.js'
 
 export interface HealthDto {
   ok: boolean

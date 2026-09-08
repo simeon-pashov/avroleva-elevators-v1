@@ -24,6 +24,8 @@ export const defectCatalogCode = z
   .regex(/^([1-9]|1[0-7]|other)$/, { message: 'validation.invalidValue' })
 
 export const createDefectBody = z.object({
+  /** Client-generated UUID (technician app): the same id again returns the stored defect. */
+  id: uuid.optional(),
   elevatorId: uuid,
   catalogCode: z.preprocess(
     (v) => (typeof v === 'string' && v.trim() === '' ? null : v),

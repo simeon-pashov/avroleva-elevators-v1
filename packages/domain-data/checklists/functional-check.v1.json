@@ -1,0 +1,311 @@
+{
+  "key": "functional_check",
+  "version": 1,
+  "name": { "bg": "Функционална проверка", "en": "Functional check" },
+  "ref": "Приложение към чл. 9, ал. 1, т. 2",
+  "groups": [
+    {
+      "code": "panels",
+      "bg": "Бутонни табла и осветление на кабината",
+      "en": "Push-button panels and cabin lighting"
+    },
+    {
+      "code": "shaft_doors",
+      "bg": "Шахтни врати (ръчни / полуавтоматични)",
+      "en": "Shaft doors (manual / semi-automatic)"
+    },
+    { "code": "auto_doors", "bg": "Автоматични врати", "en": "Automatic doors" },
+    { "code": "goods_only", "bg": "Товарни асансьори", "en": "Goods-only lifts" },
+    { "code": "cabin_safety", "bg": "Кабина", "en": "Cabin" },
+    {
+      "code": "machine_room",
+      "bg": "Машинно помещение – електрически задвижвания",
+      "en": "Machine room – electric drives"
+    },
+    { "code": "hydraulic", "bg": "Хидравлични асансьори", "en": "Hydraulic lifts" },
+    { "code": "control_panel", "bg": "Табло за управление", "en": "Control panel" },
+    { "code": "landing_panels", "bg": "Етажни бутонни табла", "en": "Landing panels" }
+  ],
+  "items": [
+    {
+      "code": "A1",
+      "group": "panels",
+      "bg": "Бутонно табло в кабината – всички бутони и сигнализация",
+      "en": "Cabin push-button panel – every button and indicator",
+      "appliesTo": {},
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "A2",
+      "group": "panels",
+      "bg": "Бутон „Стоп“ и бутон за алармен сигнал в кабината",
+      "en": "Cabin stop button and alarm button",
+      "appliesTo": {},
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "A3",
+      "group": "panels",
+      "bg": "Осветление на кабината и аварийно осветление",
+      "en": "Cabin lighting and emergency light",
+      "appliesTo": {},
+      "resultType": "ok_defect_na"
+    },
+
+    {
+      "code": "B1",
+      "group": "shaft_doors",
+      "bg": "Контакти на шахтните врати",
+      "en": "Shaft door contacts",
+      "appliesTo": { "doorType": ["manual", "semi_auto"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "B2",
+      "group": "shaft_doors",
+      "bg": "Ключалки (брави) на шахтните врати",
+      "en": "Shaft door locks",
+      "appliesTo": { "doorType": ["manual", "semi_auto"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "B3",
+      "group": "shaft_doors",
+      "bg": "Амортисьори (затварящи устройства) на вратите",
+      "en": "Door dampers / closers",
+      "appliesTo": { "doorType": ["manual", "semi_auto"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "B4",
+      "group": "shaft_doors",
+      "bg": "Отключващи гърбици",
+      "en": "Unlocking cams",
+      "appliesTo": { "doorType": ["manual", "semi_auto"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "B5",
+      "group": "shaft_doors",
+      "bg": "Стъкла на шахтните врати",
+      "en": "Shaft door glazing",
+      "appliesTo": { "doorType": ["manual", "semi_auto"] },
+      "resultType": "ok_defect_na"
+    },
+
+    {
+      "code": "C1",
+      "group": "auto_doors",
+      "bg": "Оператор на вратите (задвижване)",
+      "en": "Door operator",
+      "appliesTo": { "doorType": ["auto"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "C2",
+      "group": "auto_doors",
+      "bg": "Фотоклетка / светлинна завеса",
+      "en": "Photocell / light curtain",
+      "appliesTo": { "doorType": ["auto"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "C3",
+      "group": "auto_doors",
+      "bg": "Контакт за повторно отваряне (реверс)",
+      "en": "Re-open (reversing) contact",
+      "appliesTo": { "doorType": ["auto"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "C4",
+      "group": "auto_doors",
+      "bg": "Гърбица спрямо ключалката на шахтната врата",
+      "en": "Cam vs shaft-door lock",
+      "appliesTo": { "doorType": ["auto"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "C5",
+      "group": "auto_doors",
+      "bg": "Верига на контактите на вратите",
+      "en": "Door contact circuit",
+      "appliesTo": { "doorType": ["auto"] },
+      "resultType": "ok_defect_na"
+    },
+
+    {
+      "code": "D1",
+      "group": "goods_only",
+      "bg": "Влачене на крилата на вратите",
+      "en": "Door leaf drag",
+      "appliesTo": { "goodsOnly": true },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "D2",
+      "group": "goods_only",
+      "bg": "Заключваща клапа",
+      "en": "Locking flap",
+      "appliesTo": { "goodsOnly": true },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "D3",
+      "group": "goods_only",
+      "bg": "Задържащи устройства (фиксатори)",
+      "en": "Retainers",
+      "appliesTo": { "goodsOnly": true },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "D4",
+      "group": "goods_only",
+      "bg": "Стъкла",
+      "en": "Glazing",
+      "appliesTo": { "goodsOnly": true },
+      "resultType": "ok_defect_na"
+    },
+
+    {
+      "code": "E1",
+      "group": "cabin_safety",
+      "bg": "Бутон „Стоп“ при кабина между етажите",
+      "en": "Stop button with the cabin between floors",
+      "appliesTo": {},
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "E2",
+      "group": "cabin_safety",
+      "bg": "Люк на покрива на кабината",
+      "en": "Roof hatch",
+      "appliesTo": {},
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "E3",
+      "group": "cabin_safety",
+      "bg": "Престилка (защитен щит) под кабината",
+      "en": "Apron below the cabin",
+      "appliesTo": {},
+      "resultType": "ok_defect_na"
+    },
+
+    {
+      "code": "F1",
+      "group": "machine_room",
+      "bg": "Необичаен шум при работа на машината",
+      "en": "Abnormal machine noise",
+      "appliesTo": { "driveType": ["electric", "mrl"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "F2",
+      "group": "machine_room",
+      "bg": "Теч на масло",
+      "en": "Oil leak",
+      "appliesTo": { "driveType": ["electric", "mrl"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "F3",
+      "group": "machine_room",
+      "bg": "Ниво на маслото в редуктора",
+      "en": "Gearbox oil level",
+      "appliesTo": { "driveType": ["electric", "mrl"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "F4",
+      "group": "machine_room",
+      "bg": "Разхлабени съединения (куплунзи)",
+      "en": "Loose couplings",
+      "appliesTo": { "driveType": ["electric", "mrl"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "F5",
+      "group": "machine_room",
+      "bg": "Оглед на въжетата по цялата дължина за скъсани нишки",
+      "en": "Visual check of the full rope length for broken wires",
+      "appliesTo": { "driveType": ["electric", "mrl"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "F6",
+      "group": "machine_room",
+      "bg": "Износване на каналите на триещата шайба",
+      "en": "Sheave-groove wear",
+      "appliesTo": { "driveType": ["electric", "mrl"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "F7",
+      "group": "machine_room",
+      "bg": "Ограничител на скоростта",
+      "en": "Overspeed governor",
+      "appliesTo": { "driveType": ["electric", "mrl"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "F8",
+      "group": "machine_room",
+      "bg": "Крайни изключватели",
+      "en": "Final limit switches",
+      "appliesTo": { "driveType": ["electric", "mrl"] },
+      "resultType": "ok_defect_na"
+    },
+
+    {
+      "code": "G1",
+      "group": "hydraulic",
+      "bg": "Ниво на маслото в резервоара",
+      "en": "Oil level",
+      "appliesTo": { "driveType": ["hydraulic"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "G2",
+      "group": "hydraulic",
+      "bg": "Течове при клапанния блок, маркучите и цилиндъра",
+      "en": "Leaks at valve block, hoses and cylinder",
+      "appliesTo": { "driveType": ["hydraulic"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "G3",
+      "group": "hydraulic",
+      "bg": "Ролков блок и водачи на буталото",
+      "en": "Roller block and piston guides",
+      "appliesTo": { "driveType": ["hydraulic"] },
+      "resultType": "ok_defect_na"
+    },
+    {
+      "code": "G4",
+      "group": "hydraulic",
+      "bg": "Хидравличен агрегат (помпа, двигател)",
+      "en": "Power unit (pump, motor)",
+      "appliesTo": { "driveType": ["hydraulic"] },
+      "resultType": "ok_defect_na"
+    },
+
+    {
+      "code": "H1",
+      "group": "control_panel",
+      "bg": "Оглед на таблото за управление",
+      "en": "Visual check of the control panel",
+      "appliesTo": {},
+      "resultType": "ok_defect_na"
+    },
+
+    {
+      "code": "I1",
+      "group": "landing_panels",
+      "bg": "Всички етажни бутонни табла – бутони и сигнализация",
+      "en": "Every landing panel – buttons and indicators",
+      "appliesTo": {},
+      "resultType": "ok_defect_na"
+    }
+  ]
+}

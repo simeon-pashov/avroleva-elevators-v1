@@ -84,3 +84,8 @@ export async function archive(ctx: Ctx, id: string): Promise<void> {
   await repo.updateContact(ctx.tenantId, id, { deletedAt: clock.now() })
   await audit(actorOf(ctx), { action: 'contact.archive', entityType: 'contact', entityId: id })
 }
+
+/** Sync facade read model: building contacts, tombstones included. */
+export function listAllForSync(tenantId: string, since: Date | null) {
+  return repo.listAllForSync(tenantId, since)
+}

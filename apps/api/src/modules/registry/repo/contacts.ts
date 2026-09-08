@@ -52,3 +52,11 @@ export function updateContact(
 ) {
   return prisma.contact.update({ where: { id, tenantId }, data })
 }
+
+/** Sync pull: building contacts (name + phone) changed since `since`, or all; tombstones included. */
+export function listAllForSync(tenantId: string, since: Date | null) {
+  return prisma.contact.findMany({
+    where: { tenantId, buildingId: { not: null }, ...(since ? { updatedAt: { gte: since } } : {}) },
+    orderBy: [{ buildingId: 'asc' }, { isPrimary: 'desc' }],
+  })
+}

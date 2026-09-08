@@ -13,4 +13,12 @@ export const urls = {
   publicPage(token: string): string {
     return `${urls.base()}/p/${token}`
   },
+  /** Technician app (served at /tech/ by the API). */
+  techApp(): string {
+    return `${urls.base()}/tech/`
+  },
+  /** QR payload of a device enrollment: the app opens with the code and enrolls itself. */
+  techEnroll(code: string): string {
+    return `${urls.techApp()}?enroll=${encodeURIComponent(code)}`
+  },
 }

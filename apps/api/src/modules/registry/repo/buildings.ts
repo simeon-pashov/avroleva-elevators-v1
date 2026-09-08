@@ -80,3 +80,12 @@ export function buildingPins(tenantId: string) {
 export function countBuildings(tenantId: string) {
   return prisma.building.count({ where: { tenantId, deletedAt: null } })
 }
+
+/** Sync pull: every building (incl. archived = tombstone) changed since `since`, or all. */
+export function listAllForSync(tenantId: string, since: Date | null) {
+  return prisma.building.findMany({
+    where: { tenantId, ...(since ? { updatedAt: { gte: since } } : {}) },
+    include: { customer: { select: { name: true } } },
+    orderBy: { addressText: 'asc' },
+  })
+}

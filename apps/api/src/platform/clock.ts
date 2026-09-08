@@ -33,3 +33,16 @@ export function toDateOnly(d: Date | null | undefined): string | null {
 export function fromDateOnly(s: string | null | undefined): Date | null {
   return s ? new Date(s + 'T00:00:00Z') : null
 }
+
+export const CLOCK_SUSPECT_OFFSET_MS = 2 * 60 * 1000
+export const CLOCK_SUSPECT_AHEAD_MS = 5 * 60 * 1000
+
+/**
+ * Clock provenance rule (ARCHITECTURE section 4, A13): an event from a device is `clockSuspect`
+ * when the phone's measured offset to the server is > 2 min, or its timestamp is > 5 min ahead of
+ * the server clock at receipt. Nothing is rewritten - the flag is for the office to review.
+ */
+export function clockSuspect(at: Date, receivedAt: Date, clientOffsetMs?: number | null): boolean {
+  if (clientOffsetMs != null && Math.abs(clientOffsetMs) > CLOCK_SUSPECT_OFFSET_MS) return true
+  return at.getTime() > receivedAt.getTime() + CLOCK_SUSPECT_AHEAD_MS
+}

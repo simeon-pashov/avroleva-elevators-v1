@@ -14,11 +14,13 @@ export {
   get,
   list,
   listForElevator,
+  listForSync,
   openSummary,
   openByElevator,
   openOverSla,
   toCallbackDto,
   actorFromCtx,
+  clockFlags,
 } from './service.js'
 export type { CallbackActor } from './service.js'
 export { useVisitRecorder } from './domain/ports.js'

@@ -190,3 +190,8 @@ export async function archive(ctx: Ctx, id: string): Promise<void> {
   await repo.updateBuilding(ctx.tenantId, id, { deletedAt: clock.now(), updatedBy: ctx.userId })
   await audit(actorOf(ctx), { action: 'building.archive', entityType: 'building', entityId: id })
 }
+
+/** Sync facade read model (rows, not DTOs; the facade maps what the phone needs). */
+export function listAllForSync(tenantId: string, since: Date | null) {
+  return repo.listAllForSync(tenantId, since)
+}

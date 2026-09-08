@@ -8,9 +8,10 @@ import { registerSubscribers } from './subscribers.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const officeDist = config.OFFICE_DIST ?? resolve(here, '../../office/dist')
+const techDist = config.TECH_DIST ?? resolve(here, '../../tech/dist')
 
 registerSubscribers()
-const app = createApp({ officeDist })
+const app = createApp({ officeDist, techDist })
 
 const server = app.listen(config.PORT, () => {
   logger.info(
