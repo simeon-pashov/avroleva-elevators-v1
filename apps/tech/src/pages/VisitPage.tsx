@@ -284,6 +284,7 @@ export function VisitPage() {
         createdByUserId: me.id,
         supersedesVisitId: null,
         supersededAt: null,
+        photosPurgedAt: null,
         createdAt: endedAt,
         local: true,
       }
