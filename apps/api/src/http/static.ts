@@ -38,7 +38,9 @@ export function mountTech(app: Express, distDir: string): void {
     )
     return
   }
-  app.get('/tech', (_req, res) => res.redirect(301, '/tech/'))
+  // Exact match only: Express 5 treats the trailing slash as optional, so '/tech' would also
+  // catch '/tech/' and redirect it to itself forever.
+  app.get(/^\/tech$/, (_req, res) => res.redirect(301, '/tech/'))
   app.use(
     '/tech',
     express.static(distDir, {

@@ -101,7 +101,12 @@ export const webHttp: HttpClient = {
   },
   resolveUrl(relative) {
     if (/^https?:\/\//i.test(relative)) return relative
-    return `${effectiveApiBase()}${relative.startsWith('/') ? '' : '/'}${relative}`
+    const base = effectiveApiBase()
+    // Server-minted links (signed file URLs) already carry BASE_PATH: do not prefix it twice.
+    const basePath = base.replace(/^https?:\/\/[^/]+/i, '')
+    if (basePath && relative.startsWith(`${basePath}/`))
+      return `${base.slice(0, -basePath.length)}${relative}`
+    return `${base}${relative.startsWith('/') ? '' : '/'}${relative}`
   },
   async request<T>(method: string, path: string, opts: RequestOptions = {}) {
     const headers: Record<string, string> = {

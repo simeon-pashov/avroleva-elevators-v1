@@ -12,7 +12,7 @@ import type {
   VisitDto,
   VisitKind,
 } from '@avroleva/contracts'
-import { BASE, get, qs } from '../lib/api'
+import { BASE, get, qs, serverPath } from '../lib/api'
 import { useI18n } from '../i18n/I18nProvider'
 import { useAuth } from '../auth/AuthProvider'
 import { Badge, Empty, ErrorBox, LoadMore, Spinner, useCursorList } from './ui'
@@ -104,13 +104,13 @@ export function VisitHistory({ elevatorId, version }: { elevatorId: string; vers
                     .map((a) => (
                       <a
                         key={a.attachmentId}
-                        href={`${BASE}${a.attachment!.url}`}
+                        href={serverPath(a.attachment!.url)}
                         target="_blank"
                         rel="noopener"
                         title={t(`enum.attachmentRole.${a.role}`)}
                         className={`thumb${a.role === 'logbook_page' ? ' thumb-logbook' : ''}`}
                       >
-                        <img src={`${BASE}${a.attachment!.thumbUrl}`} alt="" loading="lazy" />
+                        <img src={serverPath(a.attachment!.thumbUrl)} alt="" loading="lazy" />
                       </a>
                     ))}
                 </div>
