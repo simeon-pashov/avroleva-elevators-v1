@@ -629,6 +629,18 @@ describe('scheduled jobs (direct handler calls, fake clock)', () => {
     expect(roll.lastStatus).toBe('ok')
     expect(roll.lastFinishedAt).not.toBeNull()
   })
+
+  it('the platform admin system page merges health, scheduled deletions and failures', async () => {
+    const admin = await adminToken(server)
+    const anon = await request(server).get('/api/v1/admin/system')
+    expect(anon.status).toBe(401)
+    const res = await request(server).get('/api/v1/admin/system').set(bearer(admin))
+    expect(res.status, res.text).toBe(200)
+    expect(res.body.health.worker.jobs.length).toBeGreaterThan(5)
+    expect(res.body.scheduledDeletions).toEqual([])
+    expect(Array.isArray(res.body.failedDeliveries)).toBe(true)
+    expect(Array.isArray(res.body.failedNotifications)).toBe(true)
+  })
 })
 
 describe('exports', () => {
