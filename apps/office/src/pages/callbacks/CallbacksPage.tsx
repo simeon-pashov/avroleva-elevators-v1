@@ -13,6 +13,7 @@ import {
   Spinner,
   useCursorList,
 } from '../../components/ui'
+import { ExportCsvButton } from '../../components/ExportCsvButton'
 import { CallbackList } from '../../components/callbacks/CallbackList'
 import { CallbackIntakeForm } from '../../components/callbacks/CallbackIntakeForm'
 
@@ -79,9 +80,12 @@ export function CallbacksPage() {
           ) : null
         }
         actions={
-          <button type="button" className="btn btn-primary" onClick={() => setIntake((v) => !v)}>
-            {t('callbacks.new')}
-          </button>
+          <>
+            <ExportCsvButton dataset="callbacks" />
+            <button type="button" className="btn btn-primary" onClick={() => setIntake((v) => !v)}>
+              {t('callbacks.new')}
+            </button>
+          </>
         }
       />
       {intake ? (

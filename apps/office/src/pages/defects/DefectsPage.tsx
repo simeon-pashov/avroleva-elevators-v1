@@ -5,6 +5,7 @@ import { get, qs } from '../../lib/api'
 import { useI18n } from '../../i18n/I18nProvider'
 import { useAuth } from '../../auth/AuthProvider'
 import { ErrorBox, LoadMore, PageHeader, Spinner, useCursorList } from '../../components/ui'
+import { ExportCsvButton } from '../../components/ExportCsvButton'
 import { DefectList } from '../../components/defects/DefectList'
 import { RecordDefectForm } from '../../components/defects/RecordDefectForm'
 
@@ -56,15 +57,18 @@ export function DefectsPage() {
       <PageHeader
         title={t('defects.title')}
         actions={
-          hasRole('owner', 'office', 'technician') ? (
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => setRecording((v) => !v)}
-            >
-              {t('defects.new')}
-            </button>
-          ) : null
+          <>
+            <ExportCsvButton dataset="defects" />
+            {hasRole('owner', 'office', 'technician') ? (
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setRecording((v) => !v)}
+              >
+                {t('defects.new')}
+              </button>
+            ) : null}
+          </>
         }
       />
       {recording ? (

@@ -6,7 +6,11 @@ import { useI18n } from '../../i18n/I18nProvider'
 import { Badge, Empty, ErrorBox, PageHeader, Spinner } from '../../components/ui'
 
 export function tenantStatusBadge(status: AdminTenantDto['status']) {
-  return status === 'active' ? 'ok' : status === 'read_only' ? 'warn' : 'danger'
+  return status === 'active'
+    ? 'ok'
+    : status === 'read_only' || status === 'deletion_scheduled'
+      ? 'warn'
+      : 'danger'
 }
 
 export function AdminTenantsPage() {
@@ -62,6 +66,9 @@ export function AdminTenantsPage() {
                     <Badge kind={tenantStatusBadge(tn.status)}>
                       {t(`enum.tenantStatus.${tn.status}`)}
                     </Badge>
+                    {tn.status === 'deletion_scheduled' && tn.deletionAt ? (
+                      <span className="muted small"> {date(tn.deletionAt)}</span>
+                    ) : null}
                   </td>
                   <td>{t(`lang.${tn.locale}`)}</td>
                   <td className="num">{tn.counts.users}</td>

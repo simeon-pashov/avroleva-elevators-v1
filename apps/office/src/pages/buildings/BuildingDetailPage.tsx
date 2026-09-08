@@ -10,6 +10,8 @@ import { geocodeBadge } from './BuildingsListPage'
 import { ElevatorPanel } from '../../components/ElevatorPanel'
 import { ContactsPanel } from '../customers/ContactsPanel'
 import { elevatorStatusBadge, dueBadge, overrideBadge } from '../elevators/ElevatorsListPage'
+import { BuildingViberCard } from './BuildingViberCard'
+import { BuildingReportCard } from './BuildingReportCard'
 
 export function BuildingDetailPage() {
   const { id } = useParams()
@@ -277,6 +279,10 @@ export function BuildingDetailPage() {
             </ul>
           )}
         </div>
+      </div>
+      <div className="grid-2">
+        <BuildingViberCard building={b} />
+        {canEdit ? <BuildingReportCard building={b} /> : null}
       </div>
       {panelId ? (
         <ElevatorPanel elevatorId={panelId} onClose={() => setPanelId(null)} onChanged={load} />

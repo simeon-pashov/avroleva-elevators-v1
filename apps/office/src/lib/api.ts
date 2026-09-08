@@ -3,6 +3,13 @@ import type { Problem } from '@avroleva/contracts'
 /** Base path baked at build time (VITE_BASE); API calls are same-origin and relative to it. */
 export const BASE = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
 export const apiUrl = (path: string) => `${BASE}/api/v1${path}`
+/**
+ * A server-rendered path outside /api (print pages, signed download links). Some DTOs already
+ * carry BASE_PATH (report `printUrl`, export `downloadUrl`), others are BASE_PATH-relative
+ * (attachment URLs): prefix only when the base is not there yet.
+ */
+export const serverPath = (path: string) =>
+  BASE && !path.startsWith(`${BASE}/`) ? `${BASE}${path}` : path
 
 export class ApiError extends Error {
   constructor(

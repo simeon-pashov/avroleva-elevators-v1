@@ -10,6 +10,7 @@ import { DueWidget } from './dashboard/DueWidget'
 import { PaymentsWidget } from './dashboard/PaymentsWidget'
 import { CallbacksWidget } from './dashboard/CallbacksWidget'
 import { DeadlinesStrip } from './dashboard/DeadlinesStrip'
+import { ThisMonthStrip } from './dashboard/ThisMonthStrip'
 
 /**
  * "Табло": the map with one pin per elevator (colour = due state), the due today/tomorrow list
@@ -59,6 +60,7 @@ export function DashboardPage() {
         }
       />
       <ErrorBox error={error} />
+      <ThisMonthStrip thisMonth={dash?.thisMonth ?? null} />
       <div className="card map-card">
         <div className="card-head">
           <h2>{t('dashboard.map')}</h2>

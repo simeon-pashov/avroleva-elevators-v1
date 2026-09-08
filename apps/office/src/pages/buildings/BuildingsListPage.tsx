@@ -16,6 +16,7 @@ import {
   useCursorList,
 } from '../../components/ui'
 import { EnumSelect } from '../../components/EnumSelect'
+import { ExportCsvButton } from '../../components/ExportCsvButton'
 
 export function geocodeBadge(status: GeocodeStatus) {
   return status === 'ok' || status === 'manual' ? 'ok' : status === 'failed' ? 'danger' : 'warn'
@@ -42,9 +43,12 @@ export function BuildingsListPage() {
         title={t('buildings.title')}
         actions={
           hasRole('owner', 'office') ? (
-            <Link className="btn btn-primary" to="/buildings/new">
-              {t('buildings.new')}
-            </Link>
+            <>
+              <ExportCsvButton dataset="buildings" />
+              <Link className="btn btn-primary" to="/buildings/new">
+                {t('buildings.new')}
+              </Link>
+            </>
           ) : null
         }
       />

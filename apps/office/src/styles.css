@@ -1191,3 +1191,297 @@ textarea:focus {
   border-radius: 4px;
   user-select: all;
 }
+
+/* ---- step 5: bell, settings nav, notifications, viber links, data page, strips */
+.bell {
+  position: relative;
+}
+.bell-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.bell-btn:hover,
+.bell-btn[aria-expanded='true'] {
+  background: #eef1f6;
+  color: var(--text);
+}
+.bell-btn.has-unread {
+  color: var(--text);
+}
+.bell-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+}
+.bell-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 380px;
+  max-width: calc(100vw - 1.5rem);
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(20, 30, 50, 0.16);
+  z-index: 70;
+}
+.bell-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+.bell-head .linkish {
+  margin-left: auto;
+  text-decoration: none;
+}
+.bell-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+.bell-list li {
+  border-bottom: 1px solid var(--border);
+}
+.bell-list li:last-child {
+  border-bottom: none;
+}
+.bell-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  padding: 0.55rem 0.8rem 0.55rem 1.1rem;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+  position: relative;
+}
+.bell-item:hover {
+  background: #f7f9fc;
+}
+.bell-list li.unread .bell-item::before {
+  content: '';
+  position: absolute;
+  left: 0.4rem;
+  top: 0.95rem;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+.bell-list li.unread .bell-subject {
+  font-weight: 600;
+}
+.bell-body {
+  font-size: 0.85rem;
+}
+.bell-empty {
+  padding: 1rem 0.8rem;
+}
+.bell-foot {
+  padding: 0.5rem 0.8rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 0.9rem;
+}
+.deletion-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 1rem;
+  background: var(--danger);
+  color: #fff;
+  font-weight: 500;
+}
+.deletion-banner .btn {
+  background: #fff;
+  color: var(--danger);
+  border-color: #fff;
+}
+.settings-nav {
+  margin: 0 0 1rem;
+}
+.settings-nav .tab {
+  text-decoration: none;
+}
+.rule-hints {
+  margin: 0 0 0.5rem;
+  padding-left: 1.1rem;
+}
+.rule-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 0 1.5rem;
+}
+.rule-group .sub-head {
+  margin-top: 0.75rem;
+}
+.rule-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1rem;
+}
+.rule-main {
+  min-width: 240px;
+}
+.rule-extra {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.chip {
+  border: 1px solid #cfd4dc;
+  border-radius: 999px;
+  background: #fff;
+  padding: 0.05rem 0.6rem;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--text);
+}
+.chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.template-grid {
+  margin-top: 0.5rem;
+}
+.template-body {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  min-height: 220px;
+}
+.template-vars {
+  margin-top: 0.75rem;
+}
+.template-vars summary {
+  cursor: pointer;
+  color: var(--primary);
+}
+.template-var-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.template-preview {
+  background: #f7f9fc;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 0.85rem;
+}
+.notif-subject {
+  font-weight: 600;
+}
+.viber-box {
+  margin-top: 0.6rem;
+}
+.viber-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font: inherit;
+  font-size: 0.9rem;
+  background: #f7f9fc;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  margin: 0 0 0.5rem;
+  max-height: 260px;
+  overflow: auto;
+}
+.viber-howto {
+  margin: 0.4rem 0 0;
+}
+.notif-table .notif-message {
+  min-width: 280px;
+  max-width: 520px;
+}
+.notif-viber {
+  margin-top: 0.4rem;
+}
+.notif-viber .btn + .btn,
+.notif-viber .viber-box + .btn {
+  margin-top: 0.4rem;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.report-row {
+  align-items: flex-end;
+}
+.report-row .field {
+  flex: 0 0 200px;
+}
+.report-actions {
+  margin-bottom: 0.75rem;
+}
+.delete-card {
+  border-color: #e3a3a3;
+}
+.delete-form {
+  max-width: 420px;
+  margin-top: 0.75rem;
+}
+.deletion-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.strip-month .card-head {
+  margin-bottom: 0;
+  flex-wrap: wrap;
+}
+.strip-month-items {
+  gap: 6px 16px;
+}
+@media (max-width: 900px) {
+  .bell-menu {
+    position: fixed;
+    top: auto;
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+    margin-top: 0.4rem;
+  }
+  .report-row .field {
+    flex: 1;
+  }
+}

@@ -20,6 +20,10 @@ import { ContractDetailPage } from './pages/contracts/ContractDetailPage'
 import { ContractFormPage } from './pages/contracts/ContractFormPage'
 import { UsersPage } from './pages/UsersPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { NotificationSettingsPage } from './pages/settings/NotificationSettingsPage'
+import { DataSettingsPage } from './pages/settings/DataSettingsPage'
+import { NotificationsLogPage } from './pages/notifications/NotificationsLogPage'
+import { ReportsPage } from './pages/reports/ReportsPage'
 import { ImportPage } from './pages/ImportPage'
 import { CallbacksPage } from './pages/callbacks/CallbacksPage'
 import { DefectsPage } from './pages/defects/DefectsPage'
@@ -86,6 +90,10 @@ export function App() {
         <Route path="/calendar" element={<CalendarPage />} />
         <Route element={<RequireRole roles={['owner', 'office']} />}>
           <Route path="/import" element={<ImportPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/notifications" element={<NotificationsLogPage />} />
+          <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
+          <Route path="/settings/data" element={<DataSettingsPage />} />
         </Route>
         <Route element={<RequireRole roles={['owner']} />}>
           <Route path="/users" element={<UsersPage />} />

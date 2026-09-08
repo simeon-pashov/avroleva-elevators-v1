@@ -5,6 +5,7 @@ import { useI18n } from '../i18n/I18nProvider'
 import { useAuth } from '../auth/AuthProvider'
 import { ErrorBox, Field, PageHeader, Spinner, toast } from '../components/ui'
 import { numOrNull, useForm } from '../components/useForm'
+import { SettingsNav } from '../components/SettingsNav'
 
 interface FormValues {
   name: string
@@ -23,6 +24,7 @@ interface FormValues {
   inspectionIntervalMonths: string
   firstInspectionIntervalMonths: string
   alarmTestIntervalMonths: string
+  retentionYears: string
   publicQrPage: boolean
   publicFaultReport: boolean
   gpsCapture: boolean
@@ -52,6 +54,7 @@ export function SettingsPage() {
     inspectionIntervalMonths: '',
     firstInspectionIntervalMonths: '',
     alarmTestIntervalMonths: '',
+    retentionYears: '',
     publicQrPage: false,
     publicFaultReport: false,
     gpsCapture: false,
@@ -85,6 +88,7 @@ export function SettingsPage() {
           firstInspectionIntervalMonths:
             tn.settings.firstInspectionIntervalMonths?.toString() ?? '',
           alarmTestIntervalMonths: tn.settings.alarmTestIntervalMonths?.toString() ?? '',
+          retentionYears: tn.settings.retentionYears?.toString() ?? '',
           publicQrPage: tn.features.publicQrPage,
           publicFaultReport: tn.features.publicFaultReport,
           gpsCapture: tn.features.gpsCapture,
@@ -126,6 +130,7 @@ export function SettingsPage() {
           inspectionIntervalMonths: numOrNull(values.inspectionIntervalMonths),
           firstInspectionIntervalMonths: numOrNull(values.firstInspectionIntervalMonths),
           alarmTestIntervalMonths: numOrNull(values.alarmTestIntervalMonths),
+          retentionYears: numOrNull(values.retentionYears),
           minTechnicians: {
             functional_check: Number(values.minFunctionalCheck),
             technical_maintenance: Number(values.minTechnicalMaintenance),
@@ -147,6 +152,7 @@ export function SettingsPage() {
   return (
     <div>
       <PageHeader title={t('settings.title')} />
+      <SettingsNav />
       <form
         className="grid-2"
         onSubmit={(e) => {
@@ -339,6 +345,20 @@ export function SettingsPage() {
             </div>
             <span className="field-hint">{t('settings.minTechniciansHint')}</span>
           </div>
+          <Field
+            label={t('settings.retentionYears')}
+            error={err['settings.retentionYears']}
+            hint={t('settings.retentionYearsHint')}
+          >
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={v.retentionYears}
+              readOnly={ro}
+              onChange={(e) => form.set('retentionYears', e.target.value)}
+            />
+          </Field>
           <div className="field">
             <span className="field-label">{t('settings.techApp')}</span>
             <div className="check-list">

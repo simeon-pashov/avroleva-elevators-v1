@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router'
 import type { AdminTenantDto, UserDto } from '@avroleva/contracts'
 import { get, patch, post } from '../../lib/api'
 import { useI18n } from '../../i18n/I18nProvider'
-import { Badge, ErrorBox, PageHeader, Spinner, toast } from '../../components/ui'
+import { Badge, ConfirmButton, ErrorBox, PageHeader, Spinner, toast } from '../../components/ui'
 import { tenantStatusBadge } from './AdminTenantsPage'
 
 export function AdminTenantDetailPage() {
@@ -39,6 +39,18 @@ export function AdminTenantDetailPage() {
     }
   }
 
+  const cancelDeletion = async () => {
+    try {
+      await post(`/admin/tenants/${tenant.id}/cancel-deletion`)
+      toast(t('admin.deletionCancelled'))
+      await load()
+    } catch (e) {
+      setError(e)
+    }
+  }
+
+  const scheduled = tenant.status === 'deletion_scheduled'
+
   return (
     <div>
       <PageHeader
@@ -49,7 +61,9 @@ export function AdminTenantDetailPage() {
         }
         title={tenant.name}
         actions={
-          tenant.status === 'active' ? (
+          scheduled ? (
+            <ConfirmButton label={t('admin.cancelDeletion')} onConfirm={cancelDeletion} />
+          ) : tenant.status === 'active' ? (
             <button
               type="button"
               className="btn btn-danger-outline"
@@ -64,6 +78,11 @@ export function AdminTenantDetailPage() {
           )
         }
       />
+      {scheduled ? (
+        <div className="alert alert-error deletion-alert" role="alert">
+          {t('admin.deletionScheduled', { date: tenant.deletionAt ? date(tenant.deletionAt) : '' })}
+        </div>
+      ) : null}
       <div className="grid-2">
         <div className="card">
           <h2>{t('admin.company')}</h2>
@@ -74,6 +93,12 @@ export function AdminTenantDetailPage() {
                 {t(`enum.tenantStatus.${tenant.status}`)}
               </Badge>
             </dd>
+            {scheduled ? (
+              <>
+                <dt>{t('admin.deletionAt')}</dt>
+                <dd className="text-danger">{tenant.deletionAt ? date(tenant.deletionAt) : '—'}</dd>
+              </>
+            ) : null}
             <dt>{t('settings.eik')}</dt>
             <dd>{tenant.eik}</dd>
             <dt>{t('settings.address')}</dt>

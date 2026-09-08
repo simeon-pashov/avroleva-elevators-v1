@@ -18,6 +18,7 @@ import {
   useCursorList,
 } from '../../components/ui'
 import { EnumSelect } from '../../components/EnumSelect'
+import { ExportCsvButton } from '../../components/ExportCsvButton'
 
 export function elevatorStatusBadge(status: ElevatorStatus): 'ok' | 'warn' | 'danger' | 'muted' {
   switch (status) {
@@ -71,9 +72,12 @@ export function ElevatorsListPage() {
         title={t('elevators.title')}
         actions={
           hasRole('owner', 'office') ? (
-            <Link className="btn btn-primary" to="/elevators/new">
-              {t('elevators.new')}
-            </Link>
+            <>
+              <ExportCsvButton dataset="elevators" />
+              <Link className="btn btn-primary" to="/elevators/new">
+                {t('elevators.new')}
+              </Link>
+            </>
           ) : null
         }
       />

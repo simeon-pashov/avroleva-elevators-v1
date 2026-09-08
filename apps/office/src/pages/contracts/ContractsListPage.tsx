@@ -16,6 +16,7 @@ import {
   useCursorList,
 } from '../../components/ui'
 import { EnumSelect } from '../../components/EnumSelect'
+import { ExportCsvButton } from '../../components/ExportCsvButton'
 
 export function ContractsListPage() {
   const { t, date, moneyFull } = useI18n()
@@ -34,9 +35,12 @@ export function ContractsListPage() {
         title={t('contracts.title')}
         actions={
           hasRole('owner', 'office') ? (
-            <Link className="btn btn-primary" to="/contracts/new">
-              {t('contracts.new')}
-            </Link>
+            <>
+              <ExportCsvButton dataset="contracts" />
+              <Link className="btn btn-primary" to="/contracts/new">
+                {t('contracts.new')}
+              </Link>
+            </>
           ) : null
         }
       />

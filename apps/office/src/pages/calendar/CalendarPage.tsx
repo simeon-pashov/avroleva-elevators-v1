@@ -7,6 +7,7 @@ import { addDays, todaySofia } from '../../lib/dates'
 import { useI18n } from '../../i18n/I18nProvider'
 import { useAuth } from '../../auth/AuthProvider'
 import { Badge, Empty, ErrorBox, PageHeader, Spinner } from '../../components/ui'
+import { ExportCsvButton } from '../../components/ExportCsvButton'
 import { InspectionForm } from '../../components/inspections/InspectionForm'
 import { ElevatorPanel } from '../../components/ElevatorPanel'
 
@@ -92,9 +93,16 @@ export function CalendarPage() {
         subtitle={t('calendar.subtitle')}
         actions={
           hasRole('owner', 'office') ? (
-            <button type="button" className="btn btn-primary" onClick={() => setAdding((v) => !v)}>
-              {t('inspections.new')}
-            </button>
+            <>
+              <ExportCsvButton dataset="inspections" />
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setAdding((v) => !v)}
+              >
+                {t('inspections.new')}
+              </button>
+            </>
           ) : null
         }
       />
