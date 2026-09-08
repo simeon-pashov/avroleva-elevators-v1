@@ -62,11 +62,26 @@ Env added (`.env.example`): `ROLE`, `WORKER_ENABLED`, `CRON_ENABLED`, `EMAIL_PRO
 5. Template = `TEMPLATE_KEY_BY_EVENT[type]` + channel + locale (contact → tenant locale, user → user locale). Helpers: `{{date x}} {{datetime x}} {{money cents}} {{t "key"}} {{join list ", "}}`. Data keys: `tenant.*`, `building.addressText/customerName`, `elevator.internalNo/regNo`, `contact.name/phone/email`, `user.name`, `visit.date/kindLabel/technicians/summary/defects/notes/flags`, `callback.receivedAt/classificationLabel/description/trappedCount/responseMinutes/elapsedMinutes/slaMinutes/cause/actionTaken`, `invoice.number/period/totalCents/dueAt`, `inspection.dueAt/inDays`, `defect.description/recordedAt/followUpDueAt`, `check.dueAt/overdueDays`, `report.*`, `export.*`, `deletion.at`, `link`.
 6. The row is written first, then the channel: in-app done, viber_link waits for the office (log page → "Изпрати по Viber" → "Маркирай като изпратено"), e-mail/SMS through the `notifications.deliver` job.
 
-## 5. Office UI (step 5)
+## 5. Office UI (step 5) and browser verification
 
-_(filled in after the UI lands — see the commit "feat(office): …")_
+Commit `b5a89b7` (feat(office): notifications, reports, exports and data settings UI):
 
-Screenshots: `docs/screenshots/notifications.png`, `building-report.png`, `data-settings.png`.
+| Where | What |
+|---|---|
+| Topbar | `NotificationsBell`: unread count from `GET /notifications/inbox`, dropdown with the latest rows, "mark read", link into the related record (polls every 60 s, refetches on focus). |
+| `/notifications` (owner, office) | Delivery log: channel / status filters, subject + body preview, recipient, error text, "Отвори" link; Viber rows carry `ViberLinks` (`viber://chat`, `viber://forward?text=`, `viber.click`) and "Маркирай като изпратено". |
+| `/settings/notifications` | `SettingsNav` tabs (Общи / Уведомления / Данни). Rule grid per event × channel × recipient with the `InspectionDueSoon` day steps (7/30/60/90); template editor with event / channel / language selectors, live preview on sample data, save an override / reset to the system row, test-send to yourself. |
+| `/settings/data` | CSV export buttons for the 13 datasets (`ExportCsvButton`, owner/office only), "Подготви пълен експорт" + runs table with fresh signed links, retention years, the delete-my-data card (password re-entry, 30-day grace, cancel while pending; the tenant shows `deletionAt` in the topbar banner). |
+| `/reports` | Month picker, "Генерирай за всички обекти", "Изпрати на всички обекти с имейл", the `report_run` list with open / send per building. |
+| Building page | `BuildingReportCard` (open the printable report for a month, send to the contact) and `BuildingViberCard` (ready-made Viber text for the primary contact). |
+| Dashboard | `ThisMonthStrip` (visits, callbacks, average response minutes) under the title. |
+| Every list page | "Експорт CSV" button (elevators, buildings, customers, contracts, callbacks, defects, calendar). |
+| Admin | Tenant list shows scheduled deletions; tenant detail can cancel a deletion at the owner's written request. |
+| i18n | ~180 keys added to `bg.json` / `en.json`; the English pass of the QA crawl shows no raw keys or untranslated strings. |
+
+Verification (2026-09-08, see `docs/QA-2026-09-08.md` for the whole pass): the bell shows the seeded inbox rows and marks them read; a recorded visit produces a queued Viber row for the building contact (no e-mail on file) and an e-mail row through the console adapter when the contact has one; the template preview renders bg/en with the date and money helpers; the full export finished in ~1 s for the demo tenant and the signed link downloaded a 350 KB zip; a 24-hour-old or tampered link answers 404; the building report for September rendered the visits and technicians of the month; the delete-request card refused a wrong password (403) and showed the 30-day date after the right one; the platform admin saw the scheduled deletion and cancelled it. Two things found and fixed during that pass belong to this step: the overdue roll emitted `InvoiceOverdue` several times per invoice under concurrent reads, and the outbox sweep delivered the seed's history as fresh notifications on the first start (commit `29b2216`).
+
+Screenshots: `docs/screenshots/notifications.png` (log with Viber links), `notification-settings.png` (rules + template editor), `building-report.png` (printable monthly report), `data-settings.png` (exports, full export run, delete-my-data).
 
 ## 6. Tests
 
