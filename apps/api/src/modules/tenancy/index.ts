@@ -36,5 +36,17 @@ export {
   adminGetTenant,
   adminUpdateTenant,
   adminResetUserPassword,
+  requestDeletion,
+  cancelDeletion,
+  adminCancelDeletion,
+  listDueForDeletion,
+  listActiveTenantIds,
+  listNotifiableUsers,
 } from './service.js'
+export {
+  deletionDate,
+  canRequestDeletion,
+  canCancelDeletion,
+  isDueForPurge,
+} from './domain/deletion.js'
 export { hashPassword, verifyPassword } from './domain/password.js'

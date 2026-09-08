@@ -16,5 +16,10 @@ export {
   processImage,
   sha256Of,
   storageKeyFor,
+  purgeVisitPhotos,
+  cleanupOrphans,
+  storageKeysOf,
+  readBytes,
 } from './service.js'
+export { retentionCutoff, ORPHAN_GRACE_DAYS } from './domain/retention.js'
 export const moduleInfo = { name: 'documents', layer: 2, status: 'active' } as const

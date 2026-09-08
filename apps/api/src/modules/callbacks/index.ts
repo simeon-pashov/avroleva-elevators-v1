@@ -18,6 +18,7 @@ export {
   openSummary,
   openByElevator,
   openOverSla,
+  listOpenRows,
   toCallbackDto,
   actorFromCtx,
   clockFlags,

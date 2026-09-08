@@ -36,8 +36,27 @@ const schema = z.object({
   SEED_DEMO: bool,
   GEOCODER: z.enum(['nominatim', 'stub']).default('nominatim'),
   NOMINATIM_URL: z.string().default('https://nominatim.openstreetmap.org'),
-  EMAIL_PROVIDER: z.enum(['console']).default('console'),
-  SMS_PROVIDER: z.enum(['console']).default('console'),
+  EMAIL_PROVIDER: z.enum(['console', 'smtp']).default('console'),
+  /** smtp://user:pass@host:587 or smtps://…; used when EMAIL_PROVIDER=smtp. */
+  SMTP_URL: z.string().optional(),
+  /** From header of outgoing e-mail (the tenant's name is prepended as display name). */
+  EMAIL_FROM: z.string().default('noreply@avroleva.local'),
+  SMS_PROVIDER: z.enum(['console', 'http']).default('console'),
+  /** Generic HTTP SMS gateway: POST {to, text} as JSON with `Authorization: Bearer SMS_HTTP_TOKEN`. */
+  SMS_HTTP_URL: z.string().optional(),
+  SMS_HTTP_TOKEN: z.string().optional(),
+  /** api | worker | all (ARCHITECTURE section 6). `all` runs the pg-boss worker inside the API process. */
+  ROLE: z.enum(['api', 'worker', 'all']).default('all'),
+  /** false = no pg-boss at all: events are delivered in-process, crons do not run (tests). */
+  WORKER_ENABLED: z
+    .string()
+    .optional()
+    .transform((v) => v === undefined || v === '' || v === 'true' || v === '1'),
+  /** Schedule cron jobs (Europe/Sofia). Off = only queues (event delivery, exports) run. */
+  CRON_ENABLED: z
+    .string()
+    .optional()
+    .transform((v) => v === undefined || v === '' || v === 'true' || v === '1'),
   OFFICE_DIST: z.string().optional(),
   /** Built technician app (apps/tech/dist), served at /tech/. */
   TECH_DIST: z.string().optional(),

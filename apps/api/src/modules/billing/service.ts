@@ -83,8 +83,25 @@ export function toPaymentDto(p: PaymentRow): PaymentDto {
  * notifications), so every read of billing data rolls first; the write is a single UPDATE and is
  * a no-op most of the time.
  */
-export async function rollStatuses(tenantId: string): Promise<void> {
-  await repo.rollOverdue(tenantId, fromDateOnly(todayInSofia())!)
+export async function rollStatuses(tenantId: string): Promise<number> {
+  const rolled = await repo.rollOverdue(tenantId, fromDateOnly(todayInSofia())!)
+  for (const inv of rolled) {
+    await events.publish(
+      { tenantId },
+      {
+        type: 'InvoiceOverdue',
+        aggregateType: 'invoice',
+        aggregateId: inv.id,
+        payload: {
+          number: inv.number,
+          buildingId: inv.buildingId,
+          dueAt: toDateOnly(inv.dueAt),
+          totalCents: inv.totalCents,
+        },
+      },
+    )
+  }
+  return rolled.length
 }
 
 /**

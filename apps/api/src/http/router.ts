@@ -1,6 +1,8 @@
 import { Router } from 'express'
 import type { HealthDto } from '@avroleva/contracts'
 import { prismaBase } from '../platform/db/prisma.js'
+import { bossRunning, queueEnabled, queuedCount, workEnabled } from '../platform/jobs/boss.js'
+import { jobStatuses } from '../platform/jobs/registry.js'
 import * as tenancy from '../modules/tenancy/index.js'
 import { registryRouter } from '../modules/registry/index.js'
 import { maintenanceRouter } from '../modules/maintenance/index.js'
@@ -9,17 +11,19 @@ import { billingRouter } from '../modules/billing/index.js'
 import { callbacksRouter } from '../modules/callbacks/index.js'
 import { defectsRouter } from '../modules/defects/index.js'
 import { calendarRouter } from '../modules/calendar/index.js'
-import { reportingRouter } from '../modules/reporting/index.js'
+import { exportsRouter, reportingRouter, reportsRouter } from '../modules/reporting/index.js'
 import { attachmentsRouter } from '../modules/documents/index.js'
+import { notificationsRouter } from '../modules/notifications/index.js'
 import { adminRouter } from './admin.js'
 import { syncRouter } from './sync.js'
 
-export const APP_VERSION = '0.4.0'
+export const APP_VERSION = '0.5.0'
 
 /** `/api/v1` - additive only; breaking changes go to `/api/v2` beside it (ARCHITECTURE A9). */
 export const apiV1 = Router()
 
-apiV1.get('/health', async (_req, res) => {
+/** Health (ARCHITECTURE section 6): db, worker status, last run per cron, queue depth. */
+export async function health(): Promise<HealthDto> {
   let db: HealthDto['db'] = 'down'
   try {
     await prismaBase.$queryRaw`SELECT 1`
@@ -27,12 +31,38 @@ apiV1.get('/health', async (_req, res) => {
   } catch {
     db = 'down'
   }
-  const body: HealthDto = {
+  let jobs: HealthDto['worker']['jobs'] = []
+  if (db === 'up') {
+    try {
+      jobs = (await jobStatuses()).map((j) => ({
+        name: j.name,
+        cron: j.cron,
+        lastStartedAt: j.lastStartedAt?.toISOString() ?? null,
+        lastFinishedAt: j.lastFinishedAt?.toISOString() ?? null,
+        lastStatus: (j.lastStatus as 'ok' | 'failed' | 'running' | null) ?? null,
+        lastError: j.lastError,
+        lastDurationMs: j.lastDurationMs,
+      }))
+    } catch {
+      jobs = []
+    }
+  }
+  return {
     ok: db === 'up',
     db,
     version: APP_VERSION,
     time: new Date().toISOString(),
+    worker: {
+      enabled: queueEnabled() && workEnabled(),
+      running: bossRunning(),
+      queued: await queuedCount(),
+      jobs,
+    },
   }
+}
+
+apiV1.get('/health', async (_req, res) => {
+  const body = await health()
   res.status(body.ok ? 200 : 503).json(body)
 })
 
@@ -50,5 +80,8 @@ apiV1.use(callbacksRouter)
 apiV1.use(defectsRouter)
 apiV1.use(calendarRouter)
 apiV1.use(reportingRouter)
+apiV1.use(exportsRouter)
+apiV1.use(reportsRouter)
+apiV1.use(notificationsRouter)
 apiV1.use(attachmentsRouter)
 apiV1.use(syncRouter)

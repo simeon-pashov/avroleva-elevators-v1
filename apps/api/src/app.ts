@@ -16,6 +16,8 @@ import { useVisitRecorder } from './modules/callbacks/index.js'
 import * as visits from './modules/visits/index.js'
 import { checklists } from './modules/maintenance/index.js'
 import { filesRouter } from './modules/documents/index.js'
+import { exportFilesRouter, useReportNotifier } from './modules/reporting/index.js'
+import * as notifications from './modules/notifications/index.js'
 import { printRouter } from './http/print.js'
 import { publicRouter } from './http/public.js'
 import { apiV1 } from './http/router.js'
@@ -29,6 +31,8 @@ useScheduleRules(scheduleRules)
 useVisitRecorder({ record: visits.record })
 // visits (L3) snapshots checklist answers through a port; maintenance (L3) owns the templates.
 visits.useChecklistResolver({ snapshotFor: checklists.snapshotFor })
+// reporting (L4) e-mails reports / export links through a port; notifications (L4) implements it.
+useReportNotifier({ sendEmail: notifications.sendEmail, notifyUsers: notifications.notifyUsers })
 
 export interface AppOptions {
   /** Absolute path of the built office SPA; omitted = API only (dev, tests). */
@@ -102,6 +106,7 @@ export function createApp(opts: AppOptions = {}): Express {
   app.use('/p', express.urlencoded({ extended: false, limit: '32kb' }), publicRouter)
   // Signed file URLs: the signature is the authorisation (no cookie, no CSRF header), so <img>
   // tags in the office and in the technician app just work.
+  app.use('/files/export', exportFilesRouter)
   app.use('/files', filesRouter)
 
   if (opts.techDist) mountTech(app, opts.techDist)

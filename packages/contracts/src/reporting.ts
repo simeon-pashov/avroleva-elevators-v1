@@ -52,5 +52,12 @@ export interface DashboardDto {
     total: number
     byKind: Record<CalendarItemKind, number>
   }
+  /** Compact "this month" strip: visits recorded, callbacks received, average response. */
+  thisMonth: {
+    period: string
+    visits: number
+    callbacks: number
+    avgResponseMinutes: number | null
+  }
   pins: DashboardPinDto[]
 }

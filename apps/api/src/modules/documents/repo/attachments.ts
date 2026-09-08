@@ -103,3 +103,54 @@ export function linksForVisits(tenantId: string, visitIds: string[], tx?: Tx) {
 export function linksForAttachment(tenantId: string, attachmentId: string) {
   return prisma.visitAttachment.findMany({ where: { tenantId, attachmentId } })
 }
+
+/** Attachment rows linked to any of the visits (for the retention purge). */
+export async function attachmentsLinkedToVisits(tenantId: string, visitIds: string[]) {
+  if (visitIds.length === 0) return [] as AttachmentRow[]
+  const links = await prisma.visitAttachment.findMany({
+    where: { tenantId, visitId: { in: visitIds } },
+    select: { attachmentId: true },
+  })
+  const ids = [...new Set(links.map((l) => l.attachmentId))]
+  if (ids.length === 0) return [] as AttachmentRow[]
+  return prisma.attachment.findMany({ where: { tenantId, id: { in: ids } } })
+}
+
+export async function deleteLinksForVisits(tenantId: string, visitIds: string[]) {
+  if (visitIds.length === 0) return 0
+  const r = await prisma.visitAttachment.deleteMany({
+    where: { tenantId, visitId: { in: visitIds } },
+  })
+  return r.count
+}
+
+export async function deleteAttachments(tenantId: string, ids: string[]) {
+  if (ids.length === 0) return 0
+  const r = await prisma.attachment.deleteMany({ where: { tenantId, id: { in: ids } } })
+  return r.count
+}
+
+/** Attachments older than `before` that no visit links to (upload without a visit, or a purge left them). */
+export async function listOrphans(tenantId: string, before: Date, limit = 500) {
+  const rows = await prisma.attachment.findMany({
+    where: { tenantId, createdAt: { lt: before } },
+    select: { id: true, storageKey: true, thumbKey: true },
+    orderBy: { createdAt: 'asc' },
+    take: limit,
+  })
+  if (rows.length === 0) return rows
+  const linked = await prisma.visitAttachment.findMany({
+    where: { tenantId, attachmentId: { in: rows.map((r) => r.id) } },
+    select: { attachmentId: true },
+  })
+  const keep = new Set(linked.map((l) => l.attachmentId))
+  return rows.filter((r) => !keep.has(r.id))
+}
+
+/** Every storage key of a tenant (tenant purge). */
+export function allStorageKeys(tenantId: string) {
+  return prismaBase.attachment.findMany({
+    where: { tenantId },
+    select: { storageKey: true, thumbKey: true },
+  })
+}

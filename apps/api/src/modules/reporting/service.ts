@@ -8,7 +8,15 @@ import type {
 } from '@avroleva/contracts'
 import { CalendarItemKind as CalendarItemKindEnum } from '@avroleva/contracts'
 import type { Ctx } from '../../platform/http/ctx.js'
-import { addDays, dateOnlyInSofia, toDateOnly, todayInSofia } from '../../platform/clock.js'
+import {
+  addDays,
+  dateOnlyInSofia,
+  fromDateOnly,
+  monthBounds,
+  toDateOnly,
+  todayInSofia,
+} from '../../platform/clock.js'
+import * as visits from '../visits/index.js'
 import { getTenantSettings } from '../tenancy/index.js'
 import { elevators } from '../registry/index.js'
 import { dueState } from '../maintenance/index.js'
@@ -25,14 +33,24 @@ import * as calendar from '../calendar/index.js'
 export async function dashboard(ctx: Ctx): Promise<DashboardDto> {
   const today = todayInSofia()
   const tomorrow = addDays(today, 1)
-  const [rows, money, cb, df, deadlines, openCallbacks] = await Promise.all([
-    elevators.listForSchedule(ctx.tenantId),
-    summary(ctx.tenantId),
-    callbacks.openSummary(ctx.tenantId),
-    defects.openSummary(ctx.tenantId),
-    calendarItems(ctx, { from: today, to: addDays(today, 30), includeOverdue: true }),
-    callbacks.openByElevator(ctx.tenantId),
-  ])
+  const period = today.slice(0, 7)
+  const { start, end } = monthBounds(period)
+  const monthFrom = fromDateOnly(start)!
+  const monthTo = fromDateOnly(addDays(end, 1))!
+  const [rows, money, cb, df, deadlines, openCallbacks, monthVisits, monthCallbacks] =
+    await Promise.all([
+      elevators.listForSchedule(ctx.tenantId),
+      summary(ctx.tenantId),
+      callbacks.openSummary(ctx.tenantId),
+      defects.openSummary(ctx.tenantId),
+      calendarItems(ctx, { from: today, to: addDays(today, 30), includeOverdue: true }),
+      callbacks.openByElevator(ctx.tenantId),
+      visits.countInPeriod(ctx.tenantId, monthFrom, monthTo),
+      callbacks.list(ctx, { limit: 200, from: start, to: addDays(end, 1) }),
+    ])
+  const responses = monthCallbacks.items
+    .map((c) => c.responseMinutes)
+    .filter((m): m is number => m != null)
   const counts = {
     elevators: 0,
     overdue: 0,
@@ -100,6 +118,14 @@ export async function dashboard(ctx: Ctx): Promise<DashboardDto> {
       followUpDue: df.followUpDue,
     },
     deadlines: { days: 30, overdue, total: deadlines.items.length, byKind },
+    thisMonth: {
+      period,
+      visits: monthVisits,
+      callbacks: monthCallbacks.items.length,
+      avgResponseMinutes: responses.length
+        ? Math.round(responses.reduce((a, b) => a + b, 0) / responses.length)
+        : null,
+    },
     pins,
   }
 }

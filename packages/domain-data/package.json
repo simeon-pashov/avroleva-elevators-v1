@@ -15,7 +15,8 @@
     "dist",
     "defects",
     "checklists",
-    "calendar-rules.json"
+    "calendar-rules.json",
+    "notifications"
   ],
   "scripts": {
     "build": "tsc -b"

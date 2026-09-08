@@ -9,6 +9,7 @@ import {
   updateMeBody,
   updateTenantBody,
   updateUserBody,
+  deleteRequestBody,
 } from '@avroleva/contracts'
 import { config } from '../../../platform/config.js'
 import { SESSION_COOKIE, ctxOf, requireAuth, requireRole } from '../../../platform/http/ctx.js'
@@ -103,6 +104,15 @@ tenantRouter.get('/tenant', requireAuth, async (req, res) => {
 
 tenantRouter.patch('/tenant', requireRole('owner'), async (req, res) => {
   res.json(await service.updateTenant(ctxOf(req), parseBody(updateTenantBody, req)))
+})
+
+/** Delete-my-data: owner, password re-entered, 30-day grace; cancellable until the date. */
+tenantRouter.post('/tenant/delete-request', requireRole('owner'), async (req, res) => {
+  res.json(await service.requestDeletion(ctxOf(req), parseBody(deleteRequestBody, req).password))
+})
+
+tenantRouter.post('/tenant/delete-request/cancel', requireRole('owner'), async (req, res) => {
+  res.json(await service.cancelDeletion(ctxOf(req)))
 })
 
 export const usersRouter = Router()

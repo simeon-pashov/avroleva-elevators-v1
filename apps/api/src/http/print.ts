@@ -15,6 +15,8 @@ import { getTenant } from '../modules/tenancy/index.js'
 import { buildings, elevators } from '../modules/registry/index.js'
 import * as defects from '../modules/defects/index.js'
 import * as visits from '../modules/visits/index.js'
+import { buildingReport, buildingReportHtml } from '../modules/reporting/index.js'
+import { buildingReportQuery } from '@avroleva/contracts'
 import { DOC_CSS, esc, page, paragraphs } from './templates/html.js'
 
 /**
@@ -355,6 +357,24 @@ printRouter.get('/logbook/:visitId', async (req, res) => {
       css: DOC_CSS + LOGBOOK_CSS,
       body,
       script: '../assets/print.js',
+    }),
+  )
+})
+
+/**
+ * Monthly building report (MVP-PLAN phase 8): `/print/building-report/:buildingId?month=YYYY-MM`.
+ * Owner/office; the same HTML goes out as the e-mail attachment (reporting.sendBuildingReport).
+ */
+printRouter.get('/building-report/:id', async (req, res) => {
+  const ctx = guard(req, res, ['owner', 'office'])
+  if (!ctx) return
+  const q = parseQuery(buildingReportQuery, req)
+  const report = await buildingReport(ctx, parseId(req), q.month)
+  const base = config.BASE_PATH === '/' ? '' : config.BASE_PATH
+  res.type('html').send(
+    buildingReportHtml(ctx, report, {
+      toolbar: true,
+      scriptUrl: `${base}/print/assets/print.js`,
     }),
   )
 })

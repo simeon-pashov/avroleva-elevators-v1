@@ -582,6 +582,11 @@ export async function openByElevator(tenantId: string): Promise<Map<string, Call
   return map
 }
 
+/** Open callbacks (oldest first) for the SLA watch job. */
+export function listOpenRows(tenantId: string): Promise<CallbackRow[]> {
+  return repo.listOpen(tenantId)
+}
+
 export async function openOverSla(tenantId: string): Promise<CallbackRow[]> {
   const now = clock.now()
   return (await repo.listOpen(tenantId)).filter((c) => slaState(c, now) === 'breached')

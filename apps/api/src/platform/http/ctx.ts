@@ -1,5 +1,6 @@
 import type { RequestHandler } from 'express'
 import type { UserRole } from '@avroleva/contracts'
+import { createT } from '@avroleva/i18n'
 import type { T } from '@avroleva/i18n'
 import type { AuditActor } from '../audit.js'
 import { forbidden, unauthorized } from './errors.js'
@@ -30,6 +31,26 @@ export const CSRF_HEADER = 'x-requested-with'
 export const CSRF_VALUE = 'avroleva'
 export const SESSION_COOKIE = 'avroleva_session'
 export const ADMIN_COOKIE = 'avroleva_admin'
+
+/**
+ * Context for jobs and subscribers acting on a tenant without a user (system actor): tenant reads
+ * work as for an owner; audit entries written with it carry actorType 'system'.
+ */
+export function systemCtx(tenantId: string, locale = 'bg', requestId = 'system'): Ctx {
+  return {
+    tenantId,
+    userId: '',
+    role: 'owner',
+    sessionId: '',
+    requestId,
+    locale,
+    t: createT(locale),
+  }
+}
+
+export function systemActorOf(tenantId: string | null): AuditActor {
+  return { tenantId, actorType: 'system', actorId: null, requestId: 'system' }
+}
 
 export function actorOf(ctx: Ctx): AuditActor {
   return {

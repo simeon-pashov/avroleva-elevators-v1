@@ -57,6 +57,8 @@ export function updateTenant(
     settings: Prisma.InputJsonValue
     features: Prisma.InputJsonValue
     status: TenantStatus
+    deletionAt: Date | null
+    deletionRequestedByUserId: string | null
   }>,
 ) {
   return prismaBase.tenant.update({ where: { id }, data })

@@ -68,6 +68,7 @@ export function toVisitDto(v: VisitRow, attachments: VisitAttachmentDto[] = []):
     createdByUserId: v.createdByUserId,
     supersedesVisitId: v.supersedesVisitId,
     supersededAt: v.supersededAt ? v.supersededAt.toISOString() : null,
+    photosPurgedAt: v.photosPurgedAt ? v.photosPurgedAt.toISOString() : null,
     createdAt: v.createdAt.toISOString(),
   }
 }
@@ -397,4 +398,32 @@ async function publishRecorded(ctx: Ctx, v: VisitRow) {
 export async function latestVisitAt(tenantId: string, elevatorId: string): Promise<Date | null> {
   const v = await repo.latestVisit(tenantId, elevatorId)
   return v?.startedAt ?? null
+}
+
+// ---- Retention (documents.retentionSweep job) ----------------------------------------------
+
+/** Ids of visits started before `cutoff` whose photos were not purged yet (oldest first). */
+export function listForRetention(tenantId: string, cutoff: Date, limit = 500): Promise<string[]> {
+  return repo.listIdsBefore(tenantId, cutoff, limit)
+}
+
+/** The retention sweep removed the photos: the visit keeps its record and gets the flag. */
+export function markPhotosPurged(tenantId: string, ids: string[], at: Date): Promise<number> {
+  return repo.markPhotosPurged(tenantId, ids, at)
+}
+
+/** Visits of one building in [from, to) for the monthly report (newest first, no pagination). */
+export async function listForBuildingPeriod(
+  tenantId: string,
+  buildingId: string,
+  from: Date,
+  to: Date,
+): Promise<VisitDto[]> {
+  const rows = await repo.listVisits(tenantId, { buildingId, from, to, limit: 1000 })
+  return toDtos(tenantId, rows.slice(0, 1000))
+}
+
+/** Count of visits recorded in [from, to) (dashboard "this month"). */
+export function countInPeriod(tenantId: string, from: Date, to: Date): Promise<number> {
+  return repo.countInPeriod(tenantId, from, to)
 }

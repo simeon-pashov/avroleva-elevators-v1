@@ -3,6 +3,7 @@ import { logger } from '../src/platform/logger.js'
 import { disconnectDb } from '../src/platform/db/prisma.js'
 import { ensurePlatformAdmin } from '../src/modules/tenancy/index.js'
 import { checklists } from '../src/modules/maintenance/index.js'
+import * as notifications from '../src/modules/notifications/index.js'
 import { seedDemoTenant } from './seed/demo.js'
 
 /**
@@ -13,6 +14,9 @@ async function main() {
   // System checklist templates (tenantId NULL) from packages/domain-data - every deployment.
   const templates = await checklists.ensureSystemTemplates()
   logger.info({ templates }, 'system checklist templates ensured')
+  // System notification templates (tenantId NULL) from packages/domain-data - every deployment.
+  const notificationTemplates = await notifications.ensureSystemTemplates()
+  logger.info(notificationTemplates, 'system notification templates ensured')
   if (config.ADMIN_PASSWORD) {
     await ensurePlatformAdmin(config.ADMIN_USERNAME, config.ADMIN_PASSWORD)
     logger.info({ username: config.ADMIN_USERNAME }, 'platform admin ensured')

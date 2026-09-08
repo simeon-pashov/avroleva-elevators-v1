@@ -28,6 +28,7 @@ export function toTenantDto(t: Tenant): TenantDto {
     settings: parseSettings(t.settings),
     features: parseFeatures(t.features),
     createdAt: t.createdAt.toISOString(),
+    deletionAt: t.deletionAt ? t.deletionAt.toISOString() : null,
   }
 }
 

@@ -14,6 +14,10 @@ export {
   latestVisitAt,
   toVisitDto,
   qualityFlags,
+  listForRetention,
+  markPhotosPurged,
+  listForBuildingPeriod,
+  countInPeriod,
 } from './service.js'
 export { useChecklistResolver } from './domain/ports.js'
 export type { ChecklistResolver } from './domain/ports.js'

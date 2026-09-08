@@ -1,7 +1,6 @@
 {
   "lang.bg": "Български",
   "lang.en": "English",
-
   "nav.dashboard": "Табло",
   "nav.buildings": "Обекти / Асансьори",
   "nav.elevators": "Асансьори",
@@ -10,7 +9,6 @@
   "nav.import": "Импорт",
   "nav.users": "Потребители",
   "nav.settings": "Настройки",
-
   "common.loading": "Зареждане…",
   "common.empty": "Няма записи.",
   "common.search": "Търсене…",
@@ -28,7 +26,6 @@
   "common.loadMore": "Зареди още",
   "common.language": "Език",
   "common.close": "Затвори",
-
   "auth.subtitle": "Вход за сервизни фирми",
   "auth.username": "Потребителско име",
   "auth.password": "Парола",
@@ -40,7 +37,6 @@
   "auth.forbidden": "Нямате права за това действие.",
   "auth.csrf": "Заявката е отхвърлена (липсва заглавие X-Requested-With).",
   "auth.rateLimited": "Твърде много опити. Опитайте отново след малко.",
-
   "admin.title": "Администрация на платформата",
   "admin.tenants": "Фирми",
   "admin.company": "Фирма",
@@ -57,7 +53,6 @@
   "admin.required": "Необходим е вход като администратор.",
   "admin.eikTaken": "Вече има регистрирана фирма с този ЕИК.",
   "admin.login": "Вход на администратор",
-
   "dashboard.title": "Табло",
   "dashboard.subtitle": "{overdue, plural, one {# просрочена} other {# просрочени}} · {today} днес · {tomorrow} утре",
   "dashboard.map": "Карта на асансьорите",
@@ -66,7 +61,6 @@
   "dashboard.noPins": "Няма обекти с координати — поставете ги на картата от страницата на обекта.",
   "dashboard.withoutCoordinates": "{count, plural, one {# обект без координати} other {# обекта без координати}}",
   "dashboard.elevatorsTotal": "{count, plural, one {# асансьор} other {# асансьора}}",
-
   "due.title": "Асансьори за поддръжка",
   "due.today": "Днес",
   "due.tomorrow": "Утре",
@@ -81,7 +75,6 @@
   "due.moveBack": "Върни за днес",
   "due.moved": "Проверката е преместена за утре.",
   "due.movedBack": "Преместването е отменено.",
-
   "visits.record": "Отбележи посещение",
   "visits.recorded": "Посещението е записано.",
   "visits.history": "История на поддръжката",
@@ -95,7 +88,6 @@
   "visits.source": "Източник",
   "visits.save": "Запиши посещението",
   "visits.empty": "Няма записани посещения.",
-
   "payments.title": "Плащания",
   "payments.pending": "Чакащи",
   "payments.history": "История",
@@ -131,7 +123,6 @@
   "payments.emptyPending": "Няма чакащи фактури.",
   "payments.emptyHistory": "Няма плащания за този период.",
   "payments.noInvoices": "Няма фактури.",
-
   "address.city": "Град",
   "address.postcode": "Пощ. код",
   "address.oblast": "Област",
@@ -143,7 +134,6 @@
   "address.blockShort": "бл.",
   "address.entrance": "Вход",
   "address.entranceShort": "вх.",
-
   "buildings.title": "Обекти",
   "buildings.new": "Нов обект",
   "buildings.edit": "Редакция на обект",
@@ -170,7 +160,6 @@
   "buildings.lng": "Дължина",
   "buildings.noElevators": "Няма въведени асансьори за този обект.",
   "buildings.hasElevators": "Обектът има асансьори и не може да бъде архивиран.",
-
   "elevators.title": "Асансьори",
   "elevators.one": "Асансьор",
   "elevators.new": "Нов асансьор",
@@ -213,7 +202,6 @@
   "elevators.noContract": "без договор",
   "elevators.address": "Адрес",
   "elevators.archiveOnlyInactive": "Само асансьор извън договор или бракуван може да бъде архивиран.",
-
   "customers.title": "Клиенти",
   "customers.new": "Нов клиент",
   "customers.edit": "Редакция на клиент",
@@ -226,7 +214,6 @@
   "customers.details": "Данни за клиента",
   "customers.allKinds": "Всички типове",
   "customers.noBuildings": "Няма обекти за този клиент.",
-
   "contacts.title": "Контакти",
   "contacts.new": "Нов контакт",
   "contacts.none": "Няма контакти.",
@@ -238,7 +225,6 @@
   "contacts.isPrimary": "Основен контакт",
   "contacts.primary": "основен",
   "contacts.noPhone": "без телефон",
-
   "contracts.title": "Договори",
   "contracts.one": "Договор",
   "contracts.new": "Нов договор",
@@ -270,7 +256,6 @@
   "contracts.duplicateElevator": "Един асансьор е посочен повече от веднъж.",
   "contracts.elevatorNotInBuilding": "Асансьорът не е в избрания обект.",
   "contracts.archiveOnlyInactive": "Активен договор не може да бъде архивиран — първо го прекратете.",
-
   "users.title": "Потребители",
   "users.new": "Нов потребител",
   "users.name": "Име",
@@ -289,7 +274,6 @@
   "users.usernameTaken": "Това потребителско име вече е заето.",
   "users.lastOwner": "Фирмата трябва да има поне един активен собственик.",
   "users.cannotDeactivateSelf": "Не можете да деактивирате собствения си акаунт.",
-
   "settings.title": "Настройки",
   "settings.company": "Фирма",
   "settings.companyName": "Наименование на фирмата",
@@ -312,7 +296,6 @@
   "settings.myLanguage": "Моят език",
   "settings.myLanguageHint": "Личен избор — има предимство пред езика на фирмата.",
   "settings.useTenantLocale": "Както е зададен за фирмата",
-
   "import.title": "Импорт от CSV",
   "import.intro": "Свалете шаблона, попълнете го (един ред = един асансьор) и го качете. Първо ще видите преглед с грешките; данните се записват едва след потвърждение.",
   "import.downloadTemplate": "Свали шаблона (CSV)",
@@ -347,7 +330,6 @@
   "import.missingLastCheck": "Липсва дата на последна проверка.",
   "import.alreadyCommitted": "Този преглед вече е записан.",
   "import.hasErrors": "Прегледът съдържа грешки — коригирайте файла и го качете отново.",
-
   "enum.userRole.owner": "Собственик",
   "enum.userRole.office": "Офис",
   "enum.userRole.technician": "Техник",
@@ -409,14 +391,12 @@
   "enum.dueState.ok": "в срок",
   "enum.dueState.stopped": "спрян",
   "enum.dueState.none": "без срок",
-
   "maintenance.rescheduleInPast": "Проверката не може да се премести на минала дата.",
   "visits.inFuture": "Посещението не може да е в бъдещето.",
   "visits.alreadySuperseded": "Това посещение вече е коригирано с ново.",
   "billing.invoiceNotOpen": "Фактурата не е отворена за плащане.",
   "billing.paymentExceedsOpen": "Плащането надвишава дължимата сума.",
   "billing.invoiceBuildingMismatch": "Фактурата не е за този обект.",
-
   "validation.invalid": "Невалидна стойност.",
   "validation.invalidType": "Невалиден тип на стойността.",
   "validation.invalidFormat": "Невалиден формат.",
@@ -429,7 +409,6 @@
   "validation.contactNeedsParent": "Контактът трябва да е свързан с клиент или обект.",
   "validation.technicianNeedsNameOrUser": "Посочете техник (потребител или име).",
   "validation.yearMonth": "Очаква се период във формат ГГГГ-ММ.",
-
   "error.validation": "Невалидни данни.",
   "error.notFound": "Записът не е намерен.",
   "error.routeNotFound": "Няма такъв адрес в API-то.",
@@ -437,11 +416,9 @@
   "error.payloadTooLarge": "Заявката е твърде голяма.",
   "error.internal": "Възникна вътрешна грешка. Опитайте отново.",
   "error.pageNotFound": "Страницата не е намерена.",
-
   "nav.callbacks": "Аварии",
   "nav.defects": "Дефекти",
   "nav.calendar": "Календар",
-
   "callbacks.title": "Аварии",
   "callbacks.one": "Авария",
   "callbacks.open": "Открити",
@@ -502,7 +479,6 @@
   "callbacks.invalidTransition": "Това действие не е възможно в текущия статус.",
   "callbacks.alreadyClosed": "Аварията вече е приключена.",
   "callbacks.userNotFound": "Няма такъв активен техник.",
-
   "defects.title": "Дефекти",
   "defects.one": "Дефект",
   "defects.new": "Нов дефект",
@@ -541,7 +517,6 @@
   "defects.recordedInFuture": "Датата не може да е в бъдещето.",
   "defects.invalidTransition": "Този преход не е възможен.",
   "defects.alreadyResolved": "Дефектът вече е отстранен.",
-
   "calendar.title": "Календар",
   "calendar.subtitle": "Срокове: прегледи, проверки, дефекти, аварии, тестове на връзката",
   "calendar.overdue": "Просрочени",
@@ -568,7 +543,6 @@
   "calendar.item.alarmTestDue": "Тест на гласовата връзка",
   "calendar.resultRequired": "Посочете резултат за извършен преглед.",
   "calendar.testInFuture": "Датата на теста не може да е в бъдещето.",
-
   "inspections.title": "Технически прегледи",
   "inspections.one": "Преглед",
   "inspections.new": "Нов преглед",
@@ -595,7 +569,6 @@
   "inspections.alarmTestFailed": "Не работи",
   "inspections.alarmTestLogged": "Тестът е записан.",
   "inspections.noAlarmTests": "Няма записани тестове.",
-
   "label.title": "QR етикет",
   "label.print": "QR етикет",
   "label.printAll": "Етикети за целия обект",
@@ -605,7 +578,6 @@
   "label.rotate": "Смени кода",
   "label.rotated": "Кодът е сменен. Старият етикет вече не работи.",
   "label.rotateConfirm": "Смени",
-
   "print.print": "Печат",
   "print.to": "До",
   "print.attn": "На вниманието на",
@@ -624,7 +596,6 @@
   "print.request.window": "Предлагаме прегледът да се извърши в периода {from} – {to}.",
   "print.request.access": "Молим да осигурите достъп до машинното помещение и шахтата в уговорения ден.",
   "print.request.contact": "За уговаряне на ден и час: {phone}.",
-
   "public.emergency": "Авария или заседнал човек",
   "public.callHint": "натиснете, за да се обадите",
   "public.address": "Адрес",
@@ -647,7 +618,6 @@
   "public.notFoundTitle": "Страницата не е налична",
   "public.notFoundText": "Кодът не е валиден или страницата е изключена.",
   "public.footer": "Страницата се поддържа от сервизната фирма.",
-
   "settings.inspectionIntervalMonths": "Интервал между прегледи (месеци)",
   "settings.firstInspectionIntervalMonths": "Първи преглед след (месеци)",
   "settings.alarmTestIntervalMonths": "Тест на гласовата връзка на (месеци)",
@@ -656,14 +626,12 @@
   "settings.publicQrPage": "QR страницата на асансьорите е включена",
   "settings.publicFaultReport": "Форма „Съобщи за проблем“ на страницата",
   "settings.defaultsHint": "Празно = стойността по подразбиране.",
-
   "elevators.callbacks": "Аварии",
   "elevators.defects": "Дефекти",
   "elevators.inspections": "Прегледи",
   "elevators.stoppedSince": "спрян от {date}",
   "elevators.stopReason": "Причина за спиране",
   "elevators.openCallbacks": "{count, plural, one {# открита авария} other {# открити аварии}}",
-
   "enum.callbackChannel.phone": "телефон",
   "enum.callbackChannel.public_page": "QR страница",
   "enum.callbackChannel.office": "офис",
@@ -718,9 +686,7 @@
   "enum.calendarKind.defect_follow_up": "дефекти без отговор",
   "enum.calendarKind.callback_sla": "аварии над лимита",
   "enum.calendarKind.alarm_test_due": "тестове на връзката",
-
   "callbacks.hoursMinutes": "{hours} ч {minutes} мин",
-
   "auth.enrollInvalid": "Кодът за свързване е невалиден, изтекъл или вече използван.",
   "sync.idempotencyKeyRequired": "Липсва заглавие Idempotency-Key.",
   "sync.idempotencyKeyInvalid": "Невалиден Idempotency-Key.",
@@ -734,7 +700,6 @@
   "attachments.notAnImage": "Файлът не е валидно изображение.",
   "checklists.templateNotFound": "Няма активен чеклист за този вид посещение.",
   "checklists.unknownItem": "Непозната точка от чеклиста.",
-
   "checklist.group.panels": "Бутонни табла и осветление на кабината",
   "checklist.group.shaft_doors": "Шахтни врати",
   "checklist.group.auto_doors": "Автоматични врати",
@@ -754,7 +719,6 @@
   "enum.timestampSource.manual": "въведено ръчно",
   "enum.sessionKind.browser": "браузър",
   "enum.sessionKind.device": "телефон",
-
   "visits.flag.singleTechnician": "по-малко монтьори от изискваните",
   "visits.flag.endBeforeStart": "край преди начало",
   "visits.flag.clockSuspect": "съмнителен час на телефона",
@@ -765,7 +729,6 @@
   "visits.logbookPage": "Страница за дневника",
   "visits.checklist": "Чеклист",
   "visits.viewPhoto": "Отвори снимката",
-
   "logbook.title": "Запис за дневника на асансьора",
   "logbook.subtitle": "Копие от офис записа – хартиеният дневник остава водещ.",
   "logbook.date": "Дата и час",
@@ -778,7 +741,6 @@
   "logbook.signature": "подпис",
   "logbook.footer": "Запис №",
   "logbook.received": "получен в системата на {at}",
-
   "users.connectPhone": "Свържи телефон",
   "users.connectPhoneTitle": "Свързване на телефон за {name}",
   "users.connectPhoneHint": "Сканирайте кода с камерата на телефона или отворете приложението и въведете кода. Валиден е 10 минути и само веднъж.",
@@ -795,13 +757,11 @@
   "users.sessionRevoked": "Сесията е прекратена.",
   "users.sessionCurrent": "тази сесия",
   "users.noSessions": "Няма активни сесии.",
-
   "settings.minTechnicians": "Минимален брой монтьори за посещение",
   "settings.minTechniciansHint": "Посещение с по-малко монтьори се записва, но се отбелязва за преглед от офиса.",
   "elevators.goodsOnly": "Товарен асансьор (без придружител)",
   "settings.gpsCapture": "Приложението записва GPS позиция при запис на посещение",
   "settings.techApp": "Приложение за монтьори",
-
   "tech.appName": "Avroleva Монтьор",
   "tech.nav.today": "Днес",
   "tech.nav.callbacks": "Аварии",
@@ -931,5 +891,52 @@
   "tech.common.no": "Не",
   "tech.common.today": "днес",
   "tech.common.tomorrow": "утре",
-  "tech.common.me": "аз"
+  "tech.common.me": "аз",
+  "notifications.templateInvalid": "Шаблонът има грешка в синтаксиса.",
+  "notifications.templateMissing": "Няма шаблон за това уведомление.",
+  "notifications.noRecipient": "Няма получател: добавете имейл/телефон на потребителя или го въведете.",
+  "notifications.notMarkable": "Само Viber връзки могат да се маркират като изпратени.",
+  "notifications.noContact": "Сградата няма лице за контакт.",
+  "notifications.noEmail": "Лицето за контакт няма имейл.",
+  "notifications.noPhone": "Лицето за контакт няма телефон.",
+  "notifications.channelNotForContacts": "Този канал не е за лица за контакт.",
+  "exports.alreadyRunning": "Вече се подготвя пълен експорт – изчакайте да приключи.",
+  "data.deletionAlreadyScheduled": "Изтриването вече е заявено.",
+  "data.deletionNotScheduled": "Няма заявено изтриване, което да бъде отказано.",
+  "reports.noEmail": "Сградата няма лице за контакт с имейл – отчетът не е изпратен.",
+  "reports.sendFailed": "Отчетът не можа да бъде изпратен.",
+  "report.title": "Какво направихме за вашите асансьори през {month}",
+  "report.date": "Дата и час",
+  "report.kind": "Вид",
+  "report.technicians": "Монтьори",
+  "report.checklist": "Проверени точки",
+  "report.defectsFound": "Установени дефекти",
+  "report.ok": "в ред",
+  "report.defect": "с дефект",
+  "report.noVisits": "Няма посещения през месеца.",
+  "report.received": "Приета на",
+  "report.classification": "Вид",
+  "report.response": "Реакция",
+  "report.cause": "Причина",
+  "report.status": "Статус",
+  "report.minutes": "{count} мин",
+  "report.noCallbacks": "Няма аварии през месеца.",
+  "report.noOpenDefects": "Няма отворени дефекти.",
+  "report.elevator": "Асансьор",
+  "report.nextCheck": "Следваща проверка",
+  "report.nextInspection": "Следващ технически преглед",
+  "report.visits": "Посещения",
+  "report.callbacks": "Аварии",
+  "report.openDefects": "Отворени дефекти",
+  "report.period": "Период",
+  "report.amount": "Сума",
+  "report.paid": "Платено",
+  "report.due": "Срок",
+  "report.noInvoices": "Няма фактури за периода.",
+  "report.contact": "Лице за контакт",
+  "report.avgResponse": "Средна реакция (мин)",
+  "report.billing": "Фактури и плащания",
+  "report.outstanding": "Дължимо",
+  "report.footer": "При авария: {phone}",
+  "report.generatedAt": "Генериран на"
 }

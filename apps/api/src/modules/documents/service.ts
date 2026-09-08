@@ -199,3 +199,77 @@ export async function attachmentsForVisits(
   }
   return out
 }
+
+// ---- Retention and cleanup (jobs) ----------------------------------------------------------
+
+async function removeFiles(rows: Array<{ storageKey: string; thumbKey: string | null }>) {
+  let removed = 0
+  for (const r of rows) {
+    await adapters.storage.remove(r.storageKey)
+    if (r.thumbKey) await adapters.storage.remove(r.thumbKey)
+    removed++
+  }
+  return removed
+}
+
+/**
+ * Retention sweep (tenant.settings.retentionYears): deletes the photos of the given visits - the
+ * links, the rows and the files. The visit rows stay (visits.markPhotosPurged sets the flag).
+ */
+export async function purgeVisitPhotos(
+  tenantId: string,
+  visitIds: string[],
+): Promise<{ attachments: number; files: number }> {
+  const rows = await repo.attachmentsLinkedToVisits(tenantId, visitIds)
+  await repo.deleteLinksForVisits(tenantId, visitIds)
+  // An attachment still linked to a visit outside the batch (supersede chains) is kept.
+  const stillLinked = new Set<string>()
+  for (const a of rows) {
+    const other = await repo.linksForAttachment(tenantId, a.id)
+    if (other.length > 0) stillLinked.add(a.id)
+  }
+  const gone = rows.filter((a) => !stillLinked.has(a.id))
+  const files = await removeFiles(gone)
+  const attachments = await repo.deleteAttachments(
+    tenantId,
+    gone.map((a) => a.id),
+  )
+  return { attachments, files }
+}
+
+/** Weekly: attachments older than 7 days that no visit references (abandoned uploads). */
+export async function cleanupOrphans(
+  tenantId: string,
+  before: Date,
+): Promise<{ attachments: number }> {
+  const orphans = await repo.listOrphans(tenantId, before)
+  await removeFiles(orphans)
+  const attachments = await repo.deleteAttachments(
+    tenantId,
+    orphans.map((o) => o.id),
+  )
+  return { attachments }
+}
+
+/** Tenant purge helper: every file key the tenant owns (the platform purge removes them). */
+export async function storageKeysOf(tenantId: string): Promise<string[]> {
+  const rows = await repo.allStorageKeys(tenantId)
+  const keys: string[] = []
+  for (const r of rows) {
+    keys.push(r.storageKey)
+    if (r.thumbKey) keys.push(r.thumbKey)
+  }
+  return keys
+}
+
+/** Bytes of a stored attachment for the full export (null when the file is gone). */
+export async function readBytes(
+  tenantId: string,
+  id: string,
+): Promise<{ bytes: Buffer; mime: string; filename: string } | null> {
+  const a = await repo.findAttachment(tenantId, id)
+  if (!a) return null
+  const f = await adapters.storage.get(a.storageKey)
+  if (!f) return null
+  return { ...f, filename: `${a.id}.jpg` }
+}

@@ -77,6 +77,12 @@ adminRouter.patch('/admin/tenants/:id', async (req, res) => {
   res.json(await withCounts(t))
 })
 
+/** Cancels a scheduled deletion at the owner's written request (audited as platformAdmin). */
+adminRouter.post('/admin/tenants/:id/cancel-deletion', async (req, res) => {
+  const t = await tenancy.adminCancelDeletion(adminActorOf(adminOf(req)), parseId(req))
+  res.json(await withCounts(t))
+})
+
 adminRouter.post('/admin/tenants/:id/users/:userId/password', async (req, res) => {
   await tenancy.adminResetUserPassword(
     adminActorOf(adminOf(req)),

@@ -19,6 +19,7 @@ enum TenantStatus {
   active
   read_only
   closed
+  deletion_scheduled
 }
 
 enum UserRole {
@@ -34,39 +35,42 @@ enum SessionKind {
 }
 
 model Tenant {
-  id             String       @id @db.Uuid
-  name           String
-  legalForm      String?
-  eik            String
-  vatNo          String?
-  vatRegistered  Boolean      @default(false)
-  address        String
-  phone          String
-  emergencyPhone String
-  email          String?
-  locale         String       @default("bg")
-  timezone       String       @default("Europe/Sofia")
-  settings       Json         @default("{}")
-  features       Json         @default("{}")
-  status         TenantStatus @default(active)
-  createdAt      DateTime     @default(now()) @db.Timestamptz
-  updatedAt      DateTime     @updatedAt @db.Timestamptz
-  deletedAt      DateTime?    @db.Timestamptz
+  id                        String       @id @db.Uuid
+  name                      String
+  legalForm                 String?
+  eik                       String
+  vatNo                     String?
+  vatRegistered             Boolean      @default(false)
+  address                   String
+  phone                     String
+  emergencyPhone            String
+  email                     String?
+  locale                    String       @default("bg")
+  timezone                  String       @default("Europe/Sofia")
+  settings                  Json         @default("{}")
+  features                  Json         @default("{}")
+  status                    TenantStatus @default(active)
+  /// Owner-requested deletion (30-day grace): the day the daily sweep purges everything.
+  deletionAt                DateTime?    @db.Timestamptz
+  deletionRequestedByUserId String?      @db.Uuid
+  createdAt                 DateTime     @default(now()) @db.Timestamptz
+  updatedAt                 DateTime     @updatedAt @db.Timestamptz
+  deletedAt                 DateTime?    @db.Timestamptz
 
-  users     User[]
-  sessions  Session[]
-  customers Customer[]
-  contacts  Contact[]
-  buildings Building[]
-  elevators Elevator[]
-  contracts Contract[]
-  visits    Visit[]
-  invoices  Invoice[]
-  payments  Payment[]
-  callbacks   Callback[]
-  defects     Defect[]
-  inspections Inspection[]
-  alarmTests  AlarmDeviceTest[]
+  users            User[]
+  sessions         Session[]
+  customers        Customer[]
+  contacts         Contact[]
+  buildings        Building[]
+  elevators        Elevator[]
+  contracts        Contract[]
+  visits           Visit[]
+  invoices         Invoice[]
+  payments         Payment[]
+  callbacks        Callback[]
+  defects          Defect[]
+  inspections      Inspection[]
+  alarmTests       AlarmDeviceTest[]
   attachments      Attachment[]
   enrollmentTokens DeviceEnrollmentToken[]
 
@@ -91,8 +95,8 @@ model User {
   updatedAt    DateTime  @updatedAt @db.Timestamptz
   deletedAt    DateTime? @db.Timestamptz
 
-  tenant   Tenant    @relation(fields: [tenantId], references: [id])
-  sessions Session[]
+  tenant           Tenant                  @relation(fields: [tenantId], references: [id])
+  sessions         Session[]
   enrollmentTokens DeviceEnrollmentToken[]
 
   @@index([tenantId, role])
@@ -443,28 +447,30 @@ enum TimestampSource {
 }
 
 model Visit {
-  id                String      @id @db.Uuid
-  tenantId          String      @db.Uuid
-  elevatorId        String      @db.Uuid
-  buildingId        String      @db.Uuid
+  id                String          @id @db.Uuid
+  tenantId          String          @db.Uuid
+  elevatorId        String          @db.Uuid
+  buildingId        String          @db.Uuid
   kind              VisitKind
-  startedAt         DateTime    @db.Timestamptz
-  endedAt           DateTime?   @db.Timestamptz
+  startedAt         DateTime        @db.Timestamptz
+  endedAt           DateTime?       @db.Timestamptz
   notes             String?
-  source            VisitSource @default(office)
+  source            VisitSource     @default(office)
   /// A13: which clock produced startedAt/endedAt and the phone's measured offset at the time.
   timestampSource   TimestampSource @default(server)
-  clientOffsetMs    Int         @default(0)
+  clientOffsetMs    Int             @default(0)
   /// Checklist snapshot: template key/version + every answered item with its label (JSONB).
   templateKey       String?
   templateVersion   Int?
   checklist         Json?
   gps               Json?
-  qualityFlags      Json        @default("[]")
-  createdByUserId   String?     @db.Uuid
-  supersedesVisitId String?     @db.Uuid
-  supersededAt      DateTime?   @db.Timestamptz
-  createdAt         DateTime    @default(now()) @db.Timestamptz
+  qualityFlags      Json            @default("[]")
+  createdByUserId   String?         @db.Uuid
+  supersedesVisitId String?         @db.Uuid
+  supersededAt      DateTime?       @db.Timestamptz
+  /// Set by the retention sweep when the visit's photos were purged (tenant.settings.retentionYears).
+  photosPurgedAt    DateTime?       @db.Timestamptz
+  createdAt         DateTime        @default(now()) @db.Timestamptz
 
   tenant      Tenant            @relation(fields: [tenantId], references: [id])
   elevator    Elevator          @relation(fields: [elevatorId], references: [id])
@@ -916,4 +922,185 @@ model AuditLog {
   @@index([tenantId, at])
   @@index([entityType, entityId])
   @@map("audit_log")
+}
+
+// ---------------------------------------------------------------- notifications (L4)
+
+enum NotificationChannel {
+  email
+  sms
+  viber_link
+  in_app
+}
+
+enum NotificationStatus {
+  queued
+  sent
+  failed
+  skipped
+}
+
+enum RecipientKind {
+  building_contact
+  owner
+  office
+  assigned_technician
+}
+
+/// Handlebars templates: system rows (tenantId NULL) per key/channel/locale, tenant rows shadow them.
+model NotificationTemplate {
+  id        String              @id @db.Uuid
+  tenantId  String?             @db.Uuid
+  key       String
+  channel   NotificationChannel
+  locale    String
+  subject   String?
+  body      String
+  active    Boolean             @default(true)
+  createdAt DateTime            @default(now()) @db.Timestamptz
+  updatedAt DateTime            @updatedAt @db.Timestamptz
+  deletedAt DateTime?           @db.Timestamptz
+
+  @@unique([tenantId, key, channel, locale])
+  @@index([key, channel, locale])
+  @@map("notification_template")
+}
+
+/// Which event goes out on which channel to whom (ARCHITECTURE A8: the rule table decides).
+model NotificationRule {
+  id            String              @id @db.Uuid
+  tenantId      String              @db.Uuid
+  eventType     String
+  channel       NotificationChannel
+  recipientKind RecipientKind
+  enabled       Boolean             @default(true)
+  config        Json                @default("{}")
+  createdAt     DateTime            @default(now()) @db.Timestamptz
+  updatedAt     DateTime            @updatedAt @db.Timestamptz
+
+  @@unique([tenantId, eventType, channel, recipientKind])
+  @@map("notification_rule")
+}
+
+/// Delivery log (append-only): one row per recipient per channel. In-app rows are addressed to a user.
+model Notification {
+  id          String              @id @db.Uuid
+  tenantId    String              @db.Uuid
+  ruleId      String?             @db.Uuid
+  eventId     String?             @db.Uuid
+  eventType   String?
+  channel     NotificationChannel
+  to          String
+  userId      String?             @db.Uuid
+  subject     String?
+  body        String
+  status      NotificationStatus  @default(queued)
+  providerId  String?
+  error       String?
+  relatedType String?
+  relatedId   String?             @db.Uuid
+  link        String?
+  /// viber_link rows: {number, chatUrl, forwardUrl, webUrl, text}; e-mail rows: {html?, attachments?}.
+  meta        Json?
+  attempts    Int                 @default(0)
+  readAt      DateTime?           @db.Timestamptz
+  createdAt   DateTime            @default(now()) @db.Timestamptz
+  sentAt      DateTime?           @db.Timestamptz
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([tenantId, userId, readAt])
+  @@index([tenantId, status])
+  @@index([tenantId, relatedType, relatedId])
+  @@map("notification")
+}
+
+// ---------------------------------------------------------------- reporting (L4)
+
+enum ExportJobStatus {
+  queued
+  running
+  done
+  failed
+}
+
+model ExportJob {
+  id                String          @id @db.Uuid
+  tenantId          String          @db.Uuid
+  kind              String          @default("full")
+  status            ExportJobStatus @default(queued)
+  requestedByUserId String?         @db.Uuid
+  storageKey        String?
+  bytes             Int?
+  summary           Json?
+  error             String?
+  createdAt         DateTime        @default(now()) @db.Timestamptz
+  startedAt         DateTime?       @db.Timestamptz
+  finishedAt        DateTime?       @db.Timestamptz
+  expiresAt         DateTime?       @db.Timestamptz
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([expiresAt])
+  @@map("export_job")
+}
+
+enum ReportRunStatus {
+  generated
+  sent
+  failed
+  skipped
+}
+
+model ReportRun {
+  id             String          @id @db.Uuid
+  tenantId       String          @db.Uuid
+  kind           String          @default("building_month")
+  buildingId     String?         @db.Uuid
+  period         String
+  status         ReportRunStatus @default(generated)
+  sentTo         String?
+  notificationId String?         @db.Uuid
+  error          String?
+  byUserId       String?         @db.Uuid
+  createdAt      DateTime        @default(now()) @db.Timestamptz
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([tenantId, buildingId, period])
+  @@map("report_run")
+}
+
+// ---------------------------------------------------------------- platform: event delivery + jobs
+
+enum DeliveryStatus {
+  pending
+  done
+  failed
+}
+
+/// Per-(event, handler) delivery record: idempotency for the pg-boss dispatcher (ARCHITECTURE A8).
+model EventDelivery {
+  eventId     String         @db.Uuid
+  handler     String
+  status      DeliveryStatus @default(pending)
+  attempts    Int            @default(0)
+  lastError   String?
+  createdAt   DateTime       @default(now()) @db.Timestamptz
+  processedAt DateTime?      @db.Timestamptz
+
+  @@id([eventId, handler])
+  @@index([status, createdAt])
+  @@map("event_delivery")
+}
+
+/// Last run per scheduled job, shown on /health and /admin.
+model JobRun {
+  name           String    @id
+  cron           String?
+  lastStartedAt  DateTime? @db.Timestamptz
+  lastFinishedAt DateTime? @db.Timestamptz
+  lastStatus     String?
+  lastError      String?
+  lastDurationMs Int?
+  lastResult     Json?
+
+  @@map("job_run")
 }

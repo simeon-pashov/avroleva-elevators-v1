@@ -97,6 +97,8 @@ export interface VisitDto {
   createdByUserId: string | null
   supersedesVisitId: string | null
   supersededAt: string | null
+  /** Photos removed by the retention sweep (tenant.settings.retentionYears); the record itself is kept. */
+  photosPurgedAt: string | null
   createdAt: string
 }
 

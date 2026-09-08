@@ -18,10 +18,22 @@ export function app(): Express {
   return createApp()
 }
 
-/** Truncates every table (order-independent thanks to CASCADE). */
+/**
+ * Truncates every table (order-independent thanks to CASCADE). Guarded: the connected database
+ * must be a test database (name contains "test"), so a shell with NODE_ENV unset can never wipe
+ * the dev data (it happened once in step 4).
+ */
 export async function resetDb(): Promise<void> {
+  const [{ current_database: name }] = await prismaBase.$queryRawUnsafe<
+    Array<{ current_database: string }>
+  >('SELECT current_database()')
+  if (!/test/i.test(name)) {
+    throw new Error(
+      `resetDb refused: connected to "${name}", not a test database (NODE_ENV=${config.NODE_ENV}, TEST_DATABASE_URL set: ${!!config.TEST_DATABASE_URL})`,
+    )
+  }
   await prismaBase.$executeRawUnsafe(
-    'TRUNCATE TABLE "audit_log", "domain_event", "idempotency_key", "visit_attachment", "attachment", "device_enrollment_token", "checklist_template", "alarm_device_test", "inspection", "defect", "callback_event", "callback", "payment", "invoice", "invoice_sequence", "visit_technician", "visit", "import_batch", "contract_elevator", "contract", "elevator", "contact", "building", "customer", "session", "user", "tenant", "platform_admin" CASCADE',
+    'TRUNCATE TABLE "audit_log", "domain_event", "event_delivery", "job_run", "notification", "notification_rule", "notification_template", "export_job", "report_run", "idempotency_key", "visit_attachment", "attachment", "device_enrollment_token", "checklist_template", "alarm_device_test", "inspection", "defect", "callback_event", "callback", "payment", "invoice", "invoice_sequence", "visit_technician", "visit", "import_batch", "contract_elevator", "contract", "elevator", "contact", "building", "customer", "session", "user", "tenant", "platform_admin" CASCADE',
   )
 }
 

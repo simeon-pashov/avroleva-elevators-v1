@@ -14,6 +14,7 @@ import { nextDue, scheduleRules } from '../../src/modules/maintenance/index.js'
 import * as billing from '../../src/modules/billing/index.js'
 import { seedStep3 } from './step3.js'
 import { seedStep4 } from './step4.js'
+import { seedStep5 } from './step5.js'
 
 useScheduleRules(scheduleRules)
 import type {
@@ -759,6 +760,7 @@ export async function seedDemoTenant(): Promise<Record<string, number>> {
   )
   Object.assign(counts, step3)
   Object.assign(counts, await seedStep4(tenantId))
+  Object.assign(counts, await seedStep5(tenantId))
 
   return { ...counts, tenantIdKnown: 1 }
 }

@@ -1,7 +1,6 @@
 {
   "lang.bg": "Български",
   "lang.en": "English",
-
   "nav.dashboard": "Dashboard",
   "nav.buildings": "Sites / Elevators",
   "nav.elevators": "Elevators",
@@ -10,7 +9,6 @@
   "nav.import": "Import",
   "nav.users": "Users",
   "nav.settings": "Settings",
-
   "common.loading": "Loading…",
   "common.empty": "No records.",
   "common.search": "Search…",
@@ -28,7 +26,6 @@
   "common.loadMore": "Load more",
   "common.language": "Language",
   "common.close": "Close",
-
   "auth.subtitle": "Sign-in for maintenance firms",
   "auth.username": "Username",
   "auth.password": "Password",
@@ -40,7 +37,6 @@
   "auth.forbidden": "You do not have permission for this action.",
   "auth.csrf": "Request rejected (missing X-Requested-With header).",
   "auth.rateLimited": "Too many attempts. Please try again later.",
-
   "admin.title": "Platform administration",
   "admin.tenants": "Companies",
   "admin.company": "Company",
@@ -57,7 +53,6 @@
   "admin.required": "Administrator sign-in required.",
   "admin.eikTaken": "A company with this EIK is already registered.",
   "admin.login": "Administrator sign-in",
-
   "dashboard.title": "Dashboard",
   "dashboard.subtitle": "{overdue, plural, one {# overdue} other {# overdue}} · {today} today · {tomorrow} tomorrow",
   "dashboard.map": "Elevator map",
@@ -66,7 +61,6 @@
   "dashboard.noPins": "No sites with coordinates — place them on the map from the site page.",
   "dashboard.withoutCoordinates": "{count, plural, one {# site without coordinates} other {# sites without coordinates}}",
   "dashboard.elevatorsTotal": "{count, plural, one {# elevator} other {# elevators}}",
-
   "due.title": "Elevators due for maintenance",
   "due.today": "Today",
   "due.tomorrow": "Tomorrow",
@@ -81,7 +75,6 @@
   "due.moveBack": "Move back to today",
   "due.moved": "The check was moved to tomorrow.",
   "due.movedBack": "The reschedule was cleared.",
-
   "visits.record": "Record visit",
   "visits.recorded": "Visit recorded.",
   "visits.history": "Maintenance history",
@@ -95,7 +88,6 @@
   "visits.source": "Source",
   "visits.save": "Save visit",
   "visits.empty": "No visits recorded.",
-
   "payments.title": "Payments",
   "payments.pending": "Pending",
   "payments.history": "History",
@@ -131,7 +123,6 @@
   "payments.emptyPending": "No pending invoices.",
   "payments.emptyHistory": "No payments in this period.",
   "payments.noInvoices": "No invoices.",
-
   "address.city": "City",
   "address.postcode": "Postcode",
   "address.oblast": "Region (oblast)",
@@ -143,7 +134,6 @@
   "address.blockShort": "bl.",
   "address.entrance": "Entrance",
   "address.entranceShort": "ent.",
-
   "buildings.title": "Sites",
   "buildings.new": "New site",
   "buildings.edit": "Edit site",
@@ -170,7 +160,6 @@
   "buildings.lng": "Longitude",
   "buildings.noElevators": "No elevators entered for this site.",
   "buildings.hasElevators": "The site has elevators and cannot be archived.",
-
   "elevators.title": "Elevators",
   "elevators.one": "Elevator",
   "elevators.new": "New elevator",
@@ -213,7 +202,6 @@
   "elevators.noContract": "no contract",
   "elevators.address": "Address",
   "elevators.archiveOnlyInactive": "Only an elevator out of contract or scrapped can be archived.",
-
   "customers.title": "Customers",
   "customers.new": "New customer",
   "customers.edit": "Edit customer",
@@ -226,7 +214,6 @@
   "customers.details": "Customer details",
   "customers.allKinds": "All types",
   "customers.noBuildings": "No sites for this customer.",
-
   "contacts.title": "Contacts",
   "contacts.new": "New contact",
   "contacts.none": "No contacts.",
@@ -238,7 +225,6 @@
   "contacts.isPrimary": "Primary contact",
   "contacts.primary": "primary",
   "contacts.noPhone": "no phone",
-
   "contracts.title": "Contracts",
   "contracts.one": "Contract",
   "contracts.new": "New contract",
@@ -270,7 +256,6 @@
   "contracts.duplicateElevator": "An elevator is listed more than once.",
   "contracts.elevatorNotInBuilding": "The elevator is not in the selected site.",
   "contracts.archiveOnlyInactive": "An active contract cannot be archived — terminate it first.",
-
   "users.title": "Users",
   "users.new": "New user",
   "users.name": "Name",
@@ -289,7 +274,6 @@
   "users.usernameTaken": "This username is already taken.",
   "users.lastOwner": "The company must keep at least one active owner.",
   "users.cannotDeactivateSelf": "You cannot deactivate your own account.",
-
   "settings.title": "Settings",
   "settings.company": "Company",
   "settings.companyName": "Company name",
@@ -312,7 +296,6 @@
   "settings.myLanguage": "My language",
   "settings.myLanguageHint": "Personal choice — takes precedence over the company language.",
   "settings.useTenantLocale": "As set for the company",
-
   "import.title": "CSV import",
   "import.intro": "Download the template, fill it in (one row = one elevator) and upload it. You will first see a preview with the errors; data is written only after confirmation.",
   "import.downloadTemplate": "Download template (CSV)",
@@ -347,7 +330,6 @@
   "import.missingLastCheck": "Last check date missing.",
   "import.alreadyCommitted": "This preview has already been written.",
   "import.hasErrors": "The preview contains errors — fix the file and upload it again.",
-
   "enum.userRole.owner": "Owner",
   "enum.userRole.office": "Office",
   "enum.userRole.technician": "Technician",
@@ -409,14 +391,12 @@
   "enum.dueState.ok": "on schedule",
   "enum.dueState.stopped": "stopped",
   "enum.dueState.none": "no due date",
-
   "maintenance.rescheduleInPast": "A check cannot be moved to a past date.",
   "visits.inFuture": "A visit cannot be in the future.",
   "visits.alreadySuperseded": "This visit has already been amended.",
   "billing.invoiceNotOpen": "The invoice is not open for payment.",
   "billing.paymentExceedsOpen": "The payment exceeds the open amount.",
   "billing.invoiceBuildingMismatch": "The invoice does not belong to this site.",
-
   "validation.invalid": "Invalid value.",
   "validation.invalidType": "Invalid value type.",
   "validation.invalidFormat": "Invalid format.",
@@ -429,7 +409,6 @@
   "validation.contactNeedsParent": "The contact must be linked to a customer or a site.",
   "validation.technicianNeedsNameOrUser": "Specify a technician (user or name).",
   "validation.yearMonth": "A period in the form YYYY-MM is expected.",
-
   "error.validation": "Validation failed",
   "error.notFound": "Record not found.",
   "error.routeNotFound": "No such API route.",
@@ -437,11 +416,9 @@
   "error.payloadTooLarge": "The request is too large.",
   "error.internal": "An internal error occurred. Please try again.",
   "error.pageNotFound": "Page not found.",
-
   "nav.callbacks": "Callbacks",
   "nav.defects": "Defects",
   "nav.calendar": "Calendar",
-
   "callbacks.title": "Callbacks",
   "callbacks.one": "Callback",
   "callbacks.open": "Open",
@@ -502,7 +479,6 @@
   "callbacks.invalidTransition": "This action is not possible in the current status.",
   "callbacks.alreadyClosed": "The callback is already closed.",
   "callbacks.userNotFound": "No such active technician.",
-
   "defects.title": "Defects",
   "defects.one": "Defect",
   "defects.new": "New defect",
@@ -541,7 +517,6 @@
   "defects.recordedInFuture": "The date cannot be in the future.",
   "defects.invalidTransition": "This transition is not possible.",
   "defects.alreadyResolved": "The defect is already resolved.",
-
   "calendar.title": "Calendar",
   "calendar.subtitle": "Deadlines: inspections, checks, defects, callbacks, voice-link tests",
   "calendar.overdue": "Overdue",
@@ -568,7 +543,6 @@
   "calendar.item.alarmTestDue": "Voice-link test",
   "calendar.resultRequired": "Give a result for a performed inspection.",
   "calendar.testInFuture": "The test date cannot be in the future.",
-
   "inspections.title": "Technical inspections",
   "inspections.one": "Inspection",
   "inspections.new": "New inspection",
@@ -595,7 +569,6 @@
   "inspections.alarmTestFailed": "Does not work",
   "inspections.alarmTestLogged": "Test logged.",
   "inspections.noAlarmTests": "No tests logged.",
-
   "label.title": "QR label",
   "label.print": "QR label",
   "label.printAll": "Labels for the whole building",
@@ -605,7 +578,6 @@
   "label.rotate": "Rotate code",
   "label.rotated": "Code rotated. The old label no longer works.",
   "label.rotateConfirm": "Rotate",
-
   "print.print": "Print",
   "print.to": "To",
   "print.attn": "Attn.",
@@ -624,7 +596,6 @@
   "print.request.window": "We propose to carry out the inspection between {from} and {to}.",
   "print.request.access": "Please provide access to the machine room and the shaft on the agreed day.",
   "print.request.contact": "To agree a day and time: {phone}.",
-
   "public.emergency": "Emergency or trapped person",
   "public.callHint": "tap to call",
   "public.address": "Address",
@@ -647,7 +618,6 @@
   "public.notFoundTitle": "Page not available",
   "public.notFoundText": "The code is not valid or the page is switched off.",
   "public.footer": "This page is maintained by the service firm.",
-
   "settings.inspectionIntervalMonths": "Inspection interval (months)",
   "settings.firstInspectionIntervalMonths": "First inspection after (months)",
   "settings.alarmTestIntervalMonths": "Voice-link test every (months)",
@@ -656,14 +626,12 @@
   "settings.publicQrPage": "Elevator QR page enabled",
   "settings.publicFaultReport": "\"Report a problem\" form on the page",
   "settings.defaultsHint": "Empty = default value.",
-
   "elevators.callbacks": "Callbacks",
   "elevators.defects": "Defects",
   "elevators.inspections": "Inspections",
   "elevators.stoppedSince": "stopped since {date}",
   "elevators.stopReason": "Stop reason",
   "elevators.openCallbacks": "{count, plural, one {# open callback} other {# open callbacks}}",
-
   "enum.callbackChannel.phone": "phone",
   "enum.callbackChannel.public_page": "QR page",
   "enum.callbackChannel.office": "office",
@@ -718,9 +686,7 @@
   "enum.calendarKind.defect_follow_up": "defects without answer",
   "enum.calendarKind.callback_sla": "callbacks over limit",
   "enum.calendarKind.alarm_test_due": "voice-link tests",
-
   "callbacks.hoursMinutes": "{hours} h {minutes} min",
-
   "auth.enrollInvalid": "The enrollment code is invalid, expired or already used.",
   "sync.idempotencyKeyRequired": "Idempotency-Key header is required.",
   "sync.idempotencyKeyInvalid": "Invalid Idempotency-Key.",
@@ -734,7 +700,6 @@
   "attachments.notAnImage": "The file is not a valid image.",
   "checklists.templateNotFound": "No active checklist for this visit kind.",
   "checklists.unknownItem": "Unknown checklist item.",
-
   "checklist.group.panels": "Push-button panels and cabin lighting",
   "checklist.group.shaft_doors": "Shaft doors",
   "checklist.group.auto_doors": "Automatic doors",
@@ -754,7 +719,6 @@
   "enum.timestampSource.manual": "entered by hand",
   "enum.sessionKind.browser": "browser",
   "enum.sessionKind.device": "phone",
-
   "visits.flag.singleTechnician": "fewer technicians than required",
   "visits.flag.endBeforeStart": "end before start",
   "visits.flag.clockSuspect": "suspicious phone clock",
@@ -765,7 +729,6 @@
   "visits.logbookPage": "Logbook page",
   "visits.checklist": "Checklist",
   "visits.viewPhoto": "Open photo",
-
   "logbook.title": "Lift logbook entry",
   "logbook.subtitle": "Copy of the office record – the paper logbook remains the book of record.",
   "logbook.date": "Date and time",
@@ -778,7 +741,6 @@
   "logbook.signature": "signature",
   "logbook.footer": "Record no.",
   "logbook.received": "received by the system on {at}",
-
   "users.connectPhone": "Connect a phone",
   "users.connectPhoneTitle": "Connect a phone for {name}",
   "users.connectPhoneHint": "Scan the code with the phone camera, or open the app and type the code. Valid for 10 minutes, once.",
@@ -795,13 +757,11 @@
   "users.sessionRevoked": "Session ended.",
   "users.sessionCurrent": "this session",
   "users.noSessions": "No active sessions.",
-
   "settings.minTechnicians": "Minimum technicians per visit",
   "settings.minTechniciansHint": "A visit with fewer technicians is recorded but flagged for the office.",
   "elevators.goodsOnly": "Goods-only lift (no attendant)",
   "settings.gpsCapture": "The technician app records a GPS position when saving a visit",
   "settings.techApp": "Technician app",
-
   "tech.appName": "Avroleva Technician",
   "tech.nav.today": "Today",
   "tech.nav.callbacks": "Callbacks",
@@ -931,5 +891,52 @@
   "tech.common.no": "No",
   "tech.common.today": "today",
   "tech.common.tomorrow": "tomorrow",
-  "tech.common.me": "me"
+  "tech.common.me": "me",
+  "notifications.templateInvalid": "The template has a syntax error.",
+  "notifications.templateMissing": "There is no template for this notification.",
+  "notifications.noRecipient": "No recipient: add an e-mail/phone to the user or enter one.",
+  "notifications.notMarkable": "Only Viber links can be marked as sent.",
+  "notifications.noContact": "The building has no contact person.",
+  "notifications.noEmail": "The contact person has no e-mail.",
+  "notifications.noPhone": "The contact person has no phone.",
+  "notifications.channelNotForContacts": "This channel is not for contact persons.",
+  "exports.alreadyRunning": "A full export is already being prepared – wait for it to finish.",
+  "data.deletionAlreadyScheduled": "Deletion has already been requested.",
+  "data.deletionNotScheduled": "There is no deletion request to cancel.",
+  "reports.noEmail": "The building has no contact with an e-mail – the report was not sent.",
+  "reports.sendFailed": "The report could not be sent.",
+  "report.title": "What we did for your lifts in {month}",
+  "report.date": "Date and time",
+  "report.kind": "Kind",
+  "report.technicians": "Technicians",
+  "report.checklist": "Items checked",
+  "report.defectsFound": "Defects found",
+  "report.ok": "OK",
+  "report.defect": "with a defect",
+  "report.noVisits": "No visits this month.",
+  "report.received": "Received",
+  "report.classification": "Type",
+  "report.response": "Response",
+  "report.cause": "Cause",
+  "report.status": "Status",
+  "report.minutes": "{count} min",
+  "report.noCallbacks": "No breakdowns this month.",
+  "report.noOpenDefects": "No open defects.",
+  "report.elevator": "Lift",
+  "report.nextCheck": "Next check",
+  "report.nextInspection": "Next inspection",
+  "report.visits": "Visits",
+  "report.callbacks": "Breakdowns",
+  "report.openDefects": "Open defects",
+  "report.period": "Period",
+  "report.amount": "Amount",
+  "report.paid": "Paid",
+  "report.due": "Due",
+  "report.noInvoices": "No invoices for the period.",
+  "report.contact": "Contact",
+  "report.avgResponse": "Average response (min)",
+  "report.billing": "Invoices and payments",
+  "report.outstanding": "Outstanding",
+  "report.footer": "Breakdowns: {phone}",
+  "report.generatedAt": "Generated at"
 }

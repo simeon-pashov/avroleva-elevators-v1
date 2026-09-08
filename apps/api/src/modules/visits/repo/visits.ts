@@ -174,3 +174,29 @@ export function countVisits(tenantId: string, elevatorId?: string) {
     where: { tenantId, supersededAt: null, ...(elevatorId ? { elevatorId } : {}) },
   })
 }
+
+/** Retention sweep: visits started before `cutoff` whose photos were not purged yet. */
+export async function listIdsBefore(tenantId: string, cutoff: Date, limit: number) {
+  const rows = await prisma.visit.findMany({
+    where: { tenantId, startedAt: { lt: cutoff }, photosPurgedAt: null },
+    select: { id: true },
+    orderBy: { startedAt: 'asc' },
+    take: limit,
+  })
+  return rows.map((r) => r.id)
+}
+
+export async function markPhotosPurged(tenantId: string, ids: string[], at: Date) {
+  if (ids.length === 0) return 0
+  const r = await prisma.visit.updateMany({
+    where: { tenantId, id: { in: ids } },
+    data: { photosPurgedAt: at },
+  })
+  return r.count
+}
+
+export function countInPeriod(tenantId: string, from: Date, to: Date) {
+  return prisma.visit.count({
+    where: { tenantId, supersededAt: null, startedAt: { gte: from, lt: to } },
+  })
+}

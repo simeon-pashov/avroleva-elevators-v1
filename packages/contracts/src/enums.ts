@@ -4,7 +4,7 @@ import { z } from 'zod'
 export const UserRole = z.enum(['owner', 'office', 'technician'])
 export type UserRole = z.infer<typeof UserRole>
 
-export const TenantStatus = z.enum(['active', 'read_only', 'closed'])
+export const TenantStatus = z.enum(['active', 'read_only', 'closed', 'deletion_scheduled'])
 export type TenantStatus = z.infer<typeof TenantStatus>
 
 export const CustomerKind = z.enum([

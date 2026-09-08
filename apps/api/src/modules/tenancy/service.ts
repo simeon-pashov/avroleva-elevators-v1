@@ -27,6 +27,12 @@ import type { AuditActor } from '../../platform/audit.js'
 import { events } from '../../platform/events/bus.js'
 import { clock } from '../../platform/clock.js'
 import { hashPassword, verifyPassword, burnCompare } from './domain/password.js'
+import {
+  canCancelDeletion,
+  canRequestDeletion,
+  deletionDate,
+  isDueForPurge,
+} from './domain/deletion.js'
 import { parseFeatures, parseSettings, toTenantDto, toUserDto } from './domain/mappers.js'
 import * as users from './repo/users.js'
 import * as tenants from './repo/tenants.js'
@@ -555,4 +561,125 @@ function actorOfCtx(ctx: Ctx): AuditActor {
     requestId: ctx.requestId,
     ip: ctx.ip,
   }
+}
+
+// ---- Delete-my-data (ARCHITECTURE section 6, data custody) ---------------------------------
+
+/**
+ * Owner-only, password re-entered: schedules the purge 30 days out. The tenant keeps working
+ * meanwhile; the request is cancellable until the date. Audit + TenantDeletionScheduled event.
+ */
+export async function requestDeletion(ctx: Ctx, password: string): Promise<TenantDto> {
+  if (ctx.role !== 'owner') throw new AppError(403, 'auth.forbidden')
+  const [user, tenant] = await Promise.all([
+    users.findUser(ctx.tenantId, ctx.userId),
+    tenants.findTenant(ctx.tenantId),
+  ])
+  if (!user || !tenant) throw notFound()
+  if (!(await verifyPassword(password, user.passwordHash)))
+    throw new AppError(403, 'auth.invalidCredentials')
+  if (!canRequestDeletion(tenant.status)) throw new AppError(409, 'data.deletionAlreadyScheduled')
+  const now = clock.now()
+  const deletionAt = deletionDate(now)
+  const updated = await tenants.updateTenant(ctx.tenantId, {
+    status: 'deletion_scheduled',
+    deletionAt,
+    deletionRequestedByUserId: ctx.userId,
+  })
+  await audit(actorOfCtx(ctx), {
+    action: 'tenant.deletionRequested',
+    entityType: 'tenant',
+    entityId: ctx.tenantId,
+    after: { deletionAt: deletionAt.toISOString() },
+  })
+  await events.publish(ctx, {
+    type: 'TenantDeletionScheduled',
+    aggregateType: 'tenant',
+    aggregateId: ctx.tenantId,
+    payload: { deletionAt: deletionAt.toISOString(), requestedByUserId: ctx.userId },
+  })
+  return toTenantDto(updated)
+}
+
+export async function cancelDeletion(ctx: Ctx): Promise<TenantDto> {
+  if (ctx.role !== 'owner') throw new AppError(403, 'auth.forbidden')
+  const tenant = await tenants.findTenant(ctx.tenantId)
+  if (!tenant) throw notFound()
+  return cancelDeletionOf(tenant, actorOfCtx(ctx), {
+    tenantId: ctx.tenantId,
+    requestId: ctx.requestId,
+  })
+}
+
+/** Platform admin, at the owner's request. */
+export async function adminCancelDeletion(actor: AuditActor, tenantId: string): Promise<TenantDto> {
+  const tenant = await tenants.findTenant(tenantId)
+  if (!tenant) throw notFound()
+  return cancelDeletionOf(tenant, actor, { tenantId, requestId: actor.requestId })
+}
+
+async function cancelDeletionOf(
+  tenant: NonNullable<Awaited<ReturnType<typeof tenants.findTenant>>>,
+  actor: AuditActor,
+  evCtx: { tenantId: string; requestId?: string },
+): Promise<TenantDto> {
+  if (!canCancelDeletion(tenant.status, tenant.deletionAt, clock.now()))
+    throw new AppError(409, 'data.deletionNotScheduled')
+  const updated = await tenants.updateTenant(tenant.id, {
+    status: 'active',
+    deletionAt: null,
+    deletionRequestedByUserId: null,
+  })
+  await audit(
+    { ...actor, tenantId: tenant.id },
+    {
+      action: 'tenant.deletionCancelled',
+      entityType: 'tenant',
+      entityId: tenant.id,
+      before: { deletionAt: tenant.deletionAt?.toISOString() ?? null },
+    },
+  )
+  await events.publish(evCtx, {
+    type: 'TenantDeletionCancelled',
+    aggregateType: 'tenant',
+    aggregateId: tenant.id,
+    payload: { actorType: actor.actorType },
+  })
+  return toTenantDto(updated)
+}
+
+/** Tenants whose grace period ended (daily tenancy.deletionSweep). */
+export async function listDueForDeletion(now: Date = clock.now()): Promise<TenantDto[]> {
+  const rows = await tenants.listTenants()
+  return rows.filter((t) => isDueForPurge(t.status, t.deletionAt, now)).map(toTenantDto)
+}
+
+/** Every live tenant id (per-tenant cron jobs iterate over this). */
+export async function listActiveTenantIds(): Promise<Array<{ id: string; locale: string }>> {
+  const rows = await tenants.listTenants()
+  return rows.filter((t) => t.status !== 'closed').map((t) => ({ id: t.id, locale: t.locale }))
+}
+
+/** Users who receive office notifications (owner + office, active). */
+export async function listNotifiableUsers(tenantId: string): Promise<
+  Array<{
+    id: string
+    name: string
+    role: string
+    email: string | null
+    phone: string | null
+    locale: string | null
+  }>
+> {
+  const rows = await users.listUsers(tenantId)
+  return rows
+    .filter((u) => u.isActive && !u.deletedAt)
+    .map((u) => ({
+      id: u.id,
+      name: u.name,
+      role: u.role,
+      email: u.email,
+      phone: u.phone,
+      locale: u.locale,
+    }))
 }

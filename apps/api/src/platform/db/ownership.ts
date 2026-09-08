@@ -29,7 +29,14 @@ export const ownership = {
   Defect: 'defects',
   Inspection: 'calendar',
   AlarmDeviceTest: 'calendar',
+  NotificationTemplate: 'notifications',
+  NotificationRule: 'notifications',
+  Notification: 'notifications',
+  ExportJob: 'reporting',
+  ReportRun: 'reporting',
   DomainEvent: 'platform',
+  EventDelivery: 'platform',
+  JobRun: 'platform',
   AuditLog: 'platform',
   IdempotencyKey: 'platform',
 } as const
@@ -60,4 +67,8 @@ export const tenantOwnedModels: ReadonlySet<string> = new Set<ModelName>([
   'Defect',
   'Inspection',
   'AlarmDeviceTest',
+  'NotificationRule',
+  'Notification',
+  'ExportJob',
+  'ReportRun',
 ])

@@ -121,11 +121,18 @@ export function invoicesForBuilding(tenantId: string, buildingId: string, limit 
 }
 
 /** issued -> overdue once dueAt is in the past. Called on read (no scheduler yet; see index.ts). */
-export function rollOverdue(tenantId: string, today: Date) {
-  return prisma.invoice.updateMany({
+/** issued -> overdue for invoices past due; returns the rows that changed (once each). */
+export async function rollOverdue(tenantId: string, today: Date) {
+  const due = await prisma.invoice.findMany({
     where: { tenantId, status: 'issued', dueAt: { lt: today } },
+    select: { id: true, number: true, buildingId: true, dueAt: true, totalCents: true },
+  })
+  if (due.length === 0) return due
+  await prisma.invoice.updateMany({
+    where: { tenantId, id: { in: due.map((d) => d.id) }, status: 'issued' },
     data: { status: 'overdue' },
   })
+  return due
 }
 
 export async function openTotals(tenantId: string, buildingId?: string) {

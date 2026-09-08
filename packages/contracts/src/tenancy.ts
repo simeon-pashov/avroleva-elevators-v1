@@ -32,6 +32,8 @@ export const tenantSettings = z.object({
   /** Applied to generated invoices; 0 = not VAT-registered (чл. 113 ал. 9). */
   vatRatePercent: z.number().int().min(0).max(27).default(20),
   showBgnReference: z.boolean().default(false),
+  /** Photos of visits older than N years are purged by the weekly retention sweep; null = keep everything. */
+  retentionYears: z.number().int().min(1).max(50).nullable().optional(),
   currencyDisplay: z.enum(['EUR', 'EUR_BGN']).default('EUR'),
   /** Overrides of packages/domain-data/calendar-rules.json; null/absent = the shipped default. */
   inspectionIntervalMonths: z.number().int().min(1).max(120).nullable().optional(),
@@ -99,7 +101,15 @@ export interface TenantDto {
   settings: TenantSettings
   features: TenantFeatures
   createdAt: string
+  /** Set while status = deletion_scheduled: the day the purge runs (cancellable until then). */
+  deletionAt: string | null
 }
+
+/** POST /tenant/delete-request (owner only): password re-entry, 30-day grace. */
+export const deleteRequestBody = z.object({ password: z.string().min(1).max(200) })
+export type DeleteRequestBody = z.infer<typeof deleteRequestBody>
+
+export const TENANT_DELETION_GRACE_DAYS = 30
 
 export const createUserBody = z.object({
   username,

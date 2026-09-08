@@ -80,3 +80,57 @@ export function defectLabel(code: string, locale: string): string {
   if (!item) return code
   return locale === 'en' ? item.en : item.bg
 }
+
+// ---- Notification templates (ARCHITECTURE A5: templates as data) ---------------------------
+
+export type NotificationTemplateChannel = 'email' | 'sms' | 'in_app' | 'viber_link'
+
+export interface NotificationTemplateText {
+  subject?: string
+  body: string
+}
+
+export interface NotificationTemplatesData {
+  version: number
+  /** key -> channel -> locale -> text (Handlebars). */
+  templates: Record<
+    string,
+    Partial<Record<NotificationTemplateChannel, Record<string, NotificationTemplateText>>>
+  >
+}
+
+export const notificationTemplates: NotificationTemplatesData = load(
+  '../notifications/templates.v1.json',
+)
+
+/** Flat list for seeding `notification_template` system rows. */
+export function listNotificationTemplates(): Array<{
+  key: string
+  channel: NotificationTemplateChannel
+  locale: string
+  subject: string | null
+  body: string
+}> {
+  const out: Array<{
+    key: string
+    channel: NotificationTemplateChannel
+    locale: string
+    subject: string | null
+    body: string
+  }> = []
+  for (const [key, channels] of Object.entries(notificationTemplates.templates)) {
+    for (const [channel, locales] of Object.entries(channels)) {
+      if (!locales) continue
+      for (const [locale, text] of Object.entries(locales)) {
+        out.push({
+          key,
+          channel: channel as NotificationTemplateChannel,
+          locale,
+          subject: text.subject ?? null,
+          body: text.body,
+        })
+      }
+    }
+  }
+  return out
+}

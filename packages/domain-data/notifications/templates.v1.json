@@ -1,0 +1,465 @@
+{
+  "version": 1,
+  "templates": {
+    "visit_recorded": {
+      "email": {
+        "bg": {
+          "subject": "{{tenant.name}}: посещение на асансьор {{elevator.internalNo}} – {{date visit.date}}",
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nНа {{datetime visit.date}} извършихме {{visit.kindLabel}} на асансьор „{{elevator.internalNo}}“ на адрес {{building.addressText}}.\n{{#if visit.technicians}}Монтьори: {{visit.technicians}}.\n{{/if}}{{#if visit.summary}}Проверени точки: {{visit.summary.ok}} в ред{{#if visit.summary.defect}}, {{visit.summary.defect}} с дефект{{/if}}.\n{{/if}}{{#if visit.defects}}Установени дефекти: {{visit.defects}}.\n{{/if}}{{#if visit.notes}}Бележки: {{visit.notes}}\n{{/if}}\nПри авария се обадете на {{tenant.emergencyPhone}}.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        },
+        "en": {
+          "subject": "{{tenant.name}}: visit to lift {{elevator.internalNo}} – {{date visit.date}}",
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nOn {{datetime visit.date}} we carried out a {{visit.kindLabel}} on lift \"{{elevator.internalNo}}\" at {{building.addressText}}.\n{{#if visit.technicians}}Technicians: {{visit.technicians}}.\n{{/if}}{{#if visit.summary}}Items checked: {{visit.summary.ok}} OK{{#if visit.summary.defect}}, {{visit.summary.defect}} with a defect{{/if}}.\n{{/if}}{{#if visit.defects}}Defects found: {{visit.defects}}.\n{{/if}}{{#if visit.notes}}Notes: {{visit.notes}}\n{{/if}}\nIn case of a breakdown call {{tenant.emergencyPhone}}.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "{{tenant.name}}: на {{date visit.date}} извършихме {{visit.kindLabel}} на асансьор {{elevator.internalNo}}, {{building.addressText}}.{{#if visit.defects}} Дефекти: {{visit.defects}}.{{/if}} Авария: {{tenant.emergencyPhone}}"
+        },
+        "en": {
+          "body": "{{tenant.name}}: on {{date visit.date}} we carried out a {{visit.kindLabel}} on lift {{elevator.internalNo}}, {{building.addressText}}.{{#if visit.defects}} Defects: {{visit.defects}}.{{/if}} Breakdowns: {{tenant.emergencyPhone}}"
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Посещение: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "{{visit.kindLabel}} на {{datetime visit.date}}{{#if visit.technicians}} – {{visit.technicians}}{{/if}}{{#if visit.flags}} ({{visit.flags}}){{/if}}"
+        },
+        "en": {
+          "subject": "Visit: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "{{visit.kindLabel}} on {{datetime visit.date}}{{#if visit.technicians}} – {{visit.technicians}}{{/if}}{{#if visit.flags}} ({{visit.flags}}){{/if}}"
+        }
+      }
+    },
+    "callback_opened": {
+      "email": {
+        "bg": {
+          "subject": "Авария: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "Приета авария на {{datetime callback.receivedAt}} за асансьор „{{elevator.internalNo}}“, {{building.addressText}}.\nВид: {{callback.classificationLabel}}.\nОписание: {{callback.description}}\n{{#if callback.trappedCount}}Блокирани хора: {{callback.trappedCount}}.\n{{/if}}\n{{tenant.name}}"
+        },
+        "en": {
+          "subject": "Breakdown: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "Breakdown received at {{datetime callback.receivedAt}} for lift \"{{elevator.internalNo}}\", {{building.addressText}}.\nType: {{callback.classificationLabel}}.\nDescription: {{callback.description}}\n{{#if callback.trappedCount}}People trapped: {{callback.trappedCount}}.\n{{/if}}\n{{tenant.name}}"
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "Авария {{datetime callback.receivedAt}}: {{elevator.internalNo}}, {{building.addressText}}. {{callback.classificationLabel}}. {{callback.description}}{{#if callback.trappedCount}} БЛОКИРАНИ ХОРА: {{callback.trappedCount}}{{/if}}"
+        },
+        "en": {
+          "body": "Breakdown {{datetime callback.receivedAt}}: {{elevator.internalNo}}, {{building.addressText}}. {{callback.classificationLabel}}. {{callback.description}}{{#if callback.trappedCount}} PEOPLE TRAPPED: {{callback.trappedCount}}{{/if}}"
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Нова авария: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "{{callback.classificationLabel}}{{#if callback.trappedCount}} – блокирани {{callback.trappedCount}}{{/if}}. {{callback.description}} Срок за реакция: {{callback.slaMinutes}} мин."
+        },
+        "en": {
+          "subject": "New breakdown: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "{{callback.classificationLabel}}{{#if callback.trappedCount}} – {{callback.trappedCount}} trapped{{/if}}. {{callback.description}} Response limit: {{callback.slaMinutes}} min."
+        }
+      }
+    },
+    "callback_closed": {
+      "email": {
+        "bg": {
+          "subject": "{{tenant.name}}: аварията на асансьор {{elevator.internalNo}} е отстранена",
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nАварията, приета на {{datetime callback.receivedAt}} за асансьор „{{elevator.internalNo}}“, {{building.addressText}}, е приключена.\n{{#if callback.responseMinutes}}Монтьорът е бил на място след {{callback.responseMinutes}} минути.\n{{/if}}{{#if callback.cause}}Причина: {{callback.cause}}\n{{/if}}{{#if callback.actionTaken}}Извършено: {{callback.actionTaken}}\n{{/if}}\n{{tenant.name}}\n{{tenant.phone}}"
+        },
+        "en": {
+          "subject": "{{tenant.name}}: the breakdown on lift {{elevator.internalNo}} is resolved",
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nThe breakdown received at {{datetime callback.receivedAt}} for lift \"{{elevator.internalNo}}\", {{building.addressText}}, is closed.\n{{#if callback.responseMinutes}}The technician was on site after {{callback.responseMinutes}} minutes.\n{{/if}}{{#if callback.cause}}Cause: {{callback.cause}}\n{{/if}}{{#if callback.actionTaken}}Work done: {{callback.actionTaken}}\n{{/if}}\n{{tenant.name}}\n{{tenant.phone}}"
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "{{tenant.name}}: аварията на асансьор {{elevator.internalNo}} ({{building.addressText}}) е отстранена.{{#if callback.cause}} Причина: {{callback.cause}}.{{/if}}"
+        },
+        "en": {
+          "body": "{{tenant.name}}: the breakdown on lift {{elevator.internalNo}} ({{building.addressText}}) is resolved.{{#if callback.cause}} Cause: {{callback.cause}}.{{/if}}"
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Приключена авария: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "{{#if callback.responseMinutes}}Реакция: {{callback.responseMinutes}} мин.{{/if}}{{#if callback.cause}} Причина: {{callback.cause}}{{/if}}"
+        },
+        "en": {
+          "subject": "Breakdown closed: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "{{#if callback.responseMinutes}}Response: {{callback.responseMinutes}} min.{{/if}}{{#if callback.cause}} Cause: {{callback.cause}}{{/if}}"
+        }
+      }
+    },
+    "callback_sla_at_risk": {
+      "email": {
+        "bg": {
+          "subject": "Авария без реакция: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "Аварията от {{datetime callback.receivedAt}} на асансьор „{{elevator.internalNo}}“, {{building.addressText}}, е на {{callback.elapsedMinutes}} минути без монтьор на място (лимит {{callback.slaMinutes}} мин)."
+        },
+        "en": {
+          "subject": "Breakdown without response: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "The breakdown from {{datetime callback.receivedAt}} on lift \"{{elevator.internalNo}}\", {{building.addressText}}, has run {{callback.elapsedMinutes}} minutes without a technician on site (limit {{callback.slaMinutes}} min)."
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "Авария {{elevator.internalNo}}, {{building.addressText}}: {{callback.elapsedMinutes}} мин без монтьор на място (лимит {{callback.slaMinutes}})."
+        },
+        "en": {
+          "body": "Breakdown {{elevator.internalNo}}, {{building.addressText}}: {{callback.elapsedMinutes}} min without a technician on site (limit {{callback.slaMinutes}})."
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Срокът за реакция изтича: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "{{callback.elapsedMinutes}} мин без монтьор на място; лимит {{callback.slaMinutes}} мин."
+        },
+        "en": {
+          "subject": "Response limit closing in: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "{{callback.elapsedMinutes}} min without a technician on site; limit {{callback.slaMinutes}} min."
+        }
+      }
+    },
+    "callback_sla_breached": {
+      "email": {
+        "bg": {
+          "subject": "Просрочена реакция: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "Аварията от {{datetime callback.receivedAt}} на асансьор „{{elevator.internalNo}}“, {{building.addressText}}, надхвърли срока за реакция от {{callback.slaMinutes}} минути ({{callback.elapsedMinutes}} мин)."
+        },
+        "en": {
+          "subject": "Response limit exceeded: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "The breakdown from {{datetime callback.receivedAt}} on lift \"{{elevator.internalNo}}\", {{building.addressText}}, exceeded the {{callback.slaMinutes}}-minute response limit ({{callback.elapsedMinutes}} min)."
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "ПРОСРОЧЕНА реакция: авария {{elevator.internalNo}}, {{building.addressText}} – {{callback.elapsedMinutes}} мин (лимит {{callback.slaMinutes}})."
+        },
+        "en": {
+          "body": "Response limit EXCEEDED: breakdown {{elevator.internalNo}}, {{building.addressText}} – {{callback.elapsedMinutes}} min (limit {{callback.slaMinutes}})."
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Просрочена реакция: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "{{callback.elapsedMinutes}} мин без монтьор на място; лимитът е {{callback.slaMinutes}} мин."
+        },
+        "en": {
+          "subject": "Response limit exceeded: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "{{callback.elapsedMinutes}} min without a technician on site; the limit is {{callback.slaMinutes}} min."
+        }
+      }
+    },
+    "invoice_issued": {
+      "email": {
+        "bg": {
+          "subject": "{{tenant.name}}: фактура № {{invoice.number}} за {{invoice.period}}",
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nИздадена е фактура № {{invoice.number}} за {{invoice.period}} на стойност {{money invoice.totalCents}} за поддръжката на асансьорите на адрес {{building.addressText}}.\nСрок за плащане: {{date invoice.dueAt}}.\n\n{{tenant.name}}\n{{tenant.phone}}{{#if tenant.email}}\n{{tenant.email}}{{/if}}"
+        },
+        "en": {
+          "subject": "{{tenant.name}}: invoice no. {{invoice.number}} for {{invoice.period}}",
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nInvoice no. {{invoice.number}} for {{invoice.period}} was issued for {{money invoice.totalCents}} for the maintenance of the lifts at {{building.addressText}}.\nDue date: {{date invoice.dueAt}}.\n\n{{tenant.name}}\n{{tenant.phone}}{{#if tenant.email}}\n{{tenant.email}}{{/if}}"
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "{{tenant.name}}: фактура № {{invoice.number}} за {{invoice.period}}, {{money invoice.totalCents}}, срок {{date invoice.dueAt}}. {{building.addressText}}"
+        },
+        "en": {
+          "body": "{{tenant.name}}: invoice no. {{invoice.number}} for {{invoice.period}}, {{money invoice.totalCents}}, due {{date invoice.dueAt}}. {{building.addressText}}"
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Фактура № {{invoice.number}}: {{building.addressText}}",
+          "body": "{{invoice.period}} – {{money invoice.totalCents}}, срок {{date invoice.dueAt}}"
+        },
+        "en": {
+          "subject": "Invoice no. {{invoice.number}}: {{building.addressText}}",
+          "body": "{{invoice.period}} – {{money invoice.totalCents}}, due {{date invoice.dueAt}}"
+        }
+      }
+    },
+    "invoice_overdue": {
+      "email": {
+        "bg": {
+          "subject": "{{tenant.name}}: напомняне за фактура № {{invoice.number}}",
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nФактура № {{invoice.number}} за {{invoice.period}} на стойност {{money invoice.totalCents}} ({{building.addressText}}) е със срок за плащане {{date invoice.dueAt}} и все още не е платена.\nАко вече сте я платили, моля, не обръщайте внимание на това писмо.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        },
+        "en": {
+          "subject": "{{tenant.name}}: reminder for invoice no. {{invoice.number}}",
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nInvoice no. {{invoice.number}} for {{invoice.period}} for {{money invoice.totalCents}} ({{building.addressText}}) was due on {{date invoice.dueAt}} and is still unpaid.\nIf you have already paid, please disregard this message.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "{{tenant.name}}: напомняне – фактура № {{invoice.number}} ({{invoice.period}}, {{money invoice.totalCents}}) е с изтекъл срок {{date invoice.dueAt}}."
+        },
+        "en": {
+          "body": "{{tenant.name}}: reminder – invoice no. {{invoice.number}} ({{invoice.period}}, {{money invoice.totalCents}}) was due on {{date invoice.dueAt}}."
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Просрочена фактура № {{invoice.number}}: {{building.addressText}}",
+          "body": "{{invoice.period}} – {{money invoice.totalCents}}, срокът беше {{date invoice.dueAt}}"
+        },
+        "en": {
+          "subject": "Overdue invoice no. {{invoice.number}}: {{building.addressText}}",
+          "body": "{{invoice.period}} – {{money invoice.totalCents}}, was due {{date invoice.dueAt}}"
+        }
+      }
+    },
+    "inspection_due_soon": {
+      "email": {
+        "bg": {
+          "subject": "{{tenant.name}}: предстоящ технически преглед на асансьор {{elevator.internalNo}}",
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nСледващият технически преглед на асансьор „{{elevator.internalNo}}“, {{building.addressText}}, е до {{date inspection.dueAt}} (след {{inspection.inDays}} дни). Ще се свържем с вас за уговаряне на дата.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        },
+        "en": {
+          "subject": "{{tenant.name}}: upcoming inspection of lift {{elevator.internalNo}}",
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nThe next inspection of lift \"{{elevator.internalNo}}\", {{building.addressText}}, is due by {{date inspection.dueAt}} (in {{inspection.inDays}} days). We will contact you to arrange a date.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "{{tenant.name}}: технически преглед на асансьор {{elevator.internalNo}} ({{building.addressText}}) до {{date inspection.dueAt}}."
+        },
+        "en": {
+          "body": "{{tenant.name}}: inspection of lift {{elevator.internalNo}} ({{building.addressText}}) due by {{date inspection.dueAt}}."
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Технически преглед след {{inspection.inDays}} дни: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "Срок: {{date inspection.dueAt}}"
+        },
+        "en": {
+          "subject": "Inspection in {{inspection.inDays}} days: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "Due: {{date inspection.dueAt}}"
+        }
+      }
+    },
+    "defect_follow_up_due": {
+      "email": {
+        "bg": {
+          "subject": "Дефект без отговор: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "Дефектът „{{defect.description}}“ на асансьор „{{elevator.internalNo}}“, {{building.addressText}}, е отворен от {{date defect.recordedAt}} без потвърждение от сградата. Срок за проследяване: {{date defect.followUpDueAt}}."
+        },
+        "en": {
+          "subject": "Defect awaiting an answer: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "The defect \"{{defect.description}}\" on lift \"{{elevator.internalNo}}\", {{building.addressText}}, has been open since {{date defect.recordedAt}} without the building's go-ahead. Follow-up date: {{date defect.followUpDueAt}}."
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "Дефект за проследяване: {{elevator.internalNo}}, {{building.addressText}} – {{defect.description}} (от {{date defect.recordedAt}})."
+        },
+        "en": {
+          "body": "Defect follow-up: {{elevator.internalNo}}, {{building.addressText}} – {{defect.description}} (since {{date defect.recordedAt}})."
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Дефект за проследяване: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "{{defect.description}} – отворен от {{date defect.recordedAt}}, срок {{date defect.followUpDueAt}}"
+        },
+        "en": {
+          "subject": "Defect follow-up: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "{{defect.description}} – open since {{date defect.recordedAt}}, due {{date defect.followUpDueAt}}"
+        }
+      }
+    },
+    "check_overdue": {
+      "email": {
+        "bg": {
+          "subject": "Пропуснато посещение: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "Асансьор „{{elevator.internalNo}}“, {{building.addressText}}, е с просрочена функционална проверка: срокът беше {{date check.dueAt}} ({{check.overdueDays}} дни закъснение)."
+        },
+        "en": {
+          "subject": "Missed visit: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "Lift \"{{elevator.internalNo}}\", {{building.addressText}}, has an overdue functional check: it was due on {{date check.dueAt}} ({{check.overdueDays}} days late)."
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "Просрочена проверка: {{elevator.internalNo}}, {{building.addressText}} – срок {{date check.dueAt}} ({{check.overdueDays}} дни)."
+        },
+        "en": {
+          "body": "Overdue check: {{elevator.internalNo}}, {{building.addressText}} – due {{date check.dueAt}} ({{check.overdueDays}} days)."
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Просрочена проверка: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "Срокът беше {{date check.dueAt}} – {{check.overdueDays}} дни закъснение"
+        },
+        "en": {
+          "subject": "Overdue check: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "Was due {{date check.dueAt}} – {{check.overdueDays}} days late"
+        }
+      }
+    },
+    "stop_lift_required": {
+      "email": {
+        "bg": {
+          "subject": "Спрян асансьор: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "Асансьор „{{elevator.internalNo}}“, {{building.addressText}}, е спрян заради дефект: {{defect.description}}."
+        },
+        "en": {
+          "subject": "Lift stopped: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "Lift \"{{elevator.internalNo}}\", {{building.addressText}}, was stopped because of a defect: {{defect.description}}."
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "Спрян асансьор {{elevator.internalNo}}, {{building.addressText}}: {{defect.description}}"
+        },
+        "en": {
+          "body": "Lift {{elevator.internalNo}}, {{building.addressText}} stopped: {{defect.description}}"
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Спрян асансьор: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "{{defect.description}}"
+        },
+        "en": {
+          "subject": "Lift stopped: {{elevator.internalNo}}, {{building.addressText}}",
+          "body": "{{defect.description}}"
+        }
+      }
+    },
+    "building_report": {
+      "email": {
+        "bg": {
+          "subject": "{{tenant.name}}: какво направихме за вашите асансьори през {{report.periodLabel}}",
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nПриложено е месечното резюме за асансьорите на адрес {{building.addressText}} за {{report.periodLabel}}: {{report.visits}} посещения, {{report.callbacks}} аварии{{#if report.avgResponseMinutes}} (средно време за реакция {{report.avgResponseMinutes}} мин){{/if}}, {{report.openDefects}} отворени дефекта.\n\nПри авария се обадете на {{tenant.emergencyPhone}}.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        },
+        "en": {
+          "subject": "{{tenant.name}}: what we did for your lifts in {{report.periodLabel}}",
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nAttached is the monthly summary for the lifts at {{building.addressText}} for {{report.periodLabel}}: {{report.visits}} visits, {{report.callbacks}} breakdowns{{#if report.avgResponseMinutes}} (average response {{report.avgResponseMinutes}} min){{/if}}, {{report.openDefects}} open defects.\n\nIn case of a breakdown call {{tenant.emergencyPhone}}.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "{{tenant.name}}: месечен отчет за {{building.addressText}}, {{report.periodLabel}} – {{report.visits}} посещения, {{report.callbacks}} аварии."
+        },
+        "en": {
+          "body": "{{tenant.name}}: monthly report for {{building.addressText}}, {{report.periodLabel}} – {{report.visits}} visits, {{report.callbacks}} breakdowns."
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Месечен отчет изпратен: {{building.addressText}}",
+          "body": "{{report.periodLabel}} → {{contact.email}}"
+        },
+        "en": {
+          "subject": "Monthly report sent: {{building.addressText}}",
+          "body": "{{report.periodLabel}} → {{contact.email}}"
+        }
+      }
+    },
+    "export_ready": {
+      "email": {
+        "bg": {
+          "subject": "{{tenant.name}}: пълният експорт на данните е готов",
+          "body": "Пълният експорт на данните на {{tenant.name}} е готов ({{export.sizeLabel}}). Линкът е валиден 24 часа:\n{{export.url}}"
+        },
+        "en": {
+          "subject": "{{tenant.name}}: the full data export is ready",
+          "body": "The full data export of {{tenant.name}} is ready ({{export.sizeLabel}}). The link is valid for 24 hours:\n{{export.url}}"
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "Експортът на данните е готов ({{export.sizeLabel}}); изтеглете го от Настройки → Данни в следващите 24 часа."
+        },
+        "en": {
+          "body": "The data export is ready ({{export.sizeLabel}}); download it from Settings → Data within 24 hours."
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Експортът на данните е готов",
+          "body": "{{export.sizeLabel}} – линкът е валиден 24 часа"
+        },
+        "en": {
+          "subject": "Data export ready",
+          "body": "{{export.sizeLabel}} – the link is valid for 24 hours"
+        }
+      }
+    },
+    "tenant_deletion_scheduled": {
+      "email": {
+        "bg": {
+          "subject": "{{tenant.name}}: заявено изтриване на данните",
+          "body": "Заявено е изтриване на всички данни на {{tenant.name}} от Avroleva. Изтриването ще се извърши на {{date deletion.at}}. До тази дата собственикът може да го откаже от Настройки → Данни. Препоръчваме първо да изтеглите пълния експорт."
+        },
+        "en": {
+          "subject": "{{tenant.name}}: data deletion requested",
+          "body": "Deletion of all data of {{tenant.name}} in Avroleva was requested. The deletion will run on {{date deletion.at}}. Until then the owner can cancel it from Settings → Data. We recommend downloading the full export first."
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "Avroleva: заявено изтриване на данните на {{tenant.name}}, изпълнява се на {{date deletion.at}}. Отказ: Настройки → Данни."
+        },
+        "en": {
+          "body": "Avroleva: deletion of {{tenant.name}} data requested, runs on {{date deletion.at}}. Cancel: Settings → Data."
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Заявено изтриване на данните",
+          "body": "Ще се изпълни на {{date deletion.at}}; може да се откаже дотогава от Настройки → Данни."
+        },
+        "en": {
+          "subject": "Data deletion requested",
+          "body": "Runs on {{date deletion.at}}; can be cancelled until then from Settings → Data."
+        }
+      }
+    },
+    "tenant_deletion_cancelled": {
+      "email": {
+        "bg": {
+          "subject": "{{tenant.name}}: изтриването на данните е отказано",
+          "body": "Заявката за изтриване на данните на {{tenant.name}} беше отказана. Данните остават."
+        },
+        "en": {
+          "subject": "{{tenant.name}}: data deletion cancelled",
+          "body": "The data deletion request of {{tenant.name}} was cancelled. The data stays."
+        }
+      },
+      "sms": {
+        "bg": { "body": "Avroleva: изтриването на данните на {{tenant.name}} е отказано." },
+        "en": { "body": "Avroleva: the data deletion of {{tenant.name}} was cancelled." }
+      },
+      "in_app": {
+        "bg": { "subject": "Изтриването на данните е отказано", "body": "Данните остават." },
+        "en": { "subject": "Data deletion cancelled", "body": "The data stays." }
+      }
+    },
+    "test_message": {
+      "email": {
+        "bg": {
+          "subject": "{{tenant.name}}: тестово съобщение",
+          "body": "Това е тестово съобщение от Avroleva за {{tenant.name}}, изпратено на {{datetime now}}."
+        },
+        "en": {
+          "subject": "{{tenant.name}}: test message",
+          "body": "This is a test message from Avroleva for {{tenant.name}}, sent on {{datetime now}}."
+        }
+      },
+      "sms": {
+        "bg": { "body": "Avroleva тест за {{tenant.name}}, {{datetime now}}." },
+        "en": { "body": "Avroleva test for {{tenant.name}}, {{datetime now}}." }
+      },
+      "in_app": {
+        "bg": { "subject": "Тестово уведомление", "body": "Изпратено на {{datetime now}}." },
+        "en": { "subject": "Test notification", "body": "Sent on {{datetime now}}." }
+      }
+    }
+  }
+}
