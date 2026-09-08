@@ -1,5 +1,6 @@
-# Avroleva - single image: API + built office SPA (ARCHITECTURE section 7).
-# UNTESTED SKETCH in step 1 (deploy is a later step). Chromium/fonts for PDF come with the PDF step.
+# Avroleva - single image: API + built office SPA + technician PWA (ARCHITECTURE section 7).
+# UNTESTED SKETCH (deploy is a later step). Chromium/fonts for PDF come with the PDF step.
+# Attachments live under DATA_DIR (mount a volume at /app/apps/api/data).
 FROM node:22-bookworm-slim AS build
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
@@ -27,6 +28,7 @@ COPY --from=build /app/apps/api/dist apps/api/dist
 COPY --from=build /app/apps/api/prisma apps/api/prisma
 COPY --from=build /app/apps/api/src/generated apps/api/src/generated
 COPY --from=build /app/apps/office/dist apps/office/dist
+COPY --from=build /app/apps/tech/dist apps/tech/dist
 WORKDIR /app/apps/api
 USER node
 EXPOSE 3005

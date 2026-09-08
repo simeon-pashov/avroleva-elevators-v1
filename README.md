@@ -2,7 +2,7 @@
 
 B2B SaaS for Bulgarian elevator-maintenance firms (асансьорни сервизи): a business-operations and customer-evidence layer on top of the paper logbook (дневник), shaped like the firm's working rhythm — 30-day functional checks, two technicians, the emergency response timer, the 17-item stop-defect catalogue, inspection dates, the long-term dossier. Regulator-facing outputs are deliberately out of the MVP (see `MVP-PLAN.md` backlog).
 
-This folder holds the design documents **and the application code** (npm-workspaces monorepo: `apps/api`, `apps/office`, `packages/contracts`, `packages/i18n`). Step 1 (foundation: platform, tenancy, registry, office UI) is built — see [`HANDOFF-STEP1.md`](./HANDOFF-STEP1.md) for how to run it, what exists and what step 2 adds. The GitHub repo name is still to be confirmed with the founder (see `D:\Code\GITHUB-GUIDE.md`).
+This folder holds the design documents **and the application code** (npm-workspaces monorepo: `apps/api`, `apps/office`, `apps/tech` (technician PWA), `packages/contracts`, `packages/i18n`, `packages/domain-data`). Step 1 (foundation: platform, tenancy, registry, office UI) is built — see [`HANDOFF-STEP1.md`](./HANDOFF-STEP1.md) for how to run it and what exists; the latest state is in [`HANDOFF-STEP4.md`](./HANDOFF-STEP4.md) (offline technician app, attachments, sync). The GitHub repo name is still to be confirmed with the founder (see `D:\Code\GITHUB-GUIDE.md`).
 
 | Document | What it is |
 |---|---|

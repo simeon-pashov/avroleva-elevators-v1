@@ -1,0 +1,212 @@
+import { useMemo } from 'react'
+import { Link } from 'react-router'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { CHECK_VISIT_KINDS } from '@avroleva/contracts'
+import type { SyncJobDto } from '@avroleva/contracts'
+import { useApp } from '../app/AppProvider'
+import { Empty, PageHeader, Section, Spinner, TelLink } from '../components/ui'
+import type { BuildingRow, ContactRow, ElevatorRow } from '../db'
+import { db } from '../db'
+import { useI18n } from '../i18n/I18nProvider'
+import { navigationUrl } from '../lib/maps'
+
+const STATES: Array<{ key: SyncJobDto['state']; label: string; tone?: 'danger' }> = [
+  { key: 'overdue', label: 'tech.today.overdue', tone: 'danger' },
+  { key: 'today', label: 'tech.today.today' },
+  { key: 'tomorrow', label: 'tech.today.tomorrow' },
+]
+
+interface BuildingGroup {
+  building: BuildingRow
+  contact: ContactRow | undefined
+  rows: Array<{ job: SyncJobDto; elevator: ElevatorRow }>
+}
+
+export function houseManager(contacts: ContactRow[]): ContactRow | undefined {
+  const managers = contacts.filter((c) => c.role === 'house_manager')
+  return (
+    managers.find((c) => c.isPrimary && c.phone) ??
+    managers.find((c) => c.phone) ??
+    managers[0] ??
+    contacts.find((c) => c.isPrimary && c.phone) ??
+    contacts.find((c) => c.phone)
+  )
+}
+
+/** addressText usually already ends with the entrance; append it only when it does not. */
+export function buildingTitle(b: BuildingRow, entranceShort: string): string {
+  if (!b.entrance) return b.addressText
+  const suffix = `${entranceShort} ${b.entrance}`.toLowerCase()
+  if (b.addressText.toLowerCase().includes(suffix)) return b.addressText
+  return `${b.addressText}, ${suffix}`
+}
+
+function BuildingCard({ group }: { group: BuildingGroup }) {
+  const { t } = useI18n()
+  const pendingIds = usePendingCheckIds()
+  const { building, contact, rows } = group
+  return (
+    <div className="card">
+      <div className="card-title">{buildingTitle(building, t('address.entranceShort'))}</div>
+      {building.customerName ? <div className="muted small">{building.customerName}</div> : null}
+      {contact ? (
+        <div className="small">
+          <span className="muted">{`${t('enum.contactRole.house_manager')}: `}</span>
+          {contact.name}
+        </div>
+      ) : null}
+      <div className="card-actions">
+        <TelLink phone={contact?.phone} />
+        {building.lat != null && building.lng != null ? (
+          <a
+            className="btn btn-outline"
+            href={navigationUrl(building.lat, building.lng)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {t('tech.today.navigate')}
+          </a>
+        ) : null}
+      </div>
+      <div className="list">
+        {rows.map(({ job, elevator }) => (
+          <Link key={elevator.id} className="row" to={`/elevators/${elevator.id}`}>
+            <div className="row-main">
+              <span className="row-title">{elevator.internalNo}</span>
+              <span className="row-sub">
+                {elevator.regNo ? `${t('elevators.regNo')} ${elevator.regNo}` : ''}
+                {job.state === 'overdue'
+                  ? `${elevator.regNo ? ' · ' : ''}${t('tech.today.daysOverdue', { count: job.daysOverdue })}`
+                  : ''}
+              </span>
+            </div>
+            {pendingIds.has(elevator.id) ? (
+              <span className="pill pill-ok">{t('tech.elevator.pendingLocal')}</span>
+            ) : null}
+            <span className="row-chevron" aria-hidden="true">
+              ›
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Elevators with a check visit recorded on this phone that the server has not confirmed yet. */
+function usePendingCheckIds(): Set<string> {
+  const local = useLiveQuery(() => db.visits.filter((v) => v.local === true).toArray(), [])
+  return useMemo(
+    () =>
+      new Set(
+        (local ?? []).filter((v) => CHECK_VISIT_KINDS.includes(v.kind)).map((v) => v.elevatorId),
+      ),
+    [local],
+  )
+}
+
+export function TodayPage() {
+  const { t, dateTime } = useI18n()
+  const app = useApp()
+  const jobs = useLiveQuery(() => db.jobs.toArray(), [])
+  const buildings = useLiveQuery(() => db.buildings.toArray(), [])
+  const elevators = useLiveQuery(() => db.elevators.toArray(), [])
+  const contacts = useLiveQuery(() => db.contacts.toArray(), [])
+
+  const groups = useMemo(() => {
+    const out = new Map<SyncJobDto['state'], BuildingGroup[]>()
+    if (!jobs || !buildings || !elevators || !contacts) return out
+    const bById = new Map(buildings.map((b) => [b.id, b]))
+    const eById = new Map(elevators.map((e) => [e.id, e]))
+    const contactsByBuilding = new Map<string, ContactRow[]>()
+    for (const c of contacts) {
+      if (!c.buildingId) continue
+      const list = contactsByBuilding.get(c.buildingId) ?? []
+      list.push(c)
+      contactsByBuilding.set(c.buildingId, list)
+    }
+    for (const s of STATES) {
+      const byBuilding = new Map<string, BuildingGroup>()
+      for (const job of jobs) {
+        if (job.state !== s.key) continue
+        const elevator = eById.get(job.elevatorId)
+        const building = bById.get(job.buildingId)
+        if (!elevator || !building) continue
+        let g = byBuilding.get(building.id)
+        if (!g) {
+          g = {
+            building,
+            contact: houseManager(contactsByBuilding.get(building.id) ?? []),
+            rows: [],
+          }
+          byBuilding.set(building.id, g)
+        }
+        g.rows.push({ job, elevator })
+      }
+      const list = [...byBuilding.values()]
+      list.sort((a, b) => a.building.addressText.localeCompare(b.building.addressText, 'bg'))
+      for (const g of list)
+        g.rows.sort((a, b) => a.elevator.internalNo.localeCompare(b.elevator.internalNo, 'bg'))
+      out.set(s.key, list)
+    }
+    return out
+  }, [jobs, buildings, elevators, contacts])
+
+  const loaded = jobs && buildings && elevators && contacts
+  const neverPulled = !app.meta.watermark
+  const total = jobs?.length ?? 0
+
+  return (
+    <>
+      <PageHeader
+        title={t('tech.today.title')}
+        subtitle={
+          <>
+            {t('tech.today.lastSync', {
+              at: app.meta.lastPullAt ? dateTime(app.meta.lastPullAt) : t('tech.today.never'),
+            })}
+            {app.pullError ? (
+              <span className="danger">{` · ${t('tech.outbox.error')}: ${app.pullError}`}</span>
+            ) : null}
+          </>
+        }
+        right={
+          <button
+            type="button"
+            className="btn btn-sm btn-outline"
+            disabled={app.pulling}
+            onClick={() => void app.syncNow()}
+          >
+            {app.pulling ? <Spinner inline /> : null}
+            {app.pulling ? t('tech.today.syncing') : t('tech.today.sync')}
+          </button>
+        }
+      />
+      <div className="page">
+        {!loaded ? (
+          <Spinner />
+        ) : neverPulled && total === 0 ? (
+          <Empty text={t('tech.today.notSynced')} />
+        ) : total === 0 ? (
+          <Empty text={t('tech.today.empty')} />
+        ) : (
+          STATES.map((s) => {
+            const list = groups.get(s.key) ?? []
+            if (!list.length) return null
+            const count = list.reduce((n, g) => n + g.rows.length, 0)
+            return (
+              <Section
+                key={s.key}
+                title={`${t(s.label)} · ${t('tech.today.elevators', { count })}`}
+              >
+                {list.map((g) => (
+                  <BuildingCard key={g.building.id} group={g} />
+                ))}
+              </Section>
+            )
+          })
+        )}
+      </div>
+    </>
+  )
+}
