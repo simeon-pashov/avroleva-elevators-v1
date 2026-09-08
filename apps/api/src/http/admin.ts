@@ -10,6 +10,8 @@ import { ADMIN_COOKIE, adminActorOf, adminOf, requireAdmin } from '../platform/h
 import { parseBody, parseId } from '../platform/http/validate.js'
 import * as tenancy from '../modules/tenancy/index.js'
 import * as registry from '../modules/registry/index.js'
+import { prismaBase } from '../platform/db/prisma.js'
+import { health } from './health.js'
 
 /**
  * Platform-admin facade (L4 http/admin). Talks to tenancy and registry through their index.ts only.
@@ -49,6 +51,53 @@ async function withCounts(
   ])
   return { ...tenant, counts: { ...c, users: users.users.length } }
 }
+
+/**
+ * System page (ARCHITECTURE section 6 observability): health + worker jobs, tenants with a
+ * scheduled deletion, event deliveries that exhausted their retries, failed notifications.
+ */
+adminRouter.get('/admin/system', async (_req, res) => {
+  const [h, tenants, failedDeliveries, failedNotifications] = await Promise.all([
+    health(),
+    tenancy.adminListTenants(),
+    prismaBase.eventDelivery.findMany({
+      where: { status: 'failed' },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    }),
+    prismaBase.notification.findMany({
+      where: { status: 'failed' },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      select: {
+        id: true,
+        tenantId: true,
+        channel: true,
+        to: true,
+        error: true,
+        createdAt: true,
+        eventType: true,
+      },
+    }),
+  ])
+  res.json({
+    health: h,
+    scheduledDeletions: tenants
+      .filter((t) => t.status === 'deletion_scheduled')
+      .map((t) => ({ id: t.id, name: t.name, deletionAt: t.deletionAt })),
+    failedDeliveries: failedDeliveries.map((d) => ({
+      eventId: d.eventId,
+      handler: d.handler,
+      attempts: d.attempts,
+      lastError: d.lastError,
+      createdAt: d.createdAt.toISOString(),
+    })),
+    failedNotifications: failedNotifications.map((n) => ({
+      ...n,
+      createdAt: n.createdAt.toISOString(),
+    })),
+  })
+})
 
 adminRouter.get('/admin/tenants', async (_req, res) => {
   const tenants = await tenancy.adminListTenants()
