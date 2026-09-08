@@ -1,0 +1,33 @@
+# Build context for docker/Dockerfile: sources + lock file only. No host artefacts, no secrets.
+.git
+.github
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Installed / built on the host (rebuilt inside the image, Linux binaries)
+**/node_modules
+**/dist
+**/dist-seed
+**/*.tsbuildinfo
+**/coverage
+**/.vite
+apps/api/src/generated
+
+# Runtime data (attachments, exports, test scratch)
+**/data
+**/data-test
+**/uploads
+**/*.log
+
+# Secrets - the container gets its environment from docker-compose, never from a baked-in file
+.env
+.env.*
+
+# Not needed to build the image
+docs
+deploy
+scripts
+*.md
+docker-compose*.yml

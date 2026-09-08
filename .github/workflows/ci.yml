@@ -1,0 +1,113 @@
+name: CI
+
+# Push / PR to main: lint, typecheck, unit + integration tests against Postgres 16, build everything,
+# and prove the production image builds (not pushed). Deploys are manual (GITHUB-GUIDE, DEPLOY.md).
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: avroleva
+          POSTGRES_PASSWORD: avroleva
+          POSTGRES_DB: avroleva
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U avroleva -d avroleva"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # apps/api/src/platform/config.ts (zod) - the test global-setup creates avroleva_test from
+      # DATABASE_URL and runs `prisma migrate deploy` on TEST_DATABASE_URL.
+      DATABASE_URL: postgresql://avroleva:avroleva@localhost:5432/avroleva?schema=public
+      TEST_DATABASE_URL: postgresql://avroleva:avroleva@localhost:5432/avroleva_test?schema=public
+      SESSION_SECRET: ci-only-session-secret-not-for-production
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin12345
+      WORKER_ENABLED: "false"
+      CRON_ENABLED: "false"
+      SEED_DEMO: "false"
+      GEOCODER: stub
+      EMAIL_PROVIDER: console
+      SMS_PROVIDER: console
+      LOG_LEVEL: silent
+      # Same values the image bakes in, so `npm run build` exercises the production base paths.
+      VITE_BASE: /avroleva/
+      VITE_TECH_BASE: /avroleva/tech/
+      VITE_API_BASE: ""
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Prisma client
+        run: npm run db:generate
+
+      - name: Lint (eslint + prettier --check)
+        run: npm run lint
+
+      - name: Typecheck (api, office, tech)
+        run: npm run typecheck
+
+      - name: Test (i18n + api unit/integration)
+        run: npm test
+
+      - name: Build (packages, api, office, tech)
+        run: npm run build
+
+  image:
+    name: docker build (not pushed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build production image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          build-args: |
+            VITE_BASE=/avroleva/
+          push: false
+          load: true
+          tags: avroleva:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Image contents smoke test
+        run: |
+          docker run --rm --entrypoint sh avroleva:ci -c '
+            set -e
+            test -f /app/apps/api/dist/main.js
+            test -f /app/apps/api/dist-seed/prisma/seed.js
+            test -f /app/apps/api/dist/generated/prisma/index.js
+            test -f /app/apps/office/dist/index.html
+            test -f /app/apps/tech/dist/index.html
+            test -x /app/node_modules/.bin/prisma
+            grep -q "/avroleva/assets/" /app/apps/office/dist/index.html
+            grep -q "/avroleva/tech/" /app/apps/tech/dist/index.html
+            echo image ok'
+          docker image inspect avroleva:ci --format "size: {{.Size}} bytes"

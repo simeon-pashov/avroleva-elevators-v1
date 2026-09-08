@@ -1,21 +1,31 @@
-# Avroleva - production stack sketch for the VPS (UNTESTED in step 1; see VPS-GUIDE.md).
-# App on 127.0.0.1:3005 for nginx `location /avroleva/`, own Postgres on an internal network.
+# Avroleva - production stack for the VPS (VPS-GUIDE.md: one image per app, own Postgres, app bound
+# to 127.0.0.1 only, host nginx routes /avroleva/ -> 127.0.0.1:3005). Secrets come from an untracked
+# `.env` next to this file (template: .env.production.example).
+#
 #   docker compose -f docker-compose.prod.yml up -d --build
+#
+# APP_HOST_PORT (default 3005) is the host port nginx proxies to; the container always listens on
+# 3005. The database port is never published. pg-boss runs inside the app (ROLE=all).
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-avroleva}
     volumes:
       - avroleva_db:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-avroleva}"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 12
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
     networks: [avroleva-net]
 
   app:
@@ -23,32 +33,63 @@ services:
       context: .
       dockerfile: docker/Dockerfile
       args:
-        VITE_BASE: /avroleva/
+        # Path prefix baked into the office SPA and (as VITE_BASE + "tech/") the technician PWA.
+        VITE_BASE: ${VITE_BASE:-/avroleva/}
     restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: "3005"
-      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public"
-      SESSION_SECRET: ${SESSION_SECRET}
-      COOKIE_SECURE: "true"
-      BASE_PATH: /avroleva
-      PUBLIC_BASE_URL: https://srv1662742.hstgr.cloud/avroleva
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-avroleva}?schema=public"
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env (openssl rand -hex 32)}
+      # true behind the HTTPS nginx (cookies Secure + trust proxy). Only false for a local run without TLS.
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      BASE_PATH: ${BASE_PATH:-/avroleva}
+      # Origin only: the app appends BASE_PATH to it (platform/urls.ts).
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://srv1662742.hstgr.cloud}
+      # Platform admin, upserted at every start; demo tenant only when SEED_DEMO=true.
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
       SEED_DEMO: ${SEED_DEMO:-false}
-      GEOCODER: nominatim
+      # Scheduler (pg-boss in the same database, schema "pgboss").
+      ROLE: ${ROLE:-all}
+      WORKER_ENABLED: ${WORKER_ENABLED:-true}
+      CRON_ENABLED: ${CRON_ENABLED:-true}
+      # Ports & adapters.
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
+      SMTP_URL: ${SMTP_URL:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@avroleva.local}
+      SMS_PROVIDER: ${SMS_PROVIDER:-console}
+      SMS_HTTP_URL: ${SMS_HTTP_URL:-}
+      SMS_HTTP_TOKEN: ${SMS_HTTP_TOKEN:-}
+      GEOCODER: ${GEOCODER:-nominatim}
+      NOMINATIM_URL: ${NOMINATIM_URL:-https://nominatim.openstreetmap.org}
+      MIN_CLIENT_VERSION: ${MIN_CLIENT_VERSION:-0.4.0}
+      # Attachments + exports live on the named volume.
+      DATA_DIR: /data
     depends_on:
       db:
         condition: service_healthy
     ports:
-      - "127.0.0.1:3005:3005"
+      - "127.0.0.1:${APP_HOST_PORT:-3005}:3005"
     volumes:
-      - avroleva_uploads:/data/uploads
+      - avroleva_data:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3005/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 90s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
     networks: [avroleva-net]
 
 volumes:
   avroleva_db:
-  avroleva_uploads:
+  avroleva_data:
 
 networks:
   avroleva-net:
