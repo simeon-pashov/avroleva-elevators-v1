@@ -25,6 +25,11 @@ interface FormValues {
   alarmTestIntervalMonths: string
   publicQrPage: boolean
   publicFaultReport: boolean
+  gpsCapture: boolean
+  minFunctionalCheck: string
+  minTechnicalMaintenance: string
+  minRepair: string
+  minCallback: string
 }
 
 export function SettingsPage() {
@@ -49,6 +54,11 @@ export function SettingsPage() {
     alarmTestIntervalMonths: '',
     publicQrPage: false,
     publicFaultReport: false,
+    gpsCapture: false,
+    minFunctionalCheck: '2',
+    minTechnicalMaintenance: '2',
+    minRepair: '2',
+    minCallback: '1',
   })
   const [loaded, setLoaded] = useState(false)
   const [loadError, setLoadError] = useState<unknown>(null)
@@ -77,6 +87,11 @@ export function SettingsPage() {
           alarmTestIntervalMonths: tn.settings.alarmTestIntervalMonths?.toString() ?? '',
           publicQrPage: tn.features.publicQrPage,
           publicFaultReport: tn.features.publicFaultReport,
+          gpsCapture: tn.features.gpsCapture,
+          minFunctionalCheck: String(tn.settings.minTechnicians.functional_check),
+          minTechnicalMaintenance: String(tn.settings.minTechnicians.technical_maintenance),
+          minRepair: String(tn.settings.minTechnicians.repair),
+          minCallback: String(tn.settings.minTechnicians.callback),
         })
         setLoaded(true)
       })
@@ -111,10 +126,18 @@ export function SettingsPage() {
           inspectionIntervalMonths: numOrNull(values.inspectionIntervalMonths),
           firstInspectionIntervalMonths: numOrNull(values.firstInspectionIntervalMonths),
           alarmTestIntervalMonths: numOrNull(values.alarmTestIntervalMonths),
+          minTechnicians: {
+            functional_check: Number(values.minFunctionalCheck),
+            technical_maintenance: Number(values.minTechnicalMaintenance),
+            repair: Number(values.minRepair),
+            callback: Number(values.minCallback),
+            other: 1,
+          },
         },
         features: {
           publicQrPage: values.publicQrPage,
           publicFaultReport: values.publicFaultReport,
+          gpsCapture: values.gpsCapture,
         },
       })
       toast(t('common.saved'))
@@ -289,6 +312,46 @@ export function SettingsPage() {
                 onChange={(e) => form.set('alarmTestIntervalMonths', e.target.value)}
               />
             </Field>
+          </div>
+          <div className="field">
+            <span className="field-label">{t('settings.minTechnicians')}</span>
+            <div className="row min-techs">
+              {(
+                [
+                  ['minFunctionalCheck', 'functional_check'],
+                  ['minTechnicalMaintenance', 'technical_maintenance'],
+                  ['minRepair', 'repair'],
+                  ['minCallback', 'callback'],
+                ] as const
+              ).map(([field, kind]) => (
+                <label key={field} className="field">
+                  <span className="field-label small">{t(`enum.visitKind.${kind}`)}</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={4}
+                    value={v[field]}
+                    disabled={ro}
+                    onChange={(e) => form.set(field, e.target.value)}
+                  />
+                </label>
+              ))}
+            </div>
+            <span className="field-hint">{t('settings.minTechniciansHint')}</span>
+          </div>
+          <div className="field">
+            <span className="field-label">{t('settings.techApp')}</span>
+            <div className="check-list">
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={v.gpsCapture}
+                  disabled={ro}
+                  onChange={(e) => form.set('gpsCapture', e.target.checked)}
+                />
+                <span>{t('settings.gpsCapture')}</span>
+              </label>
+            </div>
           </div>
           <div className="field">
             <span className="field-label">{t('settings.features')}</span>

@@ -12,7 +12,7 @@ import type {
   VisitDto,
   VisitKind,
 } from '@avroleva/contracts'
-import { get, qs } from '../lib/api'
+import { BASE, get, qs } from '../lib/api'
 import { useI18n } from '../i18n/I18nProvider'
 import { useAuth } from '../auth/AuthProvider'
 import { Badge, Empty, ErrorBox, LoadMore, Spinner, useCursorList } from './ui'
@@ -77,7 +77,49 @@ export function VisitHistory({ elevatorId, version }: { elevatorId: string; vers
                 <span className="muted">{t('visits.technicians')}: </span>
                 {v.technicians.map((x) => x.name).join(', ')}
               </div>
+              {v.checklist ? (
+                <div className="small">
+                  <span className="muted">{t('visits.checklist')}: </span>
+                  {t('visits.checklistSummary', v.checklist.summary)}
+                </div>
+              ) : null}
+              {v.qualityFlags.length ? (
+                <div className="visit-flags">
+                  {v.qualityFlags.map((f) => (
+                    <Badge key={f} kind={f === 'pendingUploads' ? 'info' : 'warn'}>
+                      {f === 'pendingUploads'
+                        ? t('visits.pendingPhotos', {
+                            count: v.attachments.filter((a) => !a.uploaded).length,
+                          })
+                        : t(`visits.flag.${f}`)}
+                    </Badge>
+                  ))}
+                </div>
+              ) : null}
               {v.notes ? <div className="pre small">{v.notes}</div> : null}
+              {v.attachments.some((a) => a.uploaded) ? (
+                <div className="thumbs">
+                  {v.attachments
+                    .filter((a) => a.uploaded && a.attachment)
+                    .map((a) => (
+                      <a
+                        key={a.attachmentId}
+                        href={`${BASE}${a.attachment!.url}`}
+                        target="_blank"
+                        rel="noopener"
+                        title={t(`enum.attachmentRole.${a.role}`)}
+                        className={`thumb${a.role === 'logbook_page' ? ' thumb-logbook' : ''}`}
+                      >
+                        <img src={`${BASE}${a.attachment!.thumbUrl}`} alt="" loading="lazy" />
+                      </a>
+                    ))}
+                </div>
+              ) : null}
+              <div className="visit-actions small">
+                <a href={`${BASE}/print/logbook/${v.id}`} target="_blank" rel="noopener">
+                  {t('visits.logbookPage')}
+                </a>
+              </div>
             </li>
           ))}
         </ul>

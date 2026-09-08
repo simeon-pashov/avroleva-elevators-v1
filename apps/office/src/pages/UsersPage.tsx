@@ -1,10 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { UserDto, UserRole } from '@avroleva/contracts'
+import type { EnrollmentTokenDto, SessionDto, UserDto, UserRole } from '@avroleva/contracts'
 import { UserRole as UserRoleEnum } from '@avroleva/contracts'
 import { get, patch, post } from '../lib/api'
 import { useI18n } from '../i18n/I18nProvider'
 import { useAuth } from '../auth/AuthProvider'
-import { Badge, ErrorBox, Field, PageHeader, Spinner, toast } from '../components/ui'
+import {
+  Badge,
+  ConfirmButton,
+  Empty,
+  ErrorBox,
+  Field,
+  PageHeader,
+  Spinner,
+  toast,
+} from '../components/ui'
 import { EnumSelect } from '../components/EnumSelect'
 import { useForm } from '../components/useForm'
 
@@ -25,6 +34,8 @@ export function UsersPage() {
   const [showNew, setShowNew] = useState(false)
   const [pwFor, setPwFor] = useState<string | null>(null)
   const [pw, setPw] = useState('')
+  const [enroll, setEnroll] = useState<EnrollmentTokenDto | null>(null)
+  const [sessions, setSessions] = useState<SessionDto[] | null>(null)
   const form = useForm<NewUser>({
     username: '',
     password: '',
@@ -41,9 +52,17 @@ export function UsersPage() {
         .catch(setError),
     [],
   )
+  const loadSessions = useCallback(
+    () =>
+      get<{ items: SessionDto[] }>('/auth/sessions')
+        .then((r) => setSessions(r.items))
+        .catch(setError),
+    [],
+  )
   useEffect(() => {
     void load()
-  }, [load])
+    void loadSessions()
+  }, [load, loadSessions])
 
   if (error) return <ErrorBox error={error} />
   if (!users) return <Spinner />
@@ -53,6 +72,14 @@ export function UsersPage() {
       await patch(`/users/${u.id}`, body)
       toast(t('common.saved'))
       await load()
+    } catch (e) {
+      setError(e)
+    }
+  }
+
+  const connectPhone = async (u: UserDto) => {
+    try {
+      setEnroll(await post<EnrollmentTokenDto>(`/users/${u.id}/enroll-token`))
     } catch (e) {
       setError(e)
     }
@@ -156,6 +183,43 @@ export function UsersPage() {
           </div>
         </form>
       ) : null}
+      {enroll ? (
+        <div className="card narrow">
+          <h2>{t('users.connectPhoneTitle', { name: enroll.userName })}</h2>
+          <p className="muted small">{t('users.connectPhoneHint')}</p>
+          <div className="enroll-box">
+            {/* Server-rendered QR (qrcode package), safe to inject; no inline scripts. */}
+            <div className="qr" dangerouslySetInnerHTML={{ __html: enroll.qrSvg }} />
+            <div>
+              <div className="field-label">{t('users.enrollCode')}</div>
+              <div className="enroll-code">{enroll.token}</div>
+              <p className="small muted">
+                {t('users.enrollExpires', { at: dateTime(enroll.expiresAt) })}
+              </p>
+              <p className="small">
+                <a href={enroll.url} target="_blank" rel="noopener">
+                  {enroll.url}
+                </a>
+              </p>
+              <div className="actions">
+                <button
+                  type="button"
+                  className="btn btn-small"
+                  onClick={() => {
+                    const u = users.find((x) => x.id === enroll.userId)
+                    if (u) void connectPhone(u)
+                  }}
+                >
+                  {t('users.enrollNew')}
+                </button>
+                <button type="button" className="btn btn-small" onClick={() => setEnroll(null)}>
+                  {t('common.close')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="table-wrap">
         <table className="table">
           <thead>
@@ -198,6 +262,15 @@ export function UsersPage() {
                   {u.lastLoginAt ? dateTime(u.lastLoginAt) : <span className="muted">—</span>}
                 </td>
                 <td className="actions">
+                  {u.isActive ? (
+                    <button
+                      type="button"
+                      className="btn btn-small btn-primary"
+                      onClick={() => connectPhone(u)}
+                    >
+                      {t('users.connectPhone')}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className="btn btn-small"
@@ -250,6 +323,68 @@ export function UsersPage() {
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="card">
+        <h2>{t('users.sessions')}</h2>
+        <p className="muted small">{t('users.sessionsHint')}</p>
+        {!sessions ? (
+          <Spinner />
+        ) : sessions.length === 0 ? (
+          <Empty text={t('users.noSessions')} />
+        ) : (
+          <div className="table-wrap">
+            <table className="table compact">
+              <thead>
+                <tr>
+                  <th>{t('users.name')}</th>
+                  <th>{t('users.sessionKind')}</th>
+                  <th>{t('users.sessionDevice')}</th>
+                  <th>{t('users.sessionSince')}</th>
+                  <th>{t('users.sessionLastSeen')}</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {sessions.map((s) => (
+                  <tr key={s.id}>
+                    <td>
+                      {s.userName}
+                      {s.current ? (
+                        <span className="muted small"> ({t('users.sessionCurrent')})</span>
+                      ) : null}
+                    </td>
+                    <td>
+                      <Badge kind={s.kind === 'device' ? 'info' : 'muted'}>
+                        {t(`enum.sessionKind.${s.kind}`)}
+                      </Badge>
+                    </td>
+                    <td>
+                      {s.deviceName ?? <span className="muted">—</span>}
+                      {s.clientVersion ? (
+                        <span className="muted small"> · {s.clientVersion}</span>
+                      ) : null}
+                    </td>
+                    <td>{dateTime(s.createdAt)}</td>
+                    <td>{dateTime(s.lastSeenAt)}</td>
+                    <td className="actions">
+                      {!s.current ? (
+                        <ConfirmButton
+                          className="btn btn-small btn-danger-outline"
+                          label={t('users.sessionRevoke')}
+                          onConfirm={async () => {
+                            await post(`/auth/sessions/${s.id}/revoke`)
+                            toast(t('users.sessionRevoked'))
+                            await loadSessions()
+                          }}
+                        />
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )

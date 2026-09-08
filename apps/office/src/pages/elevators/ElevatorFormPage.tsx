@@ -29,6 +29,7 @@ interface FormValues {
   year: string
   driveType: DriveType
   doorType: DoorType
+  goodsOnly: boolean
   stops: string
   loadKg: string
   status: ElevatorStatus
@@ -55,6 +56,7 @@ export function ElevatorFormPage() {
     year: '',
     driveType: 'electric',
     doorType: 'manual',
+    goodsOnly: false,
     stops: '',
     loadKg: '',
     status: 'active',
@@ -88,6 +90,7 @@ export function ElevatorFormPage() {
           year: e.year?.toString() ?? '',
           driveType: e.driveType,
           doorType: e.doorType,
+          goodsOnly: e.goodsOnly,
           stops: String(e.stops),
           loadKg: e.loadKg?.toString() ?? '',
           status: e.status,
@@ -121,6 +124,7 @@ export function ElevatorFormPage() {
         year: num(values.year),
         driveType: values.driveType,
         doorType: values.doorType,
+        goodsOnly: values.goodsOnly,
         stops: num(values.stops),
         loadKg: num(values.loadKg),
         status: values.status,
@@ -220,6 +224,16 @@ export function ElevatorFormPage() {
                 onChange={(x) => x && form.set('doorType', x)}
               />
             </Field>
+          </div>
+          <div className="check-list">
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={v.goodsOnly}
+                onChange={(e) => form.set('goodsOnly', e.target.checked)}
+              />
+              <span>{t('elevators.goodsOnly')}</span>
+            </label>
           </div>
           <div className="row">
             <Field label={t('elevators.stops')} required error={err.stops}>
