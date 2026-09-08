@@ -37,6 +37,8 @@ npm run lint && npm run build   # build includes apps/tech (vite-plugin-pwa inje
 
 Env (`.env.example`): `DATA_DIR` (default `./data`, relative to the API cwd, gitignored), `MIN_CLIENT_VERSION`, `TECH_DIST`, `VITE_TECH_BASE` (= `BASE_PATH` + `/tech/`), `VITE_API_BASE` (empty = same origin). Logins unchanged (`demo` / `maria` / `ivan`, `demo1234`).
 
+**Dev-database safety.** `test/helpers.ts: resetDb()` refuses to truncate a database whose name does not contain "test" (a test run in a shell without `NODE_ENV=test` wiped the dev data once during step 4; `npm run db:seed` restores the demo tenant).
+
 **Migration naming.** `prisma migrate dev` named the step-4 migration `20260908001042_…`, which sorts *before* the step-2/3 folders (the same P3006 trap as in step 3); it was renamed to `20260908030000_tech_app_sync_attachments` and the `_prisma_migrations` row of the local `avroleva` database updated by hand. `avroleva_test` received it under the new name. Any other database that applied the old name needs the same one-line `UPDATE`.
 
 ## 3. Enrolling a phone
@@ -75,11 +77,15 @@ DATA_DIR/                          # ./data under apps/api in dev (gitignored); 
 ```
 `attachment.storageKey` / `thumbKey` hold the relative keys; only the adapter knows the root. Tests write to `data-test/` (vitest `env.DATA_DIR`). Moving to S3-compatible storage = a second adapter behind `platform/ports/storage.ts` plus a copy script (ARCHITECTURE §6).
 
-## 6. Tests
+## 6. Browser verification done in step 4
+
+Office (`demo`) -> Потребители -> "Свържи телефон" for `ivan` -> QR + code card; opened `http://localhost:5176/tech/?enroll=<code>` on the phone side -> device name -> Today list pulled (clock offset measured, 0 s). Recorded a functional check with "Всичко OK", one item switched to Дефект with a note, one photo plus the logbook-page photo, notes -> the outbox drained in order (visit -> 2 photos -> defect); the office API and the elevator history showed the visit as `source=app`, `timestampSource=device`, checklist 20 OK / 1 defect, both attachments uploaded (1600 px), the defect with `sourceType=visit`, and `/print/logbook/:visitId` rendered with the photos. Offline test: the API process was killed; a second visit with a photo was recorded (Today list and elevator screen kept working from Dexie, history row "чака изпращане", outbox "2 записа чакат" with the visit retrying and the photo queued behind it); after the API came back the outbox drained on its own within 40 s (backoff) and the office received the visit with its photo. The re-enrollment path was exercised for real: after a 401 the app kept every local row and the outbox, asked for a code and resumed. Screenshots: `docs/screenshots/tech-today.png`, `tech-visit.png`, `logbook-print.png`.
+
+## 7. Tests
 
 `npm test`: i18n (12); API unit 75 (`step4.test.ts` 16: template integrity and `applicableItems` by drive / door / goods-only, `summarizeChecklist`, quality flags incl. `minTechnicians` per kind and the clock rule for device vs server sources, `clockFlags`, signed-URL sign/verify incl. wrong tenant / variant / expiry / tamper / secret, relative URL TTL, canonical request hash, `syncPushItem` schema); API integration 81 (`step4.test.ts` 19: enroll-token → enroll → single use / expired / bogus, device Bearer without CSRF + `X-Min-Client-Version`, sessions list + revoke + cross-tenant 404, `GET /checklists/active` filtering for a semi-automatic electric lift vs a hydraulic goods-only lift with automatic doors, full pull shape, delta pull with a contact tombstone, push visit with checklist + pending photos, replay / 422 / different outbox id same visit, photo upload (hash mismatch, not-an-image, duplicate 200, re-encode to 1600 px, thumbnail 320 px), signed URLs (tamper, wrong variant, no signature, cross-tenant metadata 404), defect from the checklist stopping the lift, callback on-site event with `clockSuspect`, invalid transition 409, closed callback as a tombstone, pull returns the visit, print page for the technician and the office incl. N/A omission, cross-tenant push 404). All green; `npm run lint` and `npm run build` green.
 
-## 7. Known gaps (by design in step 4)
+## 8. Known gaps (by design in step 4)
 
 - Attachments: photos only (`kind=document` rejected); no `document` rows / dossier; no upload-target negotiation (`POST /attachments/upload-target`) — the client always uploads through the API; no retention sweep; the tenant purge script does not delete files yet.
 - Checklist templates: no office editor (tenant clones are a DB row away); only `functional_check` v1 ships; `technical_maintenance` reuses it on the phone.
@@ -90,7 +96,7 @@ DATA_DIR/                          # ./data under apps/api in dev (gitignored); 
 - The QR link points at `PUBLIC_BASE_URL/tech/` (the built app served by the API); in dev the Vite tech server at :5176 needs the code pasted.
 - Print page is HTML (browser print); photos are thumbnails only.
 
-## 8. What step 5 needs from here
+## 9. What step 5 needs from here
 
 - **Notifications**: subscribe in `subscribers.ts` to `VisitRecorded` (`qualityFlags` in the payload → alert the office on `clockSuspect` / `singleTechnician`), `DefectRecorded` / `StopLiftRequired` from app defects, `CallbackOnSite`. pg-boss lands here; the `idempotency_key` sweep, the retention sweep and the signed-URL-free export links belong to the same worker.
 - **Exports**: add `visit` (checklist flattened: one column per item code), `visit_attachment`, `attachment` (metadata + the files themselves in the full zip), `checklist_template`, `session` (device list) to the CSV set; the `FileStorage.get()` port is what streams photos into the zip.
