@@ -21,7 +21,8 @@
     "typecheck": "npm run build:packages && tsc -p apps/api/tsconfig.json --noEmit && tsc -p apps/office/tsconfig.json --noEmit && tsc -p apps/tech/tsconfig.json --noEmit",
     "db:migrate": "npm run db:migrate -w apps/api",
     "db:seed": "npm run db:seed -w apps/api",
-    "db:generate": "npm run db:generate -w apps/api"
+    "db:generate": "npm run db:generate -w apps/api",
+    "db:reset": "npm run db:reset -w apps/api"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
