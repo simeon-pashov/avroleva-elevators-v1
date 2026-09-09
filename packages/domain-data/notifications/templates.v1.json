@@ -660,6 +660,74 @@
           "body": "{{statement.periodLabel}} – balance {{money statement.closingBalanceCents}}, sent to {{contact.email}}."
         }
       }
+    },
+    "quote_sent": {
+      "email": {
+        "bg": {
+          "subject": "{{tenant.name}}: оферта за {{job.title}} ({{building.addressText}})",
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nПрилагаме оферта за {{job.title}} – {{building.addressText}}, асансьор {{elevator.internalNo}}.\nОбща стойност с ДДС: {{money job.totalCents}}. Офертата е валидна до {{job.validUntilLabel}}.\n{{#if job.message}}\n{{job.message}}\n{{/if}}\nЗа одобрение отговорете на този имейл или се обадете на {{tenant.phone}}.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        },
+        "en": {
+          "subject": "{{tenant.name}}: quote for {{job.title}} ({{building.addressText}})",
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nAttached is our quote for {{job.title}} – {{building.addressText}}, elevator {{elevator.internalNo}}.\nTotal incl. VAT: {{money job.totalCents}}. The quote is valid until {{job.validUntilLabel}}.\n{{#if job.message}}\n{{job.message}}\n{{/if}}\nTo approve, reply to this e-mail or call {{tenant.phone}}.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "{{tenant.name}}: оферта за {{job.title}} ({{building.addressText}}) – {{money job.totalCents}} с ДДС, валидна до {{job.validUntilLabel}}. Тел. {{tenant.phone}}."
+        },
+        "en": {
+          "body": "{{tenant.name}}: quote for {{job.title}} ({{building.addressText}}) – {{money job.totalCents}} incl. VAT, valid until {{job.validUntilLabel}}. Tel. {{tenant.phone}}."
+        }
+      },
+      "viber_link": {
+        "bg": {
+          "body": "Здравейте, {{tenant.name}} изпраща оферта за {{job.title}} – {{building.addressText}}, асансьор {{elevator.internalNo}}: {{money job.totalCents}} с ДДС, валидна до {{job.validUntilLabel}}.{{#if job.message}} {{job.message}}{{/if}} За одобрение отговорете тук или се обадете на {{tenant.phone}}."
+        },
+        "en": {
+          "body": "Hello, {{tenant.name}} sends a quote for {{job.title}} – {{building.addressText}}, elevator {{elevator.internalNo}}: {{money job.totalCents}} incl. VAT, valid until {{job.validUntilLabel}}.{{#if job.message}} {{job.message}}{{/if}} To approve, reply here or call {{tenant.phone}}."
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Оферта изпратена: {{job.title}}",
+          "body": "{{building.addressText}} – {{money job.totalCents}} с ДДС, валидна до {{job.validUntilLabel}}."
+        },
+        "en": {
+          "subject": "Quote sent: {{job.title}}",
+          "body": "{{building.addressText}} – {{money job.totalCents}} incl. VAT, valid until {{job.validUntilLabel}}."
+        }
+      }
+    },
+    "job_approval_reminder": {
+      "email": {
+        "bg": {
+          "subject": "Оферта без отговор {{job.days}} дни: {{job.title}}",
+          "body": "Офертата за {{job.title}} ({{building.addressText}}, асансьор {{elevator.internalNo}}) на стойност {{money job.totalCents}} чака одобрение от {{job.days}} дни. Обадете се на сградата или преразгледайте офертата."
+        },
+        "en": {
+          "subject": "Quote unanswered for {{job.days}} days: {{job.title}}",
+          "body": "The quote for {{job.title}} ({{building.addressText}}, elevator {{elevator.internalNo}}) of {{money job.totalCents}} has been awaiting approval for {{job.days}} days. Call the building or revise the quote."
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "Оферта без отговор {{job.days}} дни: {{job.title}}, {{building.addressText}} – {{money job.totalCents}}."
+        },
+        "en": {
+          "body": "Quote unanswered for {{job.days}} days: {{job.title}}, {{building.addressText}} – {{money job.totalCents}}."
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Оферта без отговор {{job.days}} дни: {{job.title}}",
+          "body": "{{building.addressText}}, асансьор {{elevator.internalNo}} – {{money job.totalCents}} с ДДС. Обадете се на сградата или преразгледайте офертата."
+        },
+        "en": {
+          "subject": "Quote unanswered for {{job.days}} days: {{job.title}}",
+          "body": "{{building.addressText}}, elevator {{elevator.internalNo}} – {{money job.totalCents}} incl. VAT. Call the building or revise the quote."
+        }
+      }
     }
   }
 }

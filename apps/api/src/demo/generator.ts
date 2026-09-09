@@ -13,6 +13,8 @@ import { seedDemoBilling } from './billing.js'
 import { seedIncidents } from './incidents.js'
 import { seedEvidence } from './evidence.js'
 import { seedNotifications } from './notifications.js'
+import { seedJobs } from './jobs.js'
+import { wireModules } from '../wiring.js'
 
 /**
  * Demo-data generator (ADR 0001 section 6) - the one source of truth for `SEED_DEMO`, the
@@ -55,6 +57,7 @@ export async function generateDemoData(
   if (!tenant) throw new Error(`tenant ${tenantId} not found`)
   const counts: Record<string, number> = {}
 
+  wireModules()
   const result = await events.runQuiet(async () => {
     const hadBuildings = (await db.building.count({ where: { tenantId, deletedAt: null } })) > 0
     let elevatorRows: DemoElevatorRow[]
@@ -124,6 +127,18 @@ export async function generateDemoData(
     Object.assign(counts, await seedEvidence(tenantId))
     const money = await seedDemoBilling(tenantId, buildingIds, today, months)
     Object.assign(counts, money)
+    Object.assign(
+      counts,
+      await seedJobs(
+        tenantId,
+        elevatorRows.map((r) => ({
+          id: r.row.id,
+          buildingId: r.row.buildingId,
+          status: r.row.status,
+        })),
+        today,
+      ),
+    )
     Object.assign(counts, await seedNotifications(tenantId))
     return { registryCreated: !hadBuildings, skipped: false }
   })

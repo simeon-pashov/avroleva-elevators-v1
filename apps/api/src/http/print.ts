@@ -17,6 +17,7 @@ import * as defects from '../modules/defects/index.js'
 import * as visits from '../modules/visits/index.js'
 import { buildingReport, buildingReportHtml } from '../modules/reporting/index.js'
 import * as billing from '../modules/billing/index.js'
+import * as jobs from '../modules/jobs/index.js'
 import { buildingReportQuery, statementQuery } from '@avroleva/contracts'
 import { DOC_CSS, esc, page, paragraphs } from './templates/html.js'
 
@@ -400,6 +401,19 @@ printRouter.get('/invoice/:id', async (req, res) => {
       toolbar: true,
       scriptUrl: `${base}/print/assets/print.js`,
       lang: ctx.locale,
+    }),
+  )
+})
+
+/** `/print/quote/:jobId`: the quote of a repair job (lines, totals, validity, signature lines). */
+printRouter.get('/quote/:jobId', async (req, res) => {
+  const ctx = guard(req, res, ['owner', 'office'])
+  if (!ctx) return
+  const base = config.BASE_PATH === '/' ? '' : config.BASE_PATH
+  res.type('html').send(
+    await jobs.quoteHtml(ctx, parseId(req, 'jobId'), {
+      toolbar: true,
+      scriptUrl: `${base}/print/assets/print.js`,
     }),
   )
 })

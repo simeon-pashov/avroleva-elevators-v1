@@ -10,14 +10,9 @@ import { requestId } from './platform/http/requestId.js'
 import { csrfGuard } from './platform/http/ctx.js'
 import { errorHandler, notFound } from './platform/http/errors.js'
 import { authenticate } from './modules/tenancy/index.js'
-import { useScheduleRules } from './modules/registry/index.js'
-import { scheduleRules } from './modules/maintenance/index.js'
-import { useVisitRecorder } from './modules/callbacks/index.js'
-import * as visits from './modules/visits/index.js'
-import { checklists } from './modules/maintenance/index.js'
 import { filesRouter } from './modules/documents/index.js'
-import { exportFilesRouter, useReportNotifier } from './modules/reporting/index.js'
-import * as notifications from './modules/notifications/index.js'
+import { exportFilesRouter } from './modules/reporting/index.js'
+import { wireModules } from './wiring.js'
 import { printRouter } from './http/print.js'
 import { publicRouter } from './http/public.js'
 import { payRouter, webhookRouter } from './http/pay.js'
@@ -25,15 +20,8 @@ import { apiV1 } from './http/router.js'
 import { mountOffice, mountTech } from './http/static.js'
 import { MIN_CLIENT_VERSION_HEADER } from '@avroleva/contracts'
 
-// Composition root (ARCHITECTURE section 1.1 rule 2): the registry's schedule port gets the
-// maintenance module's cycle engine; nothing below L3 imports maintenance directly.
-useScheduleRules(scheduleRules)
-// callbacks (L3) records its close-out visit through a port; visits (L3) implements it here.
-useVisitRecorder({ record: visits.record })
-// visits (L3) snapshots checklist answers through a port; maintenance (L3) owns the templates.
-visits.useChecklistResolver({ snapshotFor: checklists.snapshotFor })
-// reporting (L4) e-mails reports / export links through a port; notifications (L4) implements it.
-useReportNotifier({ sendEmail: notifications.sendEmail, notifyUsers: notifications.notifyUsers })
+// Composition root of the module ports (ARCHITECTURE section 1.1 rule 2) - see wiring.ts.
+wireModules()
 
 export interface AppOptions {
   /** Absolute path of the built office SPA; omitted = API only (dev, tests). */

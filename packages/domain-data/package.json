@@ -17,7 +17,9 @@
     "defects",
     "checklists",
     "calendar-rules.json",
-    "notifications"
+    "notifications",
+    "billing",
+    "jobs"
   ],
   "scripts": {
     "build": "tsc -b"

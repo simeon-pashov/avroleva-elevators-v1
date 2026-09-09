@@ -69,6 +69,7 @@ model Tenant {
   payments         Payment[]
   callbacks        Callback[]
   defects          Defect[]
+  jobs             Job[]
   inspections      Inspection[]
   alarmTests       AlarmDeviceTest[]
   attachments      Attachment[]
@@ -295,6 +296,7 @@ model Building {
   payments  Payment[]
   callbacks Callback[]
   defects   Defect[]
+  jobs      Job[]
 
   @@index([tenantId, customerId])
   @@index([tenantId, geocodeStatus])
@@ -347,6 +349,7 @@ model Elevator {
   visits        Visit[]
   callbacks     Callback[]
   defects       Defect[]
+  jobs          Job[]
   inspections   Inspection[]
   alarmTests    AlarmDeviceTest[]
 
@@ -1027,6 +1030,146 @@ model Defect {
   @@index([tenantId, elevatorId, recordedAt(sort: Desc)])
   @@index([tenantId, recordedAt(sort: Desc)])
   @@map("defect")
+}
+
+// ---------------------------------------------------------------- jobs (L3, step 8)
+
+enum JobKind {
+  repair
+  modernisation
+  other
+}
+
+enum JobOriginType {
+  visit
+  callback
+  defect
+  office
+}
+
+enum JobLineKind {
+  labour
+  part
+  other
+}
+
+/// Repair job / quote. `status` is a stage code from job_stage (system defaults + tenant override),
+/// never a Postgres enum: the approval flow is data. Money = net of the current quote version.
+model Job {
+  id               String        @id @db.Uuid
+  tenantId         String        @db.Uuid
+  elevatorId       String        @db.Uuid
+  buildingId       String        @db.Uuid
+  customerId       String?       @db.Uuid
+  kind             JobKind       @default(repair)
+  title            String
+  description      String?
+  originType       JobOriginType @default(office)
+  /// visit / callback / defect id the job was created from (no FK: cross-module reference).
+  originId         String?       @db.Uuid
+  status           String        @default("draft")
+  quoteVersion     Int           @default(1)
+  netCents         Int           @default(0)
+  vatCents         Int           @default(0)
+  totalCents       Int           @default(0)
+  vatRatePercent   Int           @default(20)
+  /// {kind, by, note, at, attachmentId} - how the building said yes.
+  approvalEvidence Json?
+  quoteSentAt      DateTime?     @db.Timestamptz
+  quoteValidUntil  DateTime?     @db.Date
+  approvedAt       DateTime?     @db.Timestamptz
+  scheduledAt      DateTime?     @db.Timestamptz
+  assignedUserIds  String[]      @db.Uuid
+  startedAt        DateTime?     @db.Timestamptz
+  completedAt      DateTime?     @db.Timestamptz
+  /// The repair visit recorded on completion (visits module, through the VisitRecorder port).
+  visitId          String?       @db.Uuid
+  /// The last invoice created from the job (billing, through the InvoiceIssuer port).
+  invoiceId        String?       @db.Uuid
+  /// Net amount already invoiced (deposits + final).
+  invoicedCents    Int           @default(0)
+  warrantyUntil    DateTime?     @db.Date
+  rejectedReason   String?
+  cancelledReason  String?
+  notes            String?
+  createdByUserId  String?       @db.Uuid
+  createdAt        DateTime      @default(now()) @db.Timestamptz
+  updatedAt        DateTime      @updatedAt @db.Timestamptz
+
+  tenant   Tenant     @relation(fields: [tenantId], references: [id])
+  elevator Elevator   @relation(fields: [elevatorId], references: [id])
+  building Building   @relation(fields: [buildingId], references: [id])
+  lines    JobLine[]
+  events   JobEvent[]
+
+  @@index([tenantId, status, updatedAt(sort: Desc)])
+  @@index([tenantId, elevatorId, createdAt(sort: Desc)])
+  @@index([tenantId, buildingId])
+  @@index([tenantId, originType, originId])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("job")
+}
+
+/// Quote lines; every quote revision is a new `quoteVersion`, old lines stay as history.
+model JobLine {
+  id           String      @id @db.Uuid
+  tenantId     String      @db.Uuid
+  jobId        String      @db.Uuid
+  quoteVersion Int         @default(1)
+  kind         JobLineKind @default(part)
+  description  String
+  qty          Float       @default(1)
+  unitCents    Int         @default(0)
+  totalCents   Int         @default(0)
+  partRef      String?
+  position     Int         @default(0)
+  createdAt    DateTime    @default(now()) @db.Timestamptz
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, jobId, quoteVersion, position])
+  @@map("job_line")
+}
+
+/// Append-only transitions and notes with provenance (who, when, from which client).
+model JobEvent {
+  id         String      @id @db.Uuid
+  tenantId   String      @db.Uuid
+  jobId      String      @db.Uuid
+  type       String
+  fromStatus String?
+  toStatus   String?
+  at         DateTime    @db.Timestamptz
+  receivedAt DateTime    @default(now()) @db.Timestamptz
+  source     EventSource @default(office)
+  byUserId   String?     @db.Uuid
+  data       Json        @default("{}")
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, jobId, at])
+  @@map("job_event")
+}
+
+/// Job stages as data: system rows (tenantId NULL, from packages/domain-data/jobs) and tenant rows
+/// that replace the whole list when present.
+model JobStage {
+  id               String   @id @db.Uuid
+  tenantId         String?  @db.Uuid
+  code             String
+  labelBg          String
+  labelEn          String
+  position         Int
+  isTerminal       Boolean  @default(false)
+  allowedNext      String[]
+  requiresEvidence Boolean  @default(false)
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now()) @db.Timestamptz
+  updatedAt        DateTime @updatedAt @db.Timestamptz
+
+  @@unique([tenantId, code])
+  @@index([tenantId, position])
+  @@map("job_stage")
 }
 
 // ---------------------------------------------------------------- calendar (L3)

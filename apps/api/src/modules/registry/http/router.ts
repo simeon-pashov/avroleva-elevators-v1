@@ -7,8 +7,11 @@ import {
   createContactBody,
   createContractBody,
   createCustomerBody,
+  createBuildingWithElevatorBody,
   createElevatorBody,
   customerListQuery,
+  geoSearchQuery,
+  nearbyBuildingsQuery,
   elevatorListQuery,
   importPreviewBody,
   setBuildingLocationBody,
@@ -27,6 +30,7 @@ import * as buildings from '../service/buildings.js'
 import * as elevators from '../service/elevators.js'
 import * as contracts from '../service/contracts.js'
 import * as imports from '../service/imports.js'
+import * as geo from '../service/geo.js'
 
 export const registryRouter = Router()
 registryRouter.use(requireAuth)
@@ -69,6 +73,19 @@ registryRouter.patch('/contacts/:id', canEdit, async (req, res) => {
 registryRouter.delete('/contacts/:id', canEdit, async (req, res) => {
   await contacts.archive(ctxOf(req), parseId(req))
   res.status(204).end()
+})
+
+// ---- address search and "add an elevator here" (step 8)
+registryRouter.get('/geo/search', canEdit, async (req, res) => {
+  res.json({ items: await geo.searchAddress(ctxOf(req), parseQuery(geoSearchQuery, req)) })
+})
+registryRouter.get('/buildings/nearby', async (req, res) => {
+  res.json({ items: await geo.nearby(ctxOf(req), parseQuery(nearbyBuildingsQuery, req)) })
+})
+registryRouter.post('/buildings/with-elevator', canEdit, async (req, res) => {
+  res
+    .status(201)
+    .json(await geo.createWithElevator(ctxOf(req), parseBody(createBuildingWithElevatorBody, req)))
 })
 
 // ---- buildings

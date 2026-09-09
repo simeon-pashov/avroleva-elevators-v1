@@ -132,6 +132,26 @@ export interface BillingDefaultsData {
 /** System dunning stages (+3 reminder, +14 second reminder, +30 final notice) and one disabled late-fee rule. */
 export const billingDefaults: BillingDefaultsData = load('../billing/dunning.v1.json')
 
+// ---- Repair job stages (step 8: approval stages and state machines are data) ------------------
+
+export interface JobStageData {
+  code: string
+  bg: string
+  en: string
+  isTerminal: boolean
+  allowedNext: string[]
+  /** The transition INTO this stage must carry approval evidence (who said yes, how, when). */
+  requiresEvidence: boolean
+}
+
+export interface JobStagesData {
+  version: number
+  stages: JobStageData[]
+}
+
+/** System job stages (draft -> quoted -> awaiting_approval -> approved -> scheduled -> in_progress -> done -> invoiced, + rejected / cancelled). */
+export const jobStageDefaults: JobStagesData = load('../jobs/stages.v1.json')
+
 /** Flat list for seeding `notification_template` system rows. */
 export function listNotificationTemplates(): Array<{
   key: string

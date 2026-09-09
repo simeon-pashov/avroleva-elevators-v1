@@ -14,6 +14,7 @@ import * as documents from './modules/documents/index.js'
 import * as calendar from './modules/calendar/index.js'
 import { calendarItems, exportStorageKeys, runFullExport } from './modules/reporting/index.js'
 import * as notifications from './modules/notifications/index.js'
+import * as repairJobs from './modules/jobs/index.js'
 import { listDemoTenantIds, resetDemoTenant } from './demo/reset.js'
 
 /**
@@ -266,6 +267,15 @@ export function registerJobs(): void {
       }
       return out
     },
+  })
+
+  defineJob({
+    name: 'jobs.approvalReminders',
+    cron: '0 7 * * *',
+    description:
+      'Daily 07:00: repair jobs awaiting approval longer than tenant.settings.jobs.approvalReminderDays get an in-app reminder for the office (once a week per job).',
+    handler: () =>
+      forEachTenant('jobs.approvalReminders', (t) => repairJobs.remindApprovals(t.id, t.locale)),
   })
 
   defineJob({

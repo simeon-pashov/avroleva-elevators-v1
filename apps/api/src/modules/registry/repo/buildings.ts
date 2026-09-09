@@ -72,6 +72,7 @@ export function buildingPins(tenantId: string) {
       addressText: true,
       lat: true,
       lng: true,
+      customer: { select: { name: true } },
       _count: { select: { elevators: { where: { deletedAt: null } } } },
     },
   })

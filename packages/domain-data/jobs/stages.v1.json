@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "stages": [
+    {
+      "code": "draft",
+      "bg": "Чернова",
+      "en": "Draft",
+      "isTerminal": false,
+      "allowedNext": ["quoted", "cancelled"],
+      "requiresEvidence": false
+    },
+    {
+      "code": "quoted",
+      "bg": "Оферта",
+      "en": "Quoted",
+      "isTerminal": false,
+      "allowedNext": ["awaiting_approval", "approved", "rejected", "draft", "cancelled"],
+      "requiresEvidence": false
+    },
+    {
+      "code": "awaiting_approval",
+      "bg": "Чака одобрение",
+      "en": "Awaiting approval",
+      "isTerminal": false,
+      "allowedNext": ["approved", "rejected", "quoted", "draft", "cancelled"],
+      "requiresEvidence": false
+    },
+    {
+      "code": "approved",
+      "bg": "Одобрен",
+      "en": "Approved",
+      "isTerminal": false,
+      "allowedNext": ["scheduled", "in_progress", "done", "cancelled"],
+      "requiresEvidence": true
+    },
+    {
+      "code": "scheduled",
+      "bg": "Насрочен",
+      "en": "Scheduled",
+      "isTerminal": false,
+      "allowedNext": ["in_progress", "done", "approved", "cancelled"],
+      "requiresEvidence": false
+    },
+    {
+      "code": "in_progress",
+      "bg": "В изпълнение",
+      "en": "In progress",
+      "isTerminal": false,
+      "allowedNext": ["done", "scheduled"],
+      "requiresEvidence": false
+    },
+    {
+      "code": "done",
+      "bg": "Завършен",
+      "en": "Done",
+      "isTerminal": false,
+      "allowedNext": ["invoiced"],
+      "requiresEvidence": false
+    },
+    {
+      "code": "invoiced",
+      "bg": "Фактуриран",
+      "en": "Invoiced",
+      "isTerminal": true,
+      "allowedNext": [],
+      "requiresEvidence": false
+    },
+    {
+      "code": "rejected",
+      "bg": "Отказан",
+      "en": "Rejected",
+      "isTerminal": true,
+      "allowedNext": ["draft"],
+      "requiresEvidence": false
+    },
+    {
+      "code": "cancelled",
+      "bg": "Анулиран",
+      "en": "Cancelled",
+      "isTerminal": true,
+      "allowedNext": [],
+      "requiresEvidence": false
+    }
+  ]
+}

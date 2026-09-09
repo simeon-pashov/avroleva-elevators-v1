@@ -22,6 +22,7 @@ import { checklists, dueState } from '../modules/maintenance/index.js'
 import * as visits from '../modules/visits/index.js'
 import * as callbacks from '../modules/callbacks/index.js'
 import * as defects from '../modules/defects/index.js'
+import * as repairJobsModule from '../modules/jobs/index.js'
 
 /**
  * Sync facade of the technician app (ARCHITECTURE section 4). Composes the modules' public
@@ -66,6 +67,7 @@ export async function pull(ctx: Ctx, since: Date | null, now: Date): Promise<Syn
     templates,
     openCallbacks,
     openDefects,
+    repairJobs,
   ] = await Promise.all([
     getTenant(ctx.tenantId),
     listUsers(ctx),
@@ -75,6 +77,7 @@ export async function pull(ctx: Ctx, since: Date | null, now: Date): Promise<Syn
     checklists.listActive(ctx.tenantId),
     callbacks.listForSync(ctx, since),
     defects.listForSync(ctx, since),
+    repairJobsModule.listForSync(ctx),
   ])
   const settings = tenant.settings
   const me = users.find((u) => u.id === ctx.userId)
@@ -173,6 +176,7 @@ export async function pull(ctx: Ctx, since: Date | null, now: Date): Promise<Syn
     callbacks: openCallbacks,
     defects: openDefects,
     visits: visitDtos,
+    repairJobs,
   }
 }
 
@@ -215,6 +219,32 @@ async function apply(ctx: Ctx, item: ReturnType<typeof syncPushItem.parse>) {
     case 'defect.record': {
       const { clientOffsetMs: _o, timestampSource: _s, ...rest } = item.payload
       return defects.record(ctx, rest)
+    }
+    case 'job.event': {
+      const p = item.payload
+      const time = {
+        at: p.at,
+        clientOffsetMs: p.clientOffsetMs,
+        timestampSource: p.timestampSource,
+      }
+      if (p.type === 'start')
+        return repairJobsModule.start(ctx, p.jobId, { ...time, notes: p.notes ?? null }, 'app')
+      if (p.type === 'note')
+        return repairJobsModule.addNote(ctx, p.jobId, { ...time, notes: p.notes ?? '' }, 'app')
+      return repairJobsModule.complete(
+        ctx,
+        p.jobId,
+        {
+          ...time,
+          startedAt: p.startedAt,
+          notes: p.notes ?? null,
+          partsUsed: p.partsUsed ?? null,
+          visitId: p.visitId,
+          attachments: p.attachments,
+          createVisit: true,
+        },
+        'app',
+      )
     }
   }
 }

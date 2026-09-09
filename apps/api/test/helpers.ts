@@ -33,7 +33,7 @@ export async function resetDb(): Promise<void> {
     )
   }
   await prismaBase.$executeRawUnsafe(
-    'TRUNCATE TABLE "audit_log", "domain_event", "event_delivery", "job_run", "notification", "notification_rule", "notification_template", "export_job", "report_run", "idempotency_key", "visit_attachment", "attachment", "device_enrollment_token", "checklist_template", "alarm_device_test", "inspection", "defect", "callback_event", "callback", "payment_link", "bank_import_row", "bank_import", "invoice_adjustment", "credit_note", "credit_note_sequence", "dunning_stage", "late_fee_rule", "payment", "invoice", "invoice_sequence", "visit_technician", "visit", "import_batch", "contract_elevator", "contract", "elevator", "contact", "building", "customer", "session", "user", "tenant", "platform_admin" CASCADE',
+    'TRUNCATE TABLE "audit_log", "domain_event", "event_delivery", "job_run", "notification", "notification_rule", "notification_template", "export_job", "report_run", "idempotency_key", "visit_attachment", "attachment", "device_enrollment_token", "checklist_template", "alarm_device_test", "inspection", "defect", "job_event", "job_line", "job", "job_stage", "callback_event", "callback", "payment_link", "bank_import_row", "bank_import", "invoice_adjustment", "credit_note", "credit_note_sequence", "dunning_stage", "late_fee_rule", "payment", "invoice", "invoice_sequence", "visit_technician", "visit", "import_batch", "contract_elevator", "contract", "elevator", "contact", "building", "customer", "session", "user", "tenant", "platform_admin" CASCADE',
   )
 }
 

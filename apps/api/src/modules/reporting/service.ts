@@ -24,6 +24,7 @@ import { summary } from '../billing/index.js'
 import * as callbacks from '../callbacks/index.js'
 import * as defects from '../defects/index.js'
 import * as calendar from '../calendar/index.js'
+import * as jobs from '../jobs/index.js'
 
 /**
  * Dashboard = one registry read model query (elevators + buildings + contacts), the billing
@@ -157,7 +158,7 @@ export async function calendarItems(
   const rules = calendar.rulesFor(settings)
   const t = ctx.t
 
-  const [rows, scheduled, openDefects, overSla, lastTests] = await Promise.all([
+  const [rows, scheduled, openDefects, overSla, lastTests, awaitingJobs] = await Promise.all([
     elevators.listForSchedule(ctx.tenantId),
     wanted.has('inspection_due') ? calendar.scheduledRows(ctx.tenantId) : Promise.resolve([]),
     wanted.has('defect_follow_up') ? defects.listOpenRows(ctx.tenantId) : Promise.resolve([]),
@@ -165,6 +166,7 @@ export async function calendarItems(
     wanted.has('alarm_test_due') && rules.alarmTestIntervalMonths
       ? calendar.latestAlarmTests(ctx.tenantId)
       : Promise.resolve(new Map<string, Date>()),
+    wanted.has('job_approval') ? jobs.awaitingApprovalRows(ctx.tenantId) : Promise.resolve([]),
   ])
   const byElevator = new Map(rows.map((r) => [r.id, r]))
   const scheduledByElevator = new Map<string, (typeof scheduled)[number]>()
@@ -273,6 +275,19 @@ export async function calendarItems(
         ? calendar.addMonthsDateOnly(dateOnlyInSofia(last), rules.alarmTestIntervalMonths)
         : today
       push('alarm_test_due', 'elevator', r.id, r.id, dueAt, t('calendar.item.alarmTestDue'))
+    }
+  }
+
+  if (wanted.has('job_approval')) {
+    for (const { job, dueAt } of awaitingJobs) {
+      push(
+        'job_approval',
+        'job',
+        job.id,
+        job.elevatorId,
+        dateOnlyInSofia(dueAt),
+        t('calendar.item.jobApproval', { title: job.title }),
+      )
     }
   }
 

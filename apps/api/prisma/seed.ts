@@ -5,6 +5,7 @@ import { ensurePlatformAdmin } from '../src/modules/tenancy/index.js'
 import { checklists } from '../src/modules/maintenance/index.js'
 import * as notifications from '../src/modules/notifications/index.js'
 import { ensureSystemBillingDefaults } from '../src/modules/billing/index.js'
+import { ensureSystemJobStages } from '../src/modules/jobs/index.js'
 import { events } from '../src/platform/events/bus.js'
 import { SUBSCRIPTIONS } from '../src/subscribers.js'
 import { seedDemoTenant } from './seed/demo.js'
@@ -23,6 +24,9 @@ async function main() {
   // System dunning stages + late-fee rule (tenantId NULL) from packages/domain-data - every deployment.
   const billingDefaults = await ensureSystemBillingDefaults()
   logger.info(billingDefaults, 'system billing defaults ensured')
+  // System job stages (tenantId NULL) from packages/domain-data/jobs - every deployment (step 8).
+  const jobStages = await ensureSystemJobStages()
+  logger.info({ jobStages }, 'system job stages ensured')
   if (config.ADMIN_PASSWORD) {
     await ensurePlatformAdmin(config.ADMIN_USERNAME, config.ADMIN_PASSWORD)
     logger.info({ username: config.ADMIN_USERNAME }, 'platform admin ensured')

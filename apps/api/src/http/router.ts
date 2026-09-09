@@ -11,6 +11,7 @@ import { calendarRouter } from '../modules/calendar/index.js'
 import { exportsRouter, reportingRouter, reportsRouter } from '../modules/reporting/index.js'
 import { attachmentsRouter } from '../modules/documents/index.js'
 import { notificationsRouter } from '../modules/notifications/index.js'
+import { jobsRouter } from '../modules/jobs/index.js'
 import { adminRouter } from './admin.js'
 import { syncRouter } from './sync.js'
 
@@ -37,6 +38,7 @@ apiV1.use(billingRouter)
 apiV1.use(callbacksRouter)
 apiV1.use(defectsRouter)
 apiV1.use(calendarRouter)
+apiV1.use(jobsRouter)
 apiV1.use(reportingRouter)
 apiV1.use(exportsRouter)
 apiV1.use(reportsRouter)
