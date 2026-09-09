@@ -638,6 +638,8 @@ async function contextFor(
       const inv = await billing.get(ctx, event.aggregateId)
       const settings = await getTenantSettings(tenantId)
       const bank = billing.bankDetailsOf(settings, tenant.name)
+      // Step 9: the building's statement page behind its magic link (created on first use).
+      const statementUrl = await billing.activeLinkUrl(tenantId, inv.buildingId, { create: true })
       const daysOverdue =
         typeof p.dueAt === 'string'
           ? Math.max(0, Math.round((Date.parse(todayInSofia()) - Date.parse(p.dueAt)) / 86_400_000))
@@ -666,6 +668,7 @@ async function contextFor(
             totalCents: typeof p.totalCents === 'number' ? p.totalCents : 0,
             reason: p.reason ?? '',
           },
+          statementLink: { url: statementUrl ?? '' },
         },
         buildingId: inv.buildingId,
         elevatorId: null,

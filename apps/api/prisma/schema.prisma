@@ -74,6 +74,10 @@ model Tenant {
   alarmTests       AlarmDeviceTest[]
   attachments      Attachment[]
   enrollmentTokens DeviceEnrollmentToken[]
+  zones            Zone[]
+  technicianPairs  TechnicianPair[]
+  dayPlans         DayPlan[]
+  accessLinks      BuildingAccessLink[]
 
   @@map("tenant")
 }
@@ -280,28 +284,62 @@ model Building {
   accessNotes       String?
   keysLocation      String?
   notes             String?
+  // Step 9: the zone (Район) the building belongs to. Auto-assigned by point-in-polygon / district
+  // name on save and by the recompute job unless `zoneManual` (an office override) is set.
+  zoneId            String?       @db.Uuid
+  zoneManual        Boolean       @default(false)
   createdBy         String?       @db.Uuid
   updatedBy         String?       @db.Uuid
   createdAt         DateTime      @default(now()) @db.Timestamptz
   updatedAt         DateTime      @updatedAt @db.Timestamptz
   deletedAt         DateTime?     @db.Timestamptz
 
-  tenant    Tenant     @relation(fields: [tenantId], references: [id])
-  customer  Customer?  @relation(fields: [customerId], references: [id])
-  elevators Elevator[]
-  contacts  Contact[]
-  contracts Contract[]
-  visits    Visit[]
-  invoices  Invoice[]
-  payments  Payment[]
-  callbacks Callback[]
-  defects   Defect[]
-  jobs      Job[]
+  tenant      Tenant               @relation(fields: [tenantId], references: [id])
+  customer    Customer?            @relation(fields: [customerId], references: [id])
+  zone        Zone?                @relation(fields: [zoneId], references: [id])
+  elevators   Elevator[]
+  contacts    Contact[]
+  contracts   Contract[]
+  visits      Visit[]
+  invoices    Invoice[]
+  payments    Payment[]
+  callbacks   Callback[]
+  defects     Defect[]
+  jobs        Job[]
+  accessLinks BuildingAccessLink[]
 
   @@index([tenantId, customerId])
   @@index([tenantId, geocodeStatus])
   @@index([tenantId, addressText])
+  @@index([tenantId, zoneId])
   @@map("building")
+}
+
+/// Step 9: zones (Райони) as tenant data. A zone is a GeoJSON Polygon (drawn on the map) and/or a
+/// list of `address.district` names; buildings are assigned by point-in-polygon first, district
+/// name second. The default zone ("Всички") catches everything else.
+model Zone {
+  id        String    @id @db.Uuid
+  tenantId  String    @db.Uuid
+  name      String
+  colour    String    @default("#2563eb")
+  /// GeoJSON Polygon geometry: {type: "Polygon", coordinates: [[[lng, lat], ...]]} (first ring only).
+  polygon   Json?
+  districts String[]
+  position  Int       @default(0)
+  isDefault Boolean   @default(false)
+  active    Boolean   @default(true)
+  createdBy String?   @db.Uuid
+  updatedBy String?   @db.Uuid
+  createdAt DateTime  @default(now()) @db.Timestamptz
+  updatedAt DateTime  @updatedAt @db.Timestamptz
+  deletedAt DateTime? @db.Timestamptz
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  buildings Building[]
+
+  @@index([tenantId, position])
+  @@map("zone")
 }
 
 model Elevator {
@@ -524,6 +562,71 @@ model ChecklistTemplate {
   @@unique([tenantId, key, version])
   @@index([tenantId, key, active])
   @@map("checklist_template")
+}
+
+/// Step 9: a technician pair (екип) - the unit the day plan is built for. Two technicians is the
+/// firm's own rule (tenant.settings.minTechnicians); a pair may carry one or three user ids.
+model TechnicianPair {
+  id            String    @id @db.Uuid
+  tenantId      String    @db.Uuid
+  name          String
+  userIds       String[]  @db.Uuid
+  vehicle       String?
+  defaultZoneId String?   @db.Uuid
+  position      Int       @default(0)
+  active        Boolean   @default(true)
+  createdBy     String?   @db.Uuid
+  updatedBy     String?   @db.Uuid
+  createdAt     DateTime  @default(now()) @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @db.Timestamptz
+  deletedAt     DateTime? @db.Timestamptz
+
+  tenant Tenant    @relation(fields: [tenantId], references: [id])
+  plans  DayPlan[]
+
+  @@index([tenantId, position])
+  @@map("technician_pair")
+}
+
+enum DayPlanStatus {
+  draft
+  published
+}
+
+/// Step 9: the plan of one pair for one day (План за деня). `stops` is an ordered JSONB list of
+/// {id, kind: check | callback | job | inspection, refId, elevatorId, buildingId, order, plannedAt?,
+/// status: planned | done | skipped, completedAt?, manual?}. Generated from what is due (checks,
+/// callbacks, scheduled jobs, inspections) and ordered nearest-neighbour from the tenant's base;
+/// a locked plan keeps its manual edits through regeneration; publishing makes it visible to the
+/// technician app (sync pull). References into other modules are ids without FKs (rule 4).
+model DayPlan {
+  id          String        @id @db.Uuid
+  tenantId    String        @db.Uuid
+  date        DateTime      @db.Date
+  pairId      String?       @db.Uuid
+  userIds     String[]      @db.Uuid
+  zoneId      String?       @db.Uuid
+  stops       Json          @default("[]")
+  status      DayPlanStatus @default(draft)
+  lockedAt    DateTime?     @db.Timestamptz
+  publishedAt DateTime?     @db.Timestamptz
+  generatedAt DateTime?     @db.Timestamptz
+  startLat    Float?
+  startLng    Float?
+  /// Sum of the straight-line legs of the route in km (no routing engine).
+  estKm       Float?
+  notes       String?
+  createdBy   String?       @db.Uuid
+  updatedBy   String?       @db.Uuid
+  createdAt   DateTime      @default(now()) @db.Timestamptz
+  updatedAt   DateTime      @updatedAt @db.Timestamptz
+
+  tenant Tenant          @relation(fields: [tenantId], references: [id])
+  pair   TechnicianPair? @relation(fields: [pairId], references: [id])
+
+  @@unique([tenantId, date, pairId])
+  @@index([tenantId, date, status])
+  @@map("day_plan")
 }
 
 // ---------------------------------------------------------------- documents (L2)
@@ -873,6 +976,36 @@ model PaymentLink {
 
   @@index([tenantId, invoiceId])
   @@map("payment_link")
+}
+
+enum AccessLinkScope {
+  statement
+  statement_and_visits
+}
+
+/// Step 9: the building's magic link (`/s/:token`, 128-bit token, no login). Generated / rotated /
+/// revoked by the office; opens are counted (IP hash only, no personal data). `scope` decides
+/// whether the public page also shows the last 12 months of visits, callbacks and defects.
+model BuildingAccessLink {
+  id         String          @id @db.Uuid
+  tenantId   String          @db.Uuid
+  buildingId String          @db.Uuid
+  token      String          @unique
+  scope      AccessLinkScope @default(statement)
+  createdBy  String?         @db.Uuid
+  createdAt  DateTime        @default(now()) @db.Timestamptz
+  expiresAt  DateTime        @db.Timestamptz
+  revokedAt  DateTime?       @db.Timestamptz
+  revokedBy  String?         @db.Uuid
+  lastUsedAt DateTime?       @db.Timestamptz
+  useCount   Int             @default(0)
+  lastIpHash String?
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  building Building @relation(fields: [buildingId], references: [id])
+
+  @@index([tenantId, buildingId])
+  @@map("building_access_link")
 }
 
 // ---------------------------------------------------------------- callbacks (L3)

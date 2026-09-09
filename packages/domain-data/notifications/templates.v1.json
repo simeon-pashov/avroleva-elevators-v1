@@ -335,19 +335,19 @@
       "email": {
         "bg": {
           "subject": "{{tenant.name}}: какво направихме за вашите асансьори през {{report.periodLabel}}",
-          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nПриложено е месечното резюме за асансьорите на адрес {{building.addressText}} за {{report.periodLabel}}: {{report.visits}} посещения, {{report.callbacks}} аварии{{#if report.avgResponseMinutes}} (средно време за реакция {{report.avgResponseMinutes}} мин){{/if}}, {{report.openDefects}} отворени дефекта.\n\nПри авария се обадете на {{tenant.emergencyPhone}}.\n\n{{tenant.name}}\n{{tenant.phone}}"
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nПриложено е месечното резюме за асансьорите на адрес {{building.addressText}} за {{report.periodLabel}}: {{report.visits}} посещения, {{report.callbacks}} аварии{{#if report.avgResponseMinutes}} (средно време за реакция {{report.avgResponseMinutes}} мин){{/if}}, {{report.openDefects}} отворени дефекта.\n\nПри авария се обадете на {{tenant.emergencyPhone}}.{{#if statementLink.url}}\n\nВашата справка онлайн: {{statementLink.url}}{{/if}}\n\n{{tenant.name}}\n{{tenant.phone}}"
         },
         "en": {
           "subject": "{{tenant.name}}: what we did for your lifts in {{report.periodLabel}}",
-          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nAttached is the monthly summary for the lifts at {{building.addressText}} for {{report.periodLabel}}: {{report.visits}} visits, {{report.callbacks}} breakdowns{{#if report.avgResponseMinutes}} (average response {{report.avgResponseMinutes}} min){{/if}}, {{report.openDefects}} open defects.\n\nIn case of a breakdown call {{tenant.emergencyPhone}}.\n\n{{tenant.name}}\n{{tenant.phone}}"
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nAttached is the monthly summary for the lifts at {{building.addressText}} for {{report.periodLabel}}: {{report.visits}} visits, {{report.callbacks}} breakdowns{{#if report.avgResponseMinutes}} (average response {{report.avgResponseMinutes}} min){{/if}}, {{report.openDefects}} open defects.\n\nIn case of a breakdown call {{tenant.emergencyPhone}}.{{#if statementLink.url}}\n\nYour statement online: {{statementLink.url}}{{/if}}\n\n{{tenant.name}}\n{{tenant.phone}}"
         }
       },
       "sms": {
         "bg": {
-          "body": "{{tenant.name}}: месечен отчет за {{building.addressText}}, {{report.periodLabel}} – {{report.visits}} посещения, {{report.callbacks}} аварии."
+          "body": "{{tenant.name}}: месечен отчет за {{building.addressText}}, {{report.periodLabel}} – {{report.visits}} посещения, {{report.callbacks}} аварии.{{#if statementLink.url}} Справка: {{statementLink.url}}{{/if}}"
         },
         "en": {
-          "body": "{{tenant.name}}: monthly report for {{building.addressText}}, {{report.periodLabel}} – {{report.visits}} visits, {{report.callbacks}} breakdowns."
+          "body": "{{tenant.name}}: monthly report for {{building.addressText}}, {{report.periodLabel}} – {{report.visits}} visits, {{report.callbacks}} breakdowns.{{#if statementLink.url}} Statement: {{statementLink.url}}{{/if}}"
         }
       },
       "in_app": {
@@ -485,19 +485,19 @@
       "email": {
         "bg": {
           "subject": "{{tenant.name}}: напомняне за фактура № {{invoice.number}}",
-          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nНапомняме, че фактура № {{invoice.number}} за {{invoice.period}} ({{building.addressText}}) с падеж {{date invoice.dueAt}} все още не е платена. Дължима сума: {{money invoice.openCents}}.\n{{#if bank.iban}}Плащане по банков път: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Основание: {{invoice.paymentReference}}.\n{{/if}}\nАко вече сте платили, моля, приемете това съобщение за неотправено.\n\n{{tenant.name}}\n{{tenant.phone}}"
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nНапомняме, че фактура № {{invoice.number}} за {{invoice.period}} ({{building.addressText}}) с падеж {{date invoice.dueAt}} все още не е платена. Дължима сума: {{money invoice.openCents}}.\n{{#if bank.iban}}Плащане по банков път: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Основание: {{invoice.paymentReference}}.\n{{/if}}\nАко вече сте платили, моля, приемете това съобщение за неотправено.{{#if statementLink.url}}\n\nВашата справка онлайн: {{statementLink.url}}{{/if}}\n\n{{tenant.name}}\n{{tenant.phone}}"
         },
         "en": {
           "subject": "{{tenant.name}}: reminder for invoice no. {{invoice.number}}",
-          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nThis is a reminder that invoice no. {{invoice.number}} for {{invoice.period}} ({{building.addressText}}), due on {{date invoice.dueAt}}, is still unpaid. Amount due: {{money invoice.openCents}}.\n{{#if bank.iban}}Bank transfer: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Reference: {{invoice.paymentReference}}.\n{{/if}}\nIf you have already paid, please disregard this message.\n\n{{tenant.name}}\n{{tenant.phone}}"
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nThis is a reminder that invoice no. {{invoice.number}} for {{invoice.period}} ({{building.addressText}}), due on {{date invoice.dueAt}}, is still unpaid. Amount due: {{money invoice.openCents}}.\n{{#if bank.iban}}Bank transfer: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Reference: {{invoice.paymentReference}}.\n{{/if}}\nIf you have already paid, please disregard this message.{{#if statementLink.url}}\n\nYour statement online: {{statementLink.url}}{{/if}}\n\n{{tenant.name}}\n{{tenant.phone}}"
         }
       },
       "sms": {
         "bg": {
-          "body": "{{tenant.name}}: напомняне – фактура № {{invoice.number}} ({{building.addressText}}), дължими {{money invoice.openCents}}, падеж {{date invoice.dueAt}}. Основание за плащане: {{invoice.paymentReference}}."
+          "body": "{{tenant.name}}: напомняне – фактура № {{invoice.number}} ({{building.addressText}}), дължими {{money invoice.openCents}}, падеж {{date invoice.dueAt}}. Основание за плащане: {{invoice.paymentReference}}.{{#if statementLink.url}} Справка: {{statementLink.url}}{{/if}}"
         },
         "en": {
-          "body": "{{tenant.name}}: reminder – invoice no. {{invoice.number}} ({{building.addressText}}), {{money invoice.openCents}} due since {{date invoice.dueAt}}. Payment reference: {{invoice.paymentReference}}."
+          "body": "{{tenant.name}}: reminder – invoice no. {{invoice.number}} ({{building.addressText}}), {{money invoice.openCents}} due since {{date invoice.dueAt}}. Payment reference: {{invoice.paymentReference}}.{{#if statementLink.url}} Statement: {{statementLink.url}}{{/if}}"
         }
       },
       "in_app": {
@@ -515,19 +515,19 @@
       "email": {
         "bg": {
           "subject": "{{tenant.name}}: второ напомняне за фактура № {{invoice.number}}",
-          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nФактура № {{invoice.number}} за {{invoice.period}} ({{building.addressText}}) е с изтекъл падеж от {{date invoice.dueAt}} – {{dunning.daysOverdue}} дни. Дължима сума: {{money invoice.openCents}}.\n{{#if bank.iban}}Плащане по банков път: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Основание: {{invoice.paymentReference}}.\n{{/if}}\nМоля, погасете сумата в следващите дни, за да продължим обслужването без прекъсване.\n\n{{tenant.name}}\n{{tenant.phone}}"
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nФактура № {{invoice.number}} за {{invoice.period}} ({{building.addressText}}) е с изтекъл падеж от {{date invoice.dueAt}} – {{dunning.daysOverdue}} дни. Дължима сума: {{money invoice.openCents}}.\n{{#if bank.iban}}Плащане по банков път: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Основание: {{invoice.paymentReference}}.\n{{/if}}\nМоля, погасете сумата в следващите дни, за да продължим обслужването без прекъсване.{{#if statementLink.url}}\n\nВашата справка онлайн: {{statementLink.url}}{{/if}}\n\n{{tenant.name}}\n{{tenant.phone}}"
         },
         "en": {
           "subject": "{{tenant.name}}: second reminder for invoice no. {{invoice.number}}",
-          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nInvoice no. {{invoice.number}} for {{invoice.period}} ({{building.addressText}}) has been overdue since {{date invoice.dueAt}} – {{dunning.daysOverdue}} days. Amount due: {{money invoice.openCents}}.\n{{#if bank.iban}}Bank transfer: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Reference: {{invoice.paymentReference}}.\n{{/if}}\nPlease settle the amount in the coming days so that the service continues without interruption.\n\n{{tenant.name}}\n{{tenant.phone}}"
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nInvoice no. {{invoice.number}} for {{invoice.period}} ({{building.addressText}}) has been overdue since {{date invoice.dueAt}} – {{dunning.daysOverdue}} days. Amount due: {{money invoice.openCents}}.\n{{#if bank.iban}}Bank transfer: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Reference: {{invoice.paymentReference}}.\n{{/if}}\nPlease settle the amount in the coming days so that the service continues without interruption.{{#if statementLink.url}}\n\nYour statement online: {{statementLink.url}}{{/if}}\n\n{{tenant.name}}\n{{tenant.phone}}"
         }
       },
       "sms": {
         "bg": {
-          "body": "{{tenant.name}}: второ напомняне – фактура № {{invoice.number}} ({{building.addressText}}), {{money invoice.openCents}}, {{dunning.daysOverdue}} дни след падежа. Основание: {{invoice.paymentReference}}."
+          "body": "{{tenant.name}}: второ напомняне – фактура № {{invoice.number}} ({{building.addressText}}), {{money invoice.openCents}}, {{dunning.daysOverdue}} дни след падежа. Основание: {{invoice.paymentReference}}.{{#if statementLink.url}} Справка: {{statementLink.url}}{{/if}}"
         },
         "en": {
-          "body": "{{tenant.name}}: second reminder – invoice no. {{invoice.number}} ({{building.addressText}}), {{money invoice.openCents}}, {{dunning.daysOverdue}} days overdue. Reference: {{invoice.paymentReference}}."
+          "body": "{{tenant.name}}: second reminder – invoice no. {{invoice.number}} ({{building.addressText}}), {{money invoice.openCents}}, {{dunning.daysOverdue}} days overdue. Reference: {{invoice.paymentReference}}.{{#if statementLink.url}} Statement: {{statementLink.url}}{{/if}}"
         }
       },
       "in_app": {
@@ -545,19 +545,19 @@
       "email": {
         "bg": {
           "subject": "{{tenant.name}}: последно напомняне за фактура № {{invoice.number}}",
-          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nВъпреки предишните напомняния фактура № {{invoice.number}} за {{invoice.period}} ({{building.addressText}}) остава неплатена {{dunning.daysOverdue}} дни след падежа {{date invoice.dueAt}}. Дължима сума: {{money invoice.openCents}}{{#if dunning.lateFeeCents}} (включително такса за забава {{money dunning.lateFeeCents}}){{/if}}.\n{{#if bank.iban}}Плащане по банков път: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Основание: {{invoice.paymentReference}}.\n{{/if}}\nАко сумата не бъде платена, ще се наложи да преразгледаме условията на обслужването. За въпроси: {{tenant.phone}}.\n\n{{tenant.name}}"
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nВъпреки предишните напомняния фактура № {{invoice.number}} за {{invoice.period}} ({{building.addressText}}) остава неплатена {{dunning.daysOverdue}} дни след падежа {{date invoice.dueAt}}. Дължима сума: {{money invoice.openCents}}{{#if dunning.lateFeeCents}} (включително такса за забава {{money dunning.lateFeeCents}}){{/if}}.\n{{#if bank.iban}}Плащане по банков път: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Основание: {{invoice.paymentReference}}.\n{{/if}}\nАко сумата не бъде платена, ще се наложи да преразгледаме условията на обслужването. За въпроси: {{tenant.phone}}.{{#if statementLink.url}}\n\nВашата справка онлайн: {{statementLink.url}}{{/if}}\n\n{{tenant.name}}"
         },
         "en": {
           "subject": "{{tenant.name}}: final notice for invoice no. {{invoice.number}}",
-          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nDespite earlier reminders invoice no. {{invoice.number}} for {{invoice.period}} ({{building.addressText}}) remains unpaid {{dunning.daysOverdue}} days after its due date {{date invoice.dueAt}}. Amount due: {{money invoice.openCents}}{{#if dunning.lateFeeCents}} (including a late fee of {{money dunning.lateFeeCents}}){{/if}}.\n{{#if bank.iban}}Bank transfer: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Reference: {{invoice.paymentReference}}.\n{{/if}}\nIf the amount is not paid we will have to review the terms of service. Questions: {{tenant.phone}}.\n\n{{tenant.name}}"
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nDespite earlier reminders invoice no. {{invoice.number}} for {{invoice.period}} ({{building.addressText}}) remains unpaid {{dunning.daysOverdue}} days after its due date {{date invoice.dueAt}}. Amount due: {{money invoice.openCents}}{{#if dunning.lateFeeCents}} (including a late fee of {{money dunning.lateFeeCents}}){{/if}}.\n{{#if bank.iban}}Bank transfer: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Reference: {{invoice.paymentReference}}.\n{{/if}}\nIf the amount is not paid we will have to review the terms of service. Questions: {{tenant.phone}}.{{#if statementLink.url}}\n\nYour statement online: {{statementLink.url}}{{/if}}\n\n{{tenant.name}}"
         }
       },
       "sms": {
         "bg": {
-          "body": "{{tenant.name}}: последно напомняне – фактура № {{invoice.number}} ({{building.addressText}}), {{money invoice.openCents}}, {{dunning.daysOverdue}} дни след падежа. Основание: {{invoice.paymentReference}}. Тел. {{tenant.phone}}"
+          "body": "{{tenant.name}}: последно напомняне – фактура № {{invoice.number}} ({{building.addressText}}), {{money invoice.openCents}}, {{dunning.daysOverdue}} дни след падежа. Основание: {{invoice.paymentReference}}. Тел. {{tenant.phone}}{{#if statementLink.url}} Справка: {{statementLink.url}}{{/if}}"
         },
         "en": {
-          "body": "{{tenant.name}}: final notice – invoice no. {{invoice.number}} ({{building.addressText}}), {{money invoice.openCents}}, {{dunning.daysOverdue}} days overdue. Reference: {{invoice.paymentReference}}. Tel. {{tenant.phone}}"
+          "body": "{{tenant.name}}: final notice – invoice no. {{invoice.number}} ({{building.addressText}}), {{money invoice.openCents}}, {{dunning.daysOverdue}} days overdue. Reference: {{invoice.paymentReference}}. Tel. {{tenant.phone}}{{#if statementLink.url}} Statement: {{statementLink.url}}{{/if}}"
         }
       },
       "in_app": {
@@ -635,19 +635,19 @@
       "email": {
         "bg": {
           "subject": "{{tenant.name}}: извлечение за {{building.addressText}} ({{statement.periodLabel}})",
-          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nПрилагаме извлечението по сметката на {{building.addressText}} за периода {{statement.periodLabel}}: издадени фактури, постъпили плащания и текущо салдо {{money statement.closingBalanceCents}}.{{#if statement.openCount}}\nОтворени фактури: {{statement.openCount}} на обща стойност {{money statement.openCents}}.{{/if}}\n{{#if bank.iban}}Плащане по банков път: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}. Основание: {{statement.reference}}.\n{{/if}}\n{{tenant.name}}\n{{tenant.phone}}"
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nПрилагаме извлечението по сметката на {{building.addressText}} за периода {{statement.periodLabel}}: издадени фактури, постъпили плащания и текущо салдо {{money statement.closingBalanceCents}}.{{#if statement.openCount}}\nОтворени фактури: {{statement.openCount}} на обща стойност {{money statement.openCents}}.{{/if}}\n{{#if bank.iban}}Плащане по банков път: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}. Основание: {{statement.reference}}.\n{{/if}}{{#if statementLink.url}}Вашата справка онлайн: {{statementLink.url}}\n{{/if}}\n{{tenant.name}}\n{{tenant.phone}}"
         },
         "en": {
           "subject": "{{tenant.name}}: statement for {{building.addressText}} ({{statement.periodLabel}})",
-          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nAttached is the account statement for {{building.addressText}} for {{statement.periodLabel}}: invoices issued, payments received and the current balance of {{money statement.closingBalanceCents}}.{{#if statement.openCount}}\nOpen invoices: {{statement.openCount}} totalling {{money statement.openCents}}.{{/if}}\n{{#if bank.iban}}Bank transfer: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}. Reference: {{statement.reference}}.\n{{/if}}\n{{tenant.name}}\n{{tenant.phone}}"
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nAttached is the account statement for {{building.addressText}} for {{statement.periodLabel}}: invoices issued, payments received and the current balance of {{money statement.closingBalanceCents}}.{{#if statement.openCount}}\nOpen invoices: {{statement.openCount}} totalling {{money statement.openCents}}.{{/if}}\n{{#if bank.iban}}Bank transfer: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}. Reference: {{statement.reference}}.\n{{/if}}{{#if statementLink.url}}Your statement online: {{statementLink.url}}\n{{/if}}\n{{tenant.name}}\n{{tenant.phone}}"
         }
       },
       "sms": {
         "bg": {
-          "body": "{{tenant.name}}: извлечение за {{building.addressText}}, салдо {{money statement.closingBalanceCents}}."
+          "body": "{{tenant.name}}: извлечение за {{building.addressText}}, салдо {{money statement.closingBalanceCents}}.{{#if statementLink.url}} Справка: {{statementLink.url}}{{/if}}"
         },
         "en": {
-          "body": "{{tenant.name}}: statement for {{building.addressText}}, balance {{money statement.closingBalanceCents}}."
+          "body": "{{tenant.name}}: statement for {{building.addressText}}, balance {{money statement.closingBalanceCents}}.{{#if statementLink.url}} Statement: {{statementLink.url}}{{/if}}"
         }
       },
       "in_app": {
@@ -726,6 +726,44 @@
         "en": {
           "subject": "Quote unanswered for {{job.days}} days: {{job.title}}",
           "body": "{{building.addressText}}, elevator {{elevator.internalNo}} – {{money job.totalCents}} incl. VAT. Call the building or revise the quote."
+        }
+      }
+    },
+    "statement_link": {
+      "email": {
+        "bg": {
+          "subject": "Вашата справка — {{building.addressText}}",
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\n{{tenant.name}} Ви предоставя онлайн справка за {{building.addressText}}: текущо салдо, отворени фактури с данни за плащане, постъпили плащания и посещения.\n{{#if statementLink.message}}\n{{statementLink.message}}\n{{/if}}\nОтворете справката тук: {{statementLink.url}}\n\nЛинкът е личен за сградата и е валиден до {{date statementLink.expiresAt}}. Ако не сте го поискали, игнорирайте съобщението.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        },
+        "en": {
+          "subject": "Your statement — {{building.addressText}}",
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\n{{tenant.name}} gives you an online statement for {{building.addressText}}: current balance, open invoices with payment details, payments received and visits.\n{{#if statementLink.message}}\n{{statementLink.message}}\n{{/if}}\nOpen the statement here: {{statementLink.url}}\n\nThe link is private to the building and valid until {{date statementLink.expiresAt}}. If you did not ask for it, ignore this message.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "{{tenant.name}}: справка за {{building.addressText}} (салдо, фактури, плащания): {{statementLink.url}} – валидна до {{date statementLink.expiresAt}}."
+        },
+        "en": {
+          "body": "{{tenant.name}}: statement for {{building.addressText}} (balance, invoices, payments): {{statementLink.url}} – valid until {{date statementLink.expiresAt}}."
+        }
+      },
+      "viber_link": {
+        "bg": {
+          "body": "Здравейте, {{tenant.name}} Ви предоставя онлайн справка за {{building.addressText}} (салдо, фактури, плащания, посещения): {{statementLink.url}} – валидна до {{date statementLink.expiresAt}}.{{#if statementLink.message}} {{statementLink.message}}{{/if}}"
+        },
+        "en": {
+          "body": "Hello, {{tenant.name}} gives you an online statement for {{building.addressText}} (balance, invoices, payments, visits): {{statementLink.url}} – valid until {{date statementLink.expiresAt}}.{{#if statementLink.message}} {{statementLink.message}}{{/if}}"
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Линк към справката изпратен: {{building.addressText}}",
+          "body": "Справката на сградата е изпратена на {{contact.email}}{{contact.phone}}; валидна до {{date statementLink.expiresAt}}."
+        },
+        "en": {
+          "subject": "Statement link sent: {{building.addressText}}",
+          "body": "The building's statement link was sent to {{contact.email}}{{contact.phone}}; valid until {{date statementLink.expiresAt}}."
         }
       }
     }

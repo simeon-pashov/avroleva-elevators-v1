@@ -50,6 +50,17 @@ export function listForSchedule(tenantId: string) {
   return repo.listForSchedule(tenantId)
 }
 
+/** Live rows for a set of ids (existence checks in bulk: the day plan validates stops with it). */
+export function findByIds(tenantId: string, ids: string[]) {
+  if (ids.length === 0) return Promise.resolve([])
+  return repo.findElevatorsByIds(tenantId, ids)
+}
+
+/** Detail rows (building, contact, customer) for a set of ids; archived rows included. */
+export function findDetailByIds(tenantId: string, ids: string[]) {
+  return repo.findDetailByIds(tenantId, ids)
+}
+
 export async function create(ctx: Ctx, body: CreateElevatorBody): Promise<ElevatorDto> {
   if (!(await buildings.findBuilding(ctx.tenantId, body.buildingId))) throw notFound()
   const settings = await getTenantSettings(ctx.tenantId)

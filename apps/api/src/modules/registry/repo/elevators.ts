@@ -15,6 +15,7 @@ const withDetail = {
       address: true,
       lat: true,
       lng: true,
+      zoneId: true,
       customerId: true,
       customer: { select: { id: true, name: true } },
       contacts: {
@@ -82,6 +83,15 @@ export function findElevatorDetail(
 export function findElevatorsByIds(tenantId: string, ids: string[], tx?: Tx) {
   const db = tx ?? prisma
   return db.elevator.findMany({ where: { tenantId, deletedAt: null, id: { in: ids } } })
+}
+
+/** Detail rows (building, contact, customer) for a set of ids - the day plan resolves stops with it. */
+export function findDetailByIds(tenantId: string, ids: string[]): Promise<ElevatorDetailRow[]> {
+  if (ids.length === 0) return Promise.resolve([])
+  return prisma.elevator.findMany({
+    where: { tenantId, id: { in: ids } },
+    include: withDetail,
+  })
 }
 
 /**

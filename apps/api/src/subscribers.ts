@@ -1,6 +1,7 @@
 import { events } from './platform/events/bus.js'
 import { logger } from './platform/logger.js'
 import { elevators } from './modules/registry/index.js'
+import { markStopDoneByRef } from './modules/maintenance/index.js'
 import * as notifications from './modules/notifications/index.js'
 import { getTenant } from './modules/tenancy/index.js'
 
@@ -10,9 +11,15 @@ import { getTenant } from './modules/tenancy/index.js'
  * - TenantSettingsChanged (tenancy, L1) -> registry recomputes every elevator's nextCheckDueAt.
  * - Every notifiable event -> notifications.handleEvent (the rule table decides what goes out).
  * - TenantDeletionScheduled / Cancelled -> in-app + e-mail confirmation to the owners.
+ * - VisitRecorded / CallbackClosed / JobCompleted -> the matching stop of that day's published
+ *   day plan is marked done (step 9).
  * - The rest are logged.
  */
 let registered = false
+
+/** Step 9: (event, stop kind) pairs that complete a planned stop of the day. */
+const PLAN_STOP_EVENTS = ['VisitRecorded', 'CallbackClosed', 'JobCompleted'] as const
+const CHECK_VISIT_KINDS = new Set(['functional_check', 'technical_maintenance'])
 
 export const NOTIFIABLE_EVENTS = [
   'VisitRecorded',
@@ -37,6 +44,7 @@ export const SUBSCRIPTIONS: ReadonlyArray<{ type: string; name: string }> = [
   ...NOTIFIABLE_EVENTS.map((type) => ({ type, name: 'notifications.rules' })),
   { type: 'TenantDeletionScheduled', name: 'notifications.tenantDeletion' },
   { type: 'TenantDeletionCancelled', name: 'notifications.tenantDeletion' },
+  ...PLAN_STOP_EVENTS.map((type) => ({ type, name: 'maintenance.planStops' })),
 ]
 
 export function registerSubscribers(): void {
@@ -55,6 +63,30 @@ export function registerSubscribers(): void {
 
   for (const type of NOTIFIABLE_EVENTS) {
     events.subscribe(type, notifications.handleEvent, 'notifications.rules')
+  }
+
+  for (const type of PLAN_STOP_EVENTS) {
+    events.subscribe(
+      type,
+      async (e) => {
+        if (!e.tenantId) return
+        const p = e.payload
+        let done = 0
+        if (e.type === 'VisitRecorded') {
+          if (!CHECK_VISIT_KINDS.has(String(p.kind)) || typeof p.elevatorId !== 'string') return
+          const at = typeof p.startedAt === 'string' ? new Date(p.startedAt) : e.occurredAt
+          done = await markStopDoneByRef(e.tenantId, 'check', p.elevatorId, at)
+        } else if (e.type === 'CallbackClosed') {
+          done = await markStopDoneByRef(e.tenantId, 'callback', e.aggregateId, e.occurredAt)
+        } else if (e.type === 'JobCompleted') {
+          const at = typeof p.completedAt === 'string' ? new Date(p.completedAt) : e.occurredAt
+          done = await markStopDoneByRef(e.tenantId, 'job', e.aggregateId, at)
+        }
+        if (done > 0)
+          logger.info({ tenantId: e.tenantId, type: e.type, done }, 'day plan stop completed')
+      },
+      'maintenance.planStops',
+    )
   }
 
   for (const type of ['TenantDeletionScheduled', 'TenantDeletionCancelled']) {

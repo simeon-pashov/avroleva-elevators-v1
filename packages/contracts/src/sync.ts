@@ -4,6 +4,8 @@ import type { DoorType, DriveType, ElevatorStatus } from './enums.js'
 import { amendVisitBody, createVisitBody } from './visits.js'
 import { createDefectBody } from './defects.js'
 import { jobEventPayload } from './jobs.js'
+import { planStopEventPayload } from './planning.js'
+import type { DayPlanDto } from './planning.js'
 import type { JobDto } from './jobs.js'
 import type { CallbackDto } from './callbacks.js'
 import type { DefectCatalogItemDto, DefectDto } from './defects.js'
@@ -37,6 +39,8 @@ export interface SyncBuildingDto {
   lng: number | null
   customerName: string | null
   accessNotes: string | null
+  /** Step 9: the zone (Район) the building belongs to; null until zones are set up. */
+  zoneId?: string | null
   updatedAt: string
   deletedAt: string | null
 }
@@ -120,6 +124,8 @@ export interface SyncPullDto {
   visits: VisitDto[]
   /** Repair jobs assigned to me that are approved / scheduled / in progress. Full replace. */
   repairJobs: JobDto[]
+  /** Step 9: my PUBLISHED day plans for today and tomorrow (pairs I belong to). Full replace. */
+  dayPlans: DayPlanDto[]
 }
 
 // ---- push ------------------------------------------------------------------------------------
@@ -167,6 +173,7 @@ export const syncPushItem = z.discriminatedUnion('kind', [
   item('callback.event', callbackEventPayload),
   item('defect.record', defectRecordPayload),
   item('job.event', jobEventPayload),
+  item('plan.stop', planStopEventPayload),
 ])
 export type SyncPushItem = z.infer<typeof syncPushItem>
 export type SyncPushKind = SyncPushItem['kind']
@@ -177,7 +184,7 @@ export interface SyncPushResultDto {
   /** applied = processed now; replayed = stored response of an earlier identical request. */
   status: 'applied' | 'replayed'
   serverTime: string
-  result: VisitDto | CallbackDto | DefectDto | JobDto
+  result: VisitDto | CallbackDto | DefectDto | JobDto | DayPlanDto
 }
 
 export const IDEMPOTENCY_HEADER = 'idempotency-key'

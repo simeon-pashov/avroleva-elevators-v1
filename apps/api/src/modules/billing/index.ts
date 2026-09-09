@@ -61,6 +61,29 @@ export { statement, statementWindow } from './statement.js'
 export { createPaymentLink, resolveDemoLink, settleDemoLink, handleWebhook } from './links.js'
 export type { ResolvedDemoLink } from './links.js'
 export { publicPayment } from './statement.js'
+export {
+  listLinks as listAccessLinks,
+  createLink as createAccessLink,
+  rotateLink as rotateAccessLink,
+  revokeLink as revokeAccessLink,
+  sendLink as sendAccessLink,
+  linkStatus as accessLinkStatus,
+  activeLinkUrl,
+  resolveAccessLink,
+  recordOpen as recordAccessLinkOpen,
+  resetOpenThrottle as resetAccessLinkOpenThrottle,
+} from './accessLinks.js'
+export type { ResolvedAccessLink } from './accessLinks.js'
+export {
+  linkState as accessLinkState,
+  expiryFor as accessLinkExpiryFor,
+  rotatedExpiry as accessLinkRotatedExpiry,
+  ipHash as accessLinkIpHash,
+  isAccessTokenShape,
+  viberForwardUrl,
+} from './domain/accessLink.js'
+export { useStatementLinkNotifier } from './domain/ports.js'
+export type { StatementLinkNotifier } from './domain/ports.js'
 export { invoiceForPeriod } from './domain/invoice.js'
 export type { InvoiceDraft, BillingSettings } from './domain/invoice.js'
 export {

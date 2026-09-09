@@ -1,4 +1,4 @@
-import { contractBilling } from '@avroleva/contracts'
+import { contractBilling, geoJsonPolygon } from '@avroleva/contracts'
 import type {
   Address,
   BuildingDto,
@@ -8,9 +8,11 @@ import type {
   CustomerDto,
   ElevatorDetailDto,
   ElevatorDto,
+  GeoJsonPolygon,
   ImportBatchDto,
   ImportPreviewRow,
   ImportRowIssue,
+  ZoneDto,
 } from '@avroleva/contracts'
 import type {
   Building,
@@ -20,6 +22,7 @@ import type {
   Customer,
   Elevator,
   ImportBatch,
+  Zone,
 } from '../../../generated/prisma/index.js'
 import { toDateOnly, todayInSofia } from '../../../platform/clock.js'
 import { urls } from '../../../platform/urls.js'
@@ -62,7 +65,11 @@ export function toContactDto(c: Contact): ContactDto {
 }
 
 export function toBuildingDto(
-  b: Building & { customer?: { name: string } | null; _count?: { elevators: number } },
+  b: Building & {
+    customer?: { name: string } | null
+    zone?: { name: string } | null
+    _count?: { elevators: number }
+  },
 ): BuildingDto {
   return {
     id: b.id,
@@ -78,9 +85,35 @@ export function toBuildingDto(
     accessNotes: b.accessNotes,
     keysLocation: b.keysLocation,
     notes: b.notes,
+    zoneId: b.zoneId,
+    zoneName: b.zone?.name ?? null,
+    zoneManual: b.zoneManual,
     ...(b._count ? { elevatorCount: b._count.elevators } : {}),
     createdAt: iso(b.createdAt),
     updatedAt: iso(b.updatedAt),
+  }
+}
+
+/** The stored polygon, or null when absent or malformed (a bad row must not break the list). */
+export function parseZonePolygon(raw: unknown): GeoJsonPolygon | null {
+  if (raw == null) return null
+  const r = geoJsonPolygon.safeParse(raw)
+  return r.success ? r.data : null
+}
+
+export function toZoneDto(z: Zone, buildingCount = 0): ZoneDto {
+  return {
+    id: z.id,
+    name: z.name,
+    colour: z.colour,
+    polygon: parseZonePolygon(z.polygon),
+    districts: z.districts,
+    position: z.position,
+    isDefault: z.isDefault,
+    active: z.active,
+    buildingCount,
+    createdAt: iso(z.createdAt),
+    updatedAt: iso(z.updatedAt),
   }
 }
 

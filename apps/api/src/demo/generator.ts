@@ -14,6 +14,7 @@ import { seedIncidents } from './incidents.js'
 import { seedEvidence } from './evidence.js'
 import { seedNotifications } from './notifications.js'
 import { seedJobs } from './jobs.js'
+import { seedPlanning } from './planning.js'
 import { wireModules } from '../wiring.js'
 
 /**
@@ -107,6 +108,8 @@ export async function generateDemoData(
       })
       buildingIds = new Map(blds.map((b, i) => [`b${i + 1}`, b.id]))
     }
+    // Step 9: zones + one technician pair are master data like the registry (idempotent).
+    Object.assign(counts, await seedPlanning(tenantId))
     if (await hasOperationalData(tenantId)) {
       return { registryCreated: !hadBuildings, skipped: true }
     }

@@ -1278,6 +1278,17 @@ export async function listForSync(ctx: Ctx): Promise<JobDto[]> {
   return dtos(ctx, rows)
 }
 
+/**
+ * Day plan (step 9, read by the maintenance module through its PlanSources port): scheduled /
+ * in-progress jobs with `scheduledAt` inside [from, to) plus the listed ids, as rows.
+ */
+export function listForPlanning(
+  tenantId: string,
+  q: { from: Date; to: Date; ids?: string[] },
+): Promise<JobRow[]> {
+  return repo.listForPlanning(tenantId, { ...q, statuses: ['scheduled', 'in_progress'] })
+}
+
 /** Jobs awaiting approval past the reminder window (calendar items + the reminder job). */
 export async function awaitingApprovalRows(
   tenantId: string,

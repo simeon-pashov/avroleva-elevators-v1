@@ -23,6 +23,7 @@ import * as contacts from '../repo/contacts.js'
 import * as contracts from '../repo/contracts.js'
 import { toBuildingDto, toContactDto, toContractDto, toElevatorDto } from '../domain/mappers.js'
 import { buildAddressText } from '../domain/address.js'
+import { requireZone, resolveZoneFor } from './zones.js'
 import type { GeocodeStatus } from '../../../generated/prisma/index.js'
 
 export async function list(
@@ -33,6 +34,7 @@ export async function list(
     q?: string
     customerId?: string
     geocodeStatus?: GeocodeStatus
+    zoneId?: string
   },
 ): Promise<Page<BuildingDto>> {
   return toPage(await repo.listBuildings(ctx.tenantId, q), q.limit, toBuildingDto)
@@ -75,23 +77,32 @@ export async function create(ctx: Ctx, body: CreateBuildingBody): Promise<Buildi
   if (body.customerId && !(await customers.findCustomer(ctx.tenantId, body.customerId)))
     throw notFound()
   const hasCoords = body.lat != null && body.lng != null
+  const lat = hasCoords ? body.lat! : null
+  const lng = hasCoords ? body.lng! : null
+  // Step 9: an explicit zone is an office override; otherwise polygon / district / default.
+  const zoneManual = body.zoneId != null
+  const zoneId = zoneManual
+    ? (await requireZone(ctx.tenantId, body.zoneId!)).id
+    : await resolveZoneFor(ctx.tenantId, { lat, lng, address: body.address })
   const b = await repo.createBuilding(ctx.tenantId, {
     customerId: body.customerId ?? null,
     address: body.address,
     addressText: body.addressText ?? buildAddressText(body.address),
-    lat: hasCoords ? body.lat : null,
-    lng: hasCoords ? body.lng : null,
+    lat,
+    lng,
     geocodeStatus: hasCoords ? 'manual' : 'pending',
     accessNotes: body.accessNotes ?? null,
     keysLocation: body.keysLocation ?? null,
     notes: body.notes ?? null,
+    zoneId,
+    zoneManual,
     createdBy: ctx.userId,
   })
   await audit(actorOf(ctx), {
     action: 'building.create',
     entityType: 'building',
     entityId: b.id,
-    after: { addressText: b.addressText },
+    after: { addressText: b.addressText, zoneId: b.zoneId, zoneManual: b.zoneManual },
   })
   return toBuildingDto(b)
 }
@@ -105,8 +116,19 @@ export async function update(ctx: Ctx, id: string, body: UpdateBuildingBody): Pr
   const addressText =
     body.addressText ?? (body.address ? buildAddressText(body.address) : before.addressText)
   const coordsGiven = body.lat !== undefined || body.lng !== undefined
-  const lat = body.lat !== undefined ? body.lat : before.lat
-  const lng = body.lng !== undefined ? body.lng : before.lng
+  const lat = body.lat !== undefined ? (body.lat ?? null) : before.lat
+  const lng = body.lng !== undefined ? (body.lng ?? null) : before.lng
+  // Step 9: `zoneId` sets / clears the override; otherwise a moved pin or a new address re-runs
+  // the automatic assignment unless the office pinned the zone by hand.
+  let zone: { zoneId: string | null; zoneManual: boolean } | null = null
+  if (body.zoneId !== undefined) {
+    zone =
+      body.zoneId === null
+        ? { zoneId: await resolveZoneFor(ctx.tenantId, { lat, lng, address }), zoneManual: false }
+        : { zoneId: (await requireZone(ctx.tenantId, body.zoneId)).id, zoneManual: true }
+  } else if ((body.address !== undefined || coordsGiven) && !before.zoneManual) {
+    zone = { zoneId: await resolveZoneFor(ctx.tenantId, { lat, lng, address }), zoneManual: false }
+  }
   const b = await repo.updateBuilding(ctx.tenantId, id, {
     ...(body.customerId !== undefined ? { customerId: body.customerId } : {}),
     address,
@@ -123,14 +145,27 @@ export async function update(ctx: Ctx, id: string, body: UpdateBuildingBody): Pr
     ...(body.accessNotes !== undefined ? { accessNotes: body.accessNotes } : {}),
     ...(body.keysLocation !== undefined ? { keysLocation: body.keysLocation } : {}),
     ...(body.notes !== undefined ? { notes: body.notes } : {}),
+    ...(zone ?? {}),
     updatedBy: ctx.userId,
   })
   await audit(actorOf(ctx), {
     action: 'building.update',
     entityType: 'building',
     entityId: id,
-    before: { addressText: before.addressText, lat: before.lat, lng: before.lng },
-    after: { addressText: b.addressText, lat: b.lat, lng: b.lng },
+    before: {
+      addressText: before.addressText,
+      lat: before.lat,
+      lng: before.lng,
+      zoneId: before.zoneId,
+      zoneManual: before.zoneManual,
+    },
+    after: {
+      addressText: b.addressText,
+      lat: b.lat,
+      lng: b.lng,
+      zoneId: b.zoneId,
+      zoneManual: b.zoneManual,
+    },
   })
   return toBuildingDto(b)
 }

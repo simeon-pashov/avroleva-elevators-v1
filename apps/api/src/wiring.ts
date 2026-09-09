@@ -1,12 +1,16 @@
 import { useScheduleRules } from './modules/registry/index.js'
 import { scheduleRules } from './modules/maintenance/index.js'
 import { useVisitRecorder } from './modules/callbacks/index.js'
+import * as callbacks from './modules/callbacks/index.js'
+import * as calendar from './modules/calendar/index.js'
 import * as visits from './modules/visits/index.js'
-import { checklists } from './modules/maintenance/index.js'
+import { checklists, usePlanSources } from './modules/maintenance/index.js'
 import { useReportNotifier } from './modules/reporting/index.js'
 import * as notifications from './modules/notifications/index.js'
 import * as jobs from './modules/jobs/index.js'
 import * as billing from './modules/billing/index.js'
+import { systemCtx } from './platform/http/ctx.js'
+import { toDateOnly } from './platform/clock.js'
 
 let wired = false
 
@@ -28,6 +32,66 @@ export function wireModules(): void {
   visits.useChecklistResolver({ snapshotFor: checklists.snapshotFor })
   // reporting (L4) e-mails reports / export links through a port; notifications (L4) implements it.
   useReportNotifier({ sendEmail: notifications.sendEmail, notifyUsers: notifications.notifyUsers })
+  // maintenance (L3, step 9): the day plan reads open callbacks, scheduled repair jobs and
+  // pending inspections through the PlanSources port; callbacks / jobs / calendar implement it.
+  usePlanSources({
+    openCallbacks: async (tenantId) =>
+      (await callbacks.listOpenRows(tenantId)).map((c) => ({
+        id: c.id,
+        elevatorId: c.elevatorId,
+        buildingId: c.buildingId,
+        description: c.description,
+        status: c.status,
+        assignedUserId: c.assignedUserId,
+      })),
+    callback: async (tenantId, id) => {
+      try {
+        const c = await callbacks.get(systemCtx(tenantId), id)
+        return {
+          id: c.id,
+          elevatorId: c.elevatorId,
+          buildingId: c.buildingId,
+          description: c.description,
+          status: c.status,
+          assignedUserId: c.assignedUserId,
+        }
+      } catch {
+        return null
+      }
+    },
+    jobsForPlanning: async (tenantId, q) =>
+      (await jobs.listForPlanning(tenantId, q)).map((j) => ({
+        id: j.id,
+        elevatorId: j.elevatorId,
+        buildingId: j.buildingId,
+        title: j.title,
+        status: j.status,
+        scheduledAt: j.scheduledAt,
+        assignedUserIds: j.assignedUserIds,
+      })),
+    scheduledInspections: async (tenantId) =>
+      (await calendar.scheduledRows(tenantId)).map((i) => ({
+        id: i.id,
+        elevatorId: i.elevatorId,
+        buildingId: i.elevator.building.id,
+        scheduledAt: toDateOnly(i.scheduledAt),
+        result: i.result,
+      })),
+    inspection: async (tenantId, id) => {
+      try {
+        const i = await calendar.get(systemCtx(tenantId), id)
+        return {
+          id: i.id,
+          elevatorId: i.elevatorId,
+          buildingId: i.buildingId,
+          scheduledAt: i.scheduledAt,
+          result: i.result,
+        }
+      } catch {
+        return null
+      }
+    },
+  })
   // jobs (L3, step 8): the repair visit (visits, L3), the invoice (billing, L3) and the quote
   // e-mail / Viber link / office reminder (notifications, L4) all go through ports declared by jobs.
   jobs.useVisitRecorder({ record: visits.record })
@@ -70,6 +134,23 @@ export function wireModules(): void {
         eventId: input.eventId,
         eventType: input.eventType,
       })
+    },
+  })
+  // billing (L3, step 9): the building's statement link goes out by e-mail / Viber through a port
+  // declared by billing; notifications (L4) implements it.
+  billing.useStatementLinkNotifier({
+    sendEmail: (tenantId, input) => notifications.sendEmail(tenantId, input),
+    viberLink: async (tenantId, input) => {
+      const n = await notifications.send(tenantId, {
+        key: input.key,
+        channel: 'viber_link',
+        to: input.phone,
+        locale: input.locale ?? 'bg',
+        data: input.data,
+        relatedType: input.relatedType,
+        relatedId: input.relatedId,
+      })
+      return { id: n.id, url: n.viber?.forwardUrl ?? '', text: n.body }
     },
   })
 }

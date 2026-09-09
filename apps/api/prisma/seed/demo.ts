@@ -16,6 +16,7 @@ export const DEMO = {
     { username: 'demo', password: 'demo1234', name: 'Димитър Стоянов', role: 'owner' as const },
     { username: 'maria', password: 'demo1234', name: 'Мария Георгиева', role: 'office' as const },
     { username: 'ivan', password: 'demo1234', name: 'Иван Петров', role: 'technician' as const },
+    { username: 'petar', password: 'demo1234', name: 'Петър Илиев', role: 'technician' as const },
   ],
 }
 
@@ -39,6 +40,15 @@ const DEMO_SETTINGS = {
     },
     paymentProvider: 'demo',
     showPaymentOnPublicPage: true,
+  },
+  // Step 9: where the day plan starts from and the simple ETA model.
+  planning: {
+    baseAddress: 'София, ул. Индустриална 11',
+    baseLat: 42.6605,
+    baseLng: 23.3746,
+    avgStopMinutes: 25,
+    avgSpeedKmh: 25,
+    dayStart: '08:30',
   },
 }
 

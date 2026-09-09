@@ -19,6 +19,7 @@ import { toCsv } from '../domain/csv.js'
 import { toImportBatchDto } from '../domain/mappers.js'
 import { normalizeRegNo } from '../domain/address.js'
 import { computeNextDue } from '../domain/due.js'
+import { recomputeBuildings } from './zones.js'
 import { getTenantSettings } from '../../tenancy/index.js'
 
 export function templateCsv(): string {
@@ -225,6 +226,9 @@ export async function commit(ctx: Ctx, id: string): Promise<ImportBatchDto> {
       payload: { source: 'import', batchId: id },
     })
   }
+  // Step 9: imported buildings get their zone after the commit (the nightly recompute would too).
+  if (created.ids.buildings.length > 0)
+    await recomputeBuildings(ctx.tenantId, { ids: created.ids.buildings })
   return toImportBatchDto(result)
 }
 

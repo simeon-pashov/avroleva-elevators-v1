@@ -15,6 +15,7 @@ import { exportFilesRouter } from './modules/reporting/index.js'
 import { wireModules } from './wiring.js'
 import { printRouter } from './http/print.js'
 import { publicRouter } from './http/public.js'
+import { statementRouter } from './http/statement.js'
 import { payRouter, webhookRouter } from './http/pay.js'
 import { apiV1 } from './http/router.js'
 import { mountOffice, mountTech } from './http/static.js'
@@ -93,6 +94,8 @@ export function createApp(opts: AppOptions = {}): Express {
   // CSRF header) and the public QR page + fault form (no auth, rate-limited, form-encoded).
   app.use('/print', authenticate, printRouter)
   app.use('/p', express.urlencoded({ extended: false, limit: '32kb' }), publicRouter)
+  // Building statement behind a magic link (step 9): token-authorised, no login, form-encoded pay.
+  app.use('/s', express.urlencoded({ extended: false, limit: '8kb' }), statementRouter)
   // Hosted payment pages (demo adapter, token-authorised) and provider webhooks (raw body).
   app.use('/pay', payRouter)
   app.use('/webhooks/payments', webhookRouter)

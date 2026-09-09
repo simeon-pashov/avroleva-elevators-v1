@@ -55,6 +55,24 @@ export const tenantJobsSettings = z.object({
 })
 export type TenantJobsSettings = z.infer<typeof tenantJobsSettings>
 
+/** Step 9: the day plan's starting point and the simple ETA model (tenant data, not rules). */
+export const tenantPlanningSettings = z.object({
+  /** The firm's base (garage / office) the routes start from. */
+  baseAddress: z.string().trim().max(300).default(''),
+  baseLat: z.number().min(-90).max(90).nullable().optional(),
+  baseLng: z.number().min(-180).max(180).nullable().optional(),
+  /** Minutes on site per stop, for the ETA sequence. */
+  avgStopMinutes: z.number().int().min(5).max(240).default(25),
+  /** Average driving speed for straight-line legs, km/h. */
+  avgSpeedKmh: z.number().int().min(5).max(120).default(25),
+  /** Time the first stop starts (HH:MM, Europe/Sofia). */
+  dayStart: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, { message: 'validation.time' })
+    .default('08:30'),
+})
+export type TenantPlanningSettings = z.infer<typeof tenantPlanningSettings>
+
 export const username = z
   .string()
   .trim()
@@ -112,6 +130,7 @@ export const tenantSettings = z.object({
     }),
   billing: tenantBillingSettings.prefault({}),
   jobs: tenantJobsSettings.prefault({}),
+  planning: tenantPlanningSettings.prefault({}),
 })
 export type TenantSettings = z.infer<typeof tenantSettings>
 

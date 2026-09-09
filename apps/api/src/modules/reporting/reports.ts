@@ -236,6 +236,8 @@ export async function sendStatement(
   const html = billing.renderStatementHtml(st, tenant, ctx.t, { lang: ctx.locale })
   const openCents = st.openInvoices.reduce((s, i) => s + i.openCents, 0)
   const label = `${formatDate(st.from, ctx.locale)} – ${formatDate(st.to, ctx.locale)}`
+  // Step 9: the building's statement page behind its magic link (created on first use).
+  const statementUrl = await billing.activeLinkUrl(ctx.tenantId, buildingId, { create: true })
   try {
     const n = await reportNotifier().sendEmail(ctx.tenantId, {
       key: 'statement_sent',
@@ -255,6 +257,7 @@ export async function sendStatement(
           openCents,
           reference: st.epc?.reference ?? st.openInvoices.map((i) => i.paymentReference).join(', '),
         },
+        statementLink: { url: statementUrl ?? '' },
       },
       relatedType: 'building',
       relatedId: buildingId,
@@ -355,6 +358,8 @@ export async function sendBuildingReport(
   }
   const html = buildingReportHtml(ctx, report)
   const label = monthLabel(body.month, ctx.locale)
+  // Step 9: the building's statement page behind its magic link (created on first use).
+  const statementUrl = await billing.activeLinkUrl(ctx.tenantId, buildingId, { create: true })
   try {
     const n = await reportNotifier().sendEmail(ctx.tenantId, {
       key: 'building_report',
@@ -369,6 +374,7 @@ export async function sendBuildingReport(
           avgResponseMinutes: report.totals.avgResponseMinutes,
           openDefects: report.totals.openDefects,
         },
+        statementLink: { url: statementUrl ?? '' },
       },
       relatedType: 'building',
       relatedId: buildingId,

@@ -18,7 +18,7 @@ import { parseBody, parseQuery } from '../platform/http/validate.js'
 import { AppError } from '../platform/http/errors.js'
 import { getTenant, listUsers, noteClientVersion } from '../modules/tenancy/index.js'
 import { buildings, contacts, elevators } from '../modules/registry/index.js'
-import { checklists, dueState } from '../modules/maintenance/index.js'
+import { checklists, dueState, listMyPlans, setStopStatus } from '../modules/maintenance/index.js'
 import * as visits from '../modules/visits/index.js'
 import * as callbacks from '../modules/callbacks/index.js'
 import * as defects from '../modules/defects/index.js'
@@ -68,6 +68,7 @@ export async function pull(ctx: Ctx, since: Date | null, now: Date): Promise<Syn
     openCallbacks,
     openDefects,
     repairJobs,
+    dayPlans,
   ] = await Promise.all([
     getTenant(ctx.tenantId),
     listUsers(ctx),
@@ -78,6 +79,8 @@ export async function pull(ctx: Ctx, since: Date | null, now: Date): Promise<Syn
     callbacks.listForSync(ctx, since),
     defects.listForSync(ctx, since),
     repairJobsModule.listForSync(ctx),
+    // Step 9: my published day plans for today and tomorrow (full replace).
+    listMyPlans(ctx, [today, tomorrow]),
   ])
   const settings = tenant.settings
   const me = users.find((u) => u.id === ctx.userId)
@@ -90,6 +93,7 @@ export async function pull(ctx: Ctx, since: Date | null, now: Date): Promise<Syn
     lng: b.lng,
     customerName: b.customer?.name ?? null,
     accessNotes: b.accessNotes,
+    zoneId: b.zoneId,
     updatedAt: b.updatedAt.toISOString(),
     deletedAt: b.deletedAt ? b.deletedAt.toISOString() : null,
   }))
@@ -177,6 +181,7 @@ export async function pull(ctx: Ctx, since: Date | null, now: Date): Promise<Syn
     defects: openDefects,
     visits: visitDtos,
     repairJobs,
+    dayPlans,
   }
 }
 
@@ -243,6 +248,16 @@ async function apply(ctx: Ctx, item: ReturnType<typeof syncPushItem.parse>) {
           attachments: p.attachments,
           createVisit: true,
         },
+        'app',
+      )
+    }
+    case 'plan.stop': {
+      const p = item.payload
+      return setStopStatus(
+        ctx,
+        p.planId,
+        p.stopId,
+        { status: p.status, at: p.at, notes: p.notes ?? null },
         'app',
       )
     }

@@ -142,5 +142,11 @@ export function sampleData(locale: string): Record<string, unknown> {
     export: { sizeLabel: '12,4 MB', url: 'https://example.com/files/export/…' },
     deletion: { at: new Date(Date.now() + 30 * 86_400_000).toISOString() },
     link: 'https://example.com/',
+    // Step 9: the building's statement page behind its magic link.
+    statementLink: {
+      url: 'https://example.com/s/0123456789abcdef0123456789abcdef',
+      expiresAt: new Date(Date.now() + 365 * 86_400_000).toISOString(),
+      message: '',
+    },
   }
 }

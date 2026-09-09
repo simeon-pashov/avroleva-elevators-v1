@@ -456,7 +456,15 @@ export interface BuildingStatementDto {
   lines: StatementLineDto[]
   closingBalanceCents: number
   /** Open invoices at the end of the window (what the EPC QR asks for). */
-  openInvoices: Array<{ id: string; number: number; paymentReference: string; openCents: number }>
+  openInvoices: Array<{
+    id: string
+    number: number
+    paymentReference: string
+    openCents: number
+    /** YYYY-MM (step 9: shown on the building's statement page). */
+    period?: string
+    dueAt?: string
+  }>
   bank: TenantBankDetailsDto | null
   epc: EpcQrDto | null
   /** BASE_PATH-relative print page. */

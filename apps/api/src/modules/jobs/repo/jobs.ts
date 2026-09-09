@@ -138,6 +138,28 @@ export function listByOrigins(
   })
 }
 
+/**
+ * Day plan (step 9): repair jobs scheduled inside [from, to) that are still to be done, plus any
+ * job whose id is listed (a stop of an existing plan whose job has since moved on).
+ */
+export function listForPlanning(
+  tenantId: string,
+  q: { from: Date; to: Date; statuses: string[]; ids?: string[] },
+): Promise<JobRow[]> {
+  return prisma.job.findMany({
+    where: {
+      tenantId,
+      OR: [
+        { status: { in: q.statuses }, scheduledAt: { gte: q.from, lt: q.to } },
+        ...(q.ids && q.ids.length ? [{ id: { in: q.ids } }] : []),
+      ],
+    },
+    include: withRelations,
+    orderBy: [{ scheduledAt: 'asc' }, { createdAt: 'asc' }],
+    take: 500,
+  })
+}
+
 /** Sync pull: jobs assigned to the user in the given stages (full replace on the phone). */
 export function listForSync(
   tenantId: string,

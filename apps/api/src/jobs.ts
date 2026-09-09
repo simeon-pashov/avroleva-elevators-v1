@@ -6,7 +6,7 @@ import { systemCtx } from './platform/http/ctx.js'
 import { logger } from './platform/logger.js'
 import { purgeTenantData } from './platform/db/purge.js'
 import * as tenancy from './modules/tenancy/index.js'
-import { elevators } from './modules/registry/index.js'
+import { elevators, zones } from './modules/registry/index.js'
 import * as billing from './modules/billing/index.js'
 import * as callbacks from './modules/callbacks/index.js'
 import * as visits from './modules/visits/index.js'
@@ -48,6 +48,14 @@ export function registerJobs(): void {
     description:
       'Hourly: refresh nextCheckDueAt of every elevator from lastCheckAt + interval / strategy.',
     handler: () => forEachTenant('maintenance.recompute', (t) => elevators.recomputeSchedule(t.id)),
+  })
+
+  defineJob({
+    name: 'registry.recomputeZones',
+    cron: '15 2 * * *',
+    description:
+      'Daily 02:15: re-assigns every non-manual building to its zone (polygon, district name, default zone). Idempotent.',
+    handler: () => forEachTenant('registry.recomputeZones', (t) => zones.recomputeAll(t.id)),
   })
 
   defineJob({

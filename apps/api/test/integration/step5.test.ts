@@ -287,12 +287,16 @@ describe('events -> notifications (subscriber via the outbox)', () => {
     expect(row.eventType).toBe('VisitRecorded')
     expect(sentEmails.length).toBeGreaterThan(before)
     expect(await prismaBase.notification.count({ where: { tenantId: B.tenantId } })).toBe(0)
-    // Delivery bookkeeping: exactly one done row for the notifications handler of this event.
+    // Delivery bookkeeping: exactly one done row per handler of this event (notifications, and
+    // since step 9 the day-plan stop completion).
     const ev = await prismaBase.domainEvent.findFirst({
       where: { type: 'VisitRecorded', aggregateId: v.body.id },
     })
     const deliveries = await prismaBase.eventDelivery.findMany({ where: { eventId: ev!.id } })
-    expect(deliveries.map((d) => [d.handler, d.status])).toEqual([['notifications.rules', 'done']])
+    expect(deliveries.map((d) => [d.handler, d.status]).sort()).toEqual([
+      ['maintenance.planStops', 'done'],
+      ['notifications.rules', 'done'],
+    ])
   })
 
   it('without an e-mail the building gets a Viber link suggestion the office marks as sent', async () => {

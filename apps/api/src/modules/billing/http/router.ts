@@ -2,6 +2,7 @@ import { Router } from 'express'
 import {
   bankImportPreviewBody,
   bulkInvoiceBody,
+  createAccessLinkBody,
   createCreditNoteBody,
   createPaymentBody,
   generateInvoicesBody,
@@ -10,6 +11,7 @@ import {
   matchBankRowBody,
   payInvoiceBody,
   saveDunningStagesBody,
+  sendAccessLinkBody,
   statementQuery,
   summaryQuery,
 } from '@avroleva/contracts'
@@ -21,6 +23,7 @@ import * as dunning from '../dunning.js'
 import * as reconciliation from '../reconciliation.js'
 import * as statements from '../statement.js'
 import * as links from '../links.js'
+import * as accessLinks from '../accessLinks.js'
 
 export const billingRouter = Router()
 billingRouter.use(requireAuth)
@@ -122,4 +125,36 @@ billingRouter.get('/buildings/:id/statement', office, async (req, res) => {
 })
 billingRouter.get('/elevators/:id/billing', office, async (req, res) => {
   res.json(await service.elevatorBilling(ctxOf(req), parseId(req)))
+})
+
+// Building access links (step 9): the magic link behind `/s/:token`. Owner + office manage and
+// send them; the status endpoint carries no money, so every role may read it (elevator panel).
+billingRouter.get('/buildings/:id/access-links', office, async (req, res) => {
+  res.json({ items: await accessLinks.listLinks(ctxOf(req), parseId(req)) })
+})
+billingRouter.post('/buildings/:id/access-links', office, async (req, res) => {
+  res
+    .status(201)
+    .json(
+      await accessLinks.createLink(ctxOf(req), parseId(req), parseBody(createAccessLinkBody, req)),
+    )
+})
+billingRouter.post('/buildings/:id/access-links/:linkId/rotate', office, async (req, res) => {
+  res.json(await accessLinks.rotateLink(ctxOf(req), parseId(req), parseId(req, 'linkId')))
+})
+billingRouter.post('/buildings/:id/access-links/:linkId/revoke', office, async (req, res) => {
+  res.json(await accessLinks.revokeLink(ctxOf(req), parseId(req), parseId(req, 'linkId')))
+})
+billingRouter.post('/buildings/:id/access-links/:linkId/send', office, async (req, res) => {
+  res.json(
+    await accessLinks.sendLink(
+      ctxOf(req),
+      parseId(req),
+      parseId(req, 'linkId'),
+      parseBody(sendAccessLinkBody, req),
+    ),
+  )
+})
+billingRouter.get('/buildings/:id/access-link-status', async (req, res) => {
+  res.json(await accessLinks.linkStatus(ctxOf(req).tenantId, parseId(req)))
 })

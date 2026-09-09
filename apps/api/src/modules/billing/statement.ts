@@ -102,6 +102,8 @@ export async function statement(
       number: i.number,
       paymentReference: i.paymentReference,
       openCents: openCentsOf(i),
+      period: toDateOnly(i.periodStart)!.slice(0, 7),
+      dueAt: toDateOnly(i.dueAt)!,
     }))
   const openTotal = open.reduce((s, i) => s + i.openCents, 0)
   const bank = bankDetailsOf(settings, tenant.name)

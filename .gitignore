@@ -33,3 +33,6 @@ Thumbs.db
 .idea/
 coverage/
 .vite/
+
+# Local browser-pane launch config
+.claude/

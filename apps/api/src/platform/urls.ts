@@ -13,6 +13,10 @@ export const urls = {
   publicPage(token: string): string {
     return `${urls.base()}/p/${token}`
   },
+  /** Building statement page behind a magic link (step 9). */
+  statementPage(token: string): string {
+    return `${urls.base()}/s/${token}`
+  },
   /** Technician app (served at /tech/ by the API). */
   techApp(): string {
     return `${urls.base()}/tech/`

@@ -35,6 +35,7 @@ export {
   byOrigin,
   summary,
   listForSync,
+  listForPlanning,
   awaitingApprovalRows,
   remindApprovals,
   quoteHtml,

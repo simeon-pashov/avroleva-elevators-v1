@@ -4,6 +4,7 @@ import type { Ctx } from '../../platform/http/ctx.js'
 import { actorOf, systemActorOf, systemCtx } from '../../platform/http/ctx.js'
 import { AppError, notFound } from '../../platform/http/errors.js'
 import { audit } from '../../platform/audit.js'
+import type { AuditActor } from '../../platform/audit.js'
 import { clock, todayInSofia } from '../../platform/clock.js'
 import { logger } from '../../platform/logger.js'
 import { paymentProvider } from '../../platform/adapters/payments/index.js'
@@ -23,8 +24,15 @@ import {
 
 const LINK_TTL_MS = 30 * 24 * 60 * 60 * 1000
 
-/** A hosted-page link for an open invoice through the tenant's provider (ADR 0001 section 3). */
-export async function createPaymentLink(ctx: Ctx, invoiceId: string): Promise<PaymentLinkDto> {
+/**
+ * A hosted-page link for an open invoice through the tenant's provider (ADR 0001 section 3).
+ * `actor` overrides the audit actor (the building's statement page acts as the system).
+ */
+export async function createPaymentLink(
+  ctx: Ctx,
+  invoiceId: string,
+  actor: AuditActor = actorOf(ctx),
+): Promise<PaymentLinkDto> {
   await rollStatuses(ctx.tenantId)
   const inv = await repo.findInvoice(ctx.tenantId, invoiceId)
   if (!inv) throw notFound()
@@ -60,7 +68,7 @@ export async function createPaymentLink(ctx: Ctx, invoiceId: string): Promise<Pa
     amountCents: open,
     expiresAt: new Date(clock.now().getTime() + LINK_TTL_MS),
   })
-  await audit(actorOf(ctx), {
+  await audit(actor, {
     action: 'payment_link.create',
     entityType: 'invoice',
     entityId: invoiceId,

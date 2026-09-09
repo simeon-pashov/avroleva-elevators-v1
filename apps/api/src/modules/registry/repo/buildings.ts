@@ -6,6 +6,7 @@ import type { GeocodeStatus, Prisma } from '../../../generated/prisma/index.js'
 
 const withCounts = {
   customer: { select: { name: true } },
+  zone: { select: { name: true } },
   _count: { select: { elevators: { where: { deletedAt: null } } } },
 } as const
 
@@ -17,6 +18,7 @@ export function listBuildings(
     q?: string
     customerId?: string
     geocodeStatus?: GeocodeStatus
+    zoneId?: string
   },
 ) {
   const where: Prisma.BuildingWhereInput = {
@@ -24,9 +26,37 @@ export function listBuildings(
     deletedAt: null,
     ...(q.customerId ? { customerId: q.customerId } : {}),
     ...(q.geocodeStatus ? { geocodeStatus: q.geocodeStatus } : {}),
+    ...(q.zoneId ? { zoneId: q.zoneId } : {}),
     ...(q.q ? { addressText: { contains: q.q, mode: 'insensitive' } } : {}),
   }
   return prisma.building.findMany({ ...pageArgs(q), where, include: withCounts })
+}
+
+/** Step 9: the fields the zone assignment needs, for a recompute (all, one zone, or given ids). */
+export function listForZoneAssign(
+  tenantId: string,
+  filter: { ids?: string[]; zoneId?: string; onlyAuto?: boolean } = {},
+) {
+  return prisma.building.findMany({
+    where: {
+      tenantId,
+      deletedAt: null,
+      ...(filter.ids ? { id: { in: filter.ids } } : {}),
+      ...(filter.zoneId ? { zoneId: filter.zoneId } : {}),
+      ...(filter.onlyAuto ? { zoneManual: false } : {}),
+    },
+    select: { id: true, lat: true, lng: true, address: true, zoneId: true, zoneManual: true },
+    orderBy: { id: 'asc' },
+  })
+}
+
+export function setBuildingZone(
+  tenantId: string,
+  id: string,
+  zoneId: string | null,
+  zoneManual: boolean,
+) {
+  return prisma.building.update({ where: { id, tenantId }, data: { zoneId, zoneManual } })
 }
 
 export function buildingsForCustomer(tenantId: string, customerId: string) {

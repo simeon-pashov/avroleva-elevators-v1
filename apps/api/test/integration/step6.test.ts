@@ -169,6 +169,7 @@ describe('events.acknowledge (seeded history is not news)', () => {
         'registry.recomputeSchedule',
         'notifications.rules',
         'notifications.tenantDeletion',
+        'maintenance.planStops',
       ]),
     )
     expect(SUBSCRIPTIONS.filter((s) => s.type === 'InvoiceIssued')).toHaveLength(1)

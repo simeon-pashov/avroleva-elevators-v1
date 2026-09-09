@@ -15,6 +15,7 @@ import { logger } from '../../../platform/logger.js'
 import * as buildingsRepo from '../repo/buildings.js'
 import * as customersRepo from '../repo/customers.js'
 import * as elevators from './elevators.js'
+import { resolveZoneFor } from './zones.js'
 import { toBuildingDto } from '../domain/mappers.js'
 import { buildAddressText } from '../domain/address.js'
 import { viewboxFor, withinRadius } from '../domain/geo.js'
@@ -118,6 +119,7 @@ export async function createWithElevator(
       geocodeProvider: 'manual',
       accessNotes: b.accessNotes ?? null,
       notes: b.notes ?? null,
+      zoneId: await resolveZoneFor(ctx.tenantId, { lat: b.lat, lng: b.lng, address: b.address }),
       createdBy: ctx.userId,
     })
     buildingCreated = true

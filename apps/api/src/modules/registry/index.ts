@@ -1,6 +1,6 @@
 /**
  * registry (L2) - public interface. Owns: customer, contact, building, elevator, contract,
- * contract_elevator, import_batch. Other modules import ONLY from this file.
+ * contract_elevator, import_batch, zone (step 9). Other modules import ONLY from this file.
  */
 import * as customersRepo from './repo/customers.js'
 import * as buildingsRepo from './repo/buildings.js'
@@ -15,7 +15,10 @@ export * as elevators from './service/elevators.js'
 export * as contracts from './service/contracts.js'
 export * as imports from './service/imports.js'
 export * as geo from './service/geo.js'
+export * as zones from './service/zones.js'
 export { distanceMetres, withinRadius, viewboxFor } from './domain/geo.js'
+export { pointInPolygon, assignZone, normalizeDistrict } from './domain/zone.js'
+export type { ZoneLike, ZoneAssignable } from './domain/zone.js'
 export { parseImport } from './domain/import.js'
 export { parseCsv, toCsv } from './domain/csv.js'
 export { buildAddressText, normalizeRegNo, normalizePhone } from './domain/address.js'

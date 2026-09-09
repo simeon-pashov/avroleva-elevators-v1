@@ -9,6 +9,7 @@ import {
   createCustomerBody,
   createBuildingWithElevatorBody,
   createElevatorBody,
+  createZoneBody,
   customerListQuery,
   geoSearchQuery,
   nearbyBuildingsQuery,
@@ -21,6 +22,7 @@ import {
   updateContractBody,
   updateCustomerBody,
   updateElevatorBody,
+  updateZoneBody,
 } from '@avroleva/contracts'
 import { ctxOf, requireAuth, requireRole } from '../../../platform/http/ctx.js'
 import { parseBody, parseId, parseQuery } from '../../../platform/http/validate.js'
@@ -31,11 +33,33 @@ import * as elevators from '../service/elevators.js'
 import * as contracts from '../service/contracts.js'
 import * as imports from '../service/imports.js'
 import * as geo from '../service/geo.js'
+import * as zones from '../service/zones.js'
 
 export const registryRouter = Router()
 registryRouter.use(requireAuth)
 
 const canEdit = requireRole('owner', 'office')
+
+// ---- zones (Райони, step 9): reads for everyone, writes for the office
+registryRouter.get('/zones', async (req, res) => {
+  res.json({ items: await zones.list(ctxOf(req)) })
+})
+registryRouter.post('/zones', canEdit, async (req, res) => {
+  res.status(201).json(await zones.create(ctxOf(req), parseBody(createZoneBody, req)))
+})
+registryRouter.post('/zones/recompute', canEdit, async (req, res) => {
+  res.json(await zones.recompute(ctxOf(req)))
+})
+registryRouter.get('/zones/:id', async (req, res) => {
+  res.json(await zones.get(ctxOf(req), parseId(req)))
+})
+registryRouter.patch('/zones/:id', canEdit, async (req, res) => {
+  res.json(await zones.update(ctxOf(req), parseId(req), parseBody(updateZoneBody, req)))
+})
+registryRouter.delete('/zones/:id', canEdit, async (req, res) => {
+  await zones.archive(ctxOf(req), parseId(req))
+  res.status(204).end()
+})
 
 // ---- public QR token (elevators; the rest of the elevator routes are below)
 registryRouter.post('/elevators/:id/rotate-token', canEdit, async (req, res) => {

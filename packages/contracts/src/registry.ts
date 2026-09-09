@@ -131,6 +131,8 @@ export const createBuildingBody = z.object({
   accessNotes: nullableText(2000),
   keysLocation: nullableText(500),
   notes: nullableText(4000),
+  /** Step 9: explicit zone (sets the manual override); null = back to automatic assignment. */
+  zoneId: uuid.nullable().optional(),
 })
 export type CreateBuildingBody = z.infer<typeof createBuildingBody>
 export const updateBuildingBody = patchOf(createBuildingBody)
@@ -152,6 +154,9 @@ export interface BuildingDto {
   accessNotes: string | null
   keysLocation: string | null
   notes: string | null
+  zoneId: string | null
+  zoneName?: string | null
+  zoneManual: boolean
   elevatorCount?: number
   createdAt: string
   updatedAt: string
@@ -174,6 +179,7 @@ export interface BuildingPinDto {
 export const buildingListQuery = listQuery.extend({
   customerId: uuid.optional(),
   geocodeStatus: GeocodeStatus.optional(),
+  zoneId: uuid.optional(),
 })
 
 // ---- Elevator -----------------------------------------------------------------------------

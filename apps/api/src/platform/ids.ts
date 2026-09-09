@@ -11,6 +11,11 @@ export function newPublicToken(): string {
   return randomBytes(16).toString('hex')
 }
 
+/** Building access-link token (`/s/:token`, step 9): the same 128-bit shape as the public token. */
+export function newAccessToken(): string {
+  return randomBytes(16).toString('hex')
+}
+
 /** 8-char public code for QR labels (step 2+); unique per tenant. */
 export function newPublicCode(): string {
   const bytes = randomBytes(8)
