@@ -24,6 +24,8 @@ export function kindBadge(kind: CalendarItemKind): 'ok' | 'warn' | 'danger' | 'm
       return 'warn'
     case 'inspection_due':
       return 'info'
+    case 'job_approval':
+      return 'warn'
     default:
       return 'muted'
   }
@@ -195,6 +197,10 @@ export function CalendarPage() {
                       ) : it.kind === 'defect_follow_up' ? (
                         <Link className="btn btn-small" to="/defects?tab=followUp">
                           {t('defects.title')}
+                        </Link>
+                      ) : it.kind === 'job_approval' ? (
+                        <Link className="btn btn-small" to={`/jobs/${it.refId}`}>
+                          {t('jobs.one')}
                         </Link>
                       ) : (
                         <button

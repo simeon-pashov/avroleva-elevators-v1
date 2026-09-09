@@ -33,6 +33,9 @@ import { ImportPage } from './pages/ImportPage'
 import { CallbacksPage } from './pages/callbacks/CallbacksPage'
 import { DefectsPage } from './pages/defects/DefectsPage'
 import { CalendarPage } from './pages/calendar/CalendarPage'
+import { JobsPage } from './pages/jobs/JobsPage'
+import { JobFormPage } from './pages/jobs/JobFormPage'
+import { JobDetailPage } from './pages/jobs/JobDetailPage'
 import { AdminLoginPage } from './pages/admin/AdminLoginPage'
 import { AdminShell } from './pages/admin/AdminShell'
 import { AdminTenantsPage } from './pages/admin/AdminTenantsPage'
@@ -93,8 +96,11 @@ export function App() {
         <Route path="/callbacks" element={<CallbacksPage />} />
         <Route path="/defects" element={<DefectsPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/jobs" element={<JobsPage />} />
+        <Route path="/jobs/:id" element={<JobDetailPage />} />
         <Route element={<RequireRole roles={['owner', 'office']} />}>
           <Route path="/import" element={<ImportPage />} />
+          <Route path="/jobs/new" element={<JobFormPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/notifications" element={<NotificationsLogPage />} />
           <Route path="/settings/notifications" element={<NotificationSettingsPage />} />

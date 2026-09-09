@@ -21,6 +21,8 @@ import { CallbackIntakeForm } from './callbacks/CallbackIntakeForm'
 import { DefectList } from './defects/DefectList'
 import { RecordDefectForm } from './defects/RecordDefectForm'
 import { ElevatorInspections } from './inspections/ElevatorInspections'
+import { JobList } from './jobs/JobList'
+import type { JobDto } from '@avroleva/contracts'
 
 export function invoiceStatusBadge(status: InvoiceStatus): 'ok' | 'warn' | 'danger' | 'muted' {
   switch (status) {
@@ -53,6 +55,8 @@ export function visitKindBadge(kind: VisitKind): 'ok' | 'warn' | 'danger' | 'mut
 /** Visit list of one elevator, newest first, with a cursor. */
 export function VisitHistory({ elevatorId, version }: { elevatorId: string; version: number }) {
   const { t, dateTime } = useI18n()
+  const { hasRole } = useAuth()
+  const isOffice = hasRole('owner', 'office')
   const list = useCursorList<VisitDto>(
     (cursor) => get<Page<VisitDto>>(`/elevators/${elevatorId}/visits${qs({ cursor, limit: 20 })}`),
     [elevatorId, version],
@@ -72,6 +76,14 @@ export function VisitHistory({ elevatorId, version }: { elevatorId: string; vers
                 <strong>{dateTime(v.startedAt)}</strong>
                 <Badge kind={visitKindBadge(v.kind)}>{t(`enum.visitKind.${v.kind}`)}</Badge>
                 <span className="muted small">{t(`enum.visitSource.${v.source}`)}</span>
+                {isOffice && !v.supersededAt ? (
+                  <Link
+                    className="btn btn-small"
+                    to={`/jobs/new?elevatorId=${v.elevatorId}&visitId=${v.id}`}
+                  >
+                    {t('jobs.createFromHere')}
+                  </Link>
+                ) : null}
               </div>
               <div className="small">
                 <span className="muted">{t('visits.technicians')}: </span>
@@ -391,7 +403,35 @@ export function ElevatorDefects({
   )
 }
 
-type Tab = 'history' | 'callbacks' | 'defects' | 'inspections' | 'payments'
+/** Repair jobs of one elevator (step 8). */
+export function ElevatorJobs({ elevator, version }: { elevator: ElevatorDto; version: number }) {
+  const { t } = useI18n()
+  const { hasRole } = useAuth()
+  const list = useCursorList<JobDto>(
+    (cursor) => get<Page<JobDto>>(`/elevators/${elevator.id}/jobs${qs({ cursor, limit: 20 })}`),
+    [elevator.id, version],
+  )
+  return (
+    <div>
+      {hasRole('owner', 'office') ? (
+        <div className="actions">
+          <Link className="btn btn-small btn-primary" to={`/jobs/new?elevatorId=${elevator.id}`}>
+            {t('jobs.new')}
+          </Link>
+        </div>
+      ) : null}
+      <ErrorBox error={list.error} />
+      {list.loading && list.items.length === 0 ? (
+        <Spinner />
+      ) : (
+        <JobList items={list.items} showElevator={false} />
+      )}
+      <LoadMore hasMore={list.hasMore} loading={list.loading} onClick={list.loadMore} />
+    </div>
+  )
+}
+
+type Tab = 'history' | 'callbacks' | 'defects' | 'inspections' | 'jobs' | 'payments'
 
 /**
  * "История" / "Аварии" / "Дефекти" / "Прегледи" / "Плащания" tabs of one elevator; the payments
@@ -418,6 +458,7 @@ export function ElevatorTabs({
     { key: 'callbacks', label: t('elevators.callbacks') },
     { key: 'defects', label: t('elevators.defects') },
     { key: 'inspections', label: t('elevators.inspections') },
+    { key: 'jobs', label: t('jobs.title') },
     { key: 'payments', label: t('payments.title'), show: showBilling },
   ]
   return (
@@ -446,6 +487,8 @@ export function ElevatorTabs({
         <ElevatorDefects elevator={elevator} version={version} onChanged={changed} />
       ) : tab === 'inspections' ? (
         <ElevatorInspections elevator={elevator} version={version} onChanged={changed} />
+      ) : tab === 'jobs' ? (
+        <ElevatorJobs elevator={elevator} version={version} />
       ) : (
         <VisitHistory elevatorId={elevator.id} version={version} />
       )}

@@ -17,6 +17,7 @@ import {
 } from '../../components/ui'
 import { EnumSelect } from '../../components/EnumSelect'
 import { ExportCsvButton } from '../../components/ExportCsvButton'
+import { PlaceOnMapDialog } from '../../components/PlaceOnMapDialog'
 
 export function geocodeBadge(status: GeocodeStatus) {
   return status === 'ok' || status === 'manual' ? 'ok' : status === 'failed' ? 'danger' : 'warn'
@@ -28,7 +29,11 @@ export function BuildingsListPage() {
   const [params, setParams] = useSearchParams()
   const q = params.get('q') ?? ''
   const customerId = params.get('customerId') ?? ''
-  const [geocodeStatus, setGeocodeStatus] = useState<GeocodeStatus | ''>('')
+  const [geocodeStatus, setGeocodeStatus] = useState<GeocodeStatus | ''>(
+    params.get('geocodeStatus') === 'pending' ? 'pending' : '',
+  )
+  const [placing, setPlacing] = useState<BuildingDto | null>(null)
+  const canEdit = hasRole('owner', 'office')
   const list = useCursorList<BuildingDto>(
     (cursor) =>
       get<Page<BuildingDto>>(
@@ -66,7 +71,24 @@ export function BuildingsListPage() {
           allowEmpty
           emptyLabel={t('buildings.allGeocode')}
         />
+        <button
+          type="button"
+          className={`btn btn-small${geocodeStatus === 'pending' ? ' btn-primary' : ''}`}
+          onClick={() => setGeocodeStatus(geocodeStatus === 'pending' ? '' : 'pending')}
+        >
+          {t('geo.withoutCoordinates')}
+        </button>
       </div>
+      {placing ? (
+        <PlaceOnMapDialog
+          building={placing}
+          onClose={() => setPlacing(null)}
+          onSaved={() => {
+            setPlacing(null)
+            list.reload()
+          }}
+        />
+      ) : null}
       <ErrorBox error={list.error} />
       {list.loading && list.items.length === 0 ? (
         <Spinner />
@@ -81,6 +103,7 @@ export function BuildingsListPage() {
                 <th>{t('buildings.customer')}</th>
                 <th className="num">{t('buildings.elevators')}</th>
                 <th>{t('buildings.location')}</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -95,6 +118,13 @@ export function BuildingsListPage() {
                     <Badge kind={geocodeBadge(b.geocodeStatus)}>
                       {t(`enum.geocodeStatus.${b.geocodeStatus}`)}
                     </Badge>
+                  </td>
+                  <td>
+                    {canEdit && (b.geocodeStatus === 'pending' || b.geocodeStatus === 'failed') ? (
+                      <button type="button" className="btn btn-small" onClick={() => setPlacing(b)}>
+                        {t('geo.placeOnMap')}
+                      </button>
+                    ) : null}
                   </td>
                 </tr>
               ))}

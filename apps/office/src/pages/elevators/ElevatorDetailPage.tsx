@@ -55,6 +55,9 @@ export function ElevatorDetailPage() {
             </a>
             {canEdit ? (
               <>
+                <Link className="btn" to={`/jobs/new?elevatorId=${e.id}`}>
+                  {t('jobs.createFromHere')}
+                </Link>
                 <Link className="btn" to={`/elevators/${e.id}/edit`}>
                   {t('common.edit')}
                 </Link>

@@ -5,6 +5,7 @@ import { get, patch, post, qs } from '../../lib/api'
 import { useI18n } from '../../i18n/I18nProvider'
 import { ErrorBox, Field, PageHeader, Spinner, toast } from '../../components/ui'
 import { MapPicker } from '../../components/MapPicker'
+import { AddressSearch } from '../../components/AddressSearch'
 import { useForm } from '../../components/useForm'
 
 interface FormValues {
@@ -201,6 +202,24 @@ export function BuildingFormPage() {
         </div>
         <div className="card">
           <h2>{t('buildings.location')}</h2>
+          <AddressSearch
+            bias={v.lat != null && v.lng != null ? { lat: v.lat, lng: v.lng } : null}
+            onPick={(s) =>
+              form.setValues((cur) => ({
+                ...cur,
+                lat: s.lat,
+                lng: s.lng,
+                city: cur.city || s.address.city,
+                postcode: cur.postcode || s.address.postcode || '',
+                district: cur.district || s.address.district || '',
+                street: cur.street || s.address.street || '',
+                number: cur.number || s.address.number || '',
+                block: cur.block || s.address.block || '',
+                entrance: cur.entrance || s.address.entrance || '',
+              }))
+            }
+          />
+          <p className="muted small">{t('geo.searchHint')}</p>
           <MapPicker
             lat={v.lat}
             lng={v.lng}

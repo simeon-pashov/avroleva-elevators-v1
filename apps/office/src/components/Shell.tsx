@@ -14,6 +14,7 @@ export function Shell() {
     { to: '/', label: t('nav.dashboard') },
     { to: '/callbacks', label: t('nav.callbacks') },
     { to: '/defects', label: t('nav.defects') },
+    { to: '/jobs', label: t('nav.jobs') },
     { to: '/calendar', label: t('nav.calendar') },
     { to: '/buildings', label: t('nav.buildings') },
     { to: '/elevators', label: t('nav.elevators') },

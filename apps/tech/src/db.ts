@@ -6,6 +6,7 @@ import type {
   ChecklistTemplateDto,
   DefectCatalogItemDto,
   DefectDto,
+  JobDto,
   SyncBuildingDto,
   SyncContactDto,
   SyncElevatorDto,
@@ -36,6 +37,12 @@ export type DefectRow = DefectDto & { local?: boolean }
 
 /** Server visit, or the local pending copy (`local: true`) until the server copy arrives. */
 export type VisitRow = VisitDto & { local?: boolean }
+
+/**
+ * Repair job assigned to me (step 8). `local: 'done'` = completed on this phone, the outbox
+ * item not confirmed yet (the pull keeps the row until the server says done / drops it).
+ */
+export type RepairJobRow = JobDto & { local?: 'done' }
 
 export interface BlobRow {
   id: string
@@ -111,6 +118,7 @@ export class TechDb extends Dexie {
   callbacks!: EntityTable<CallbackRow, 'id'>
   defects!: EntityTable<DefectRow, 'id'>
   visits!: EntityTable<VisitRow, 'id'>
+  repairJobs!: EntityTable<RepairJobRow, 'id'>
   blobs!: EntityTable<BlobRow, 'id'>
   outbox!: EntityTable<OutboxRow, 'id'>
   meta!: EntityTable<MetaRow, 'key'>
@@ -132,6 +140,10 @@ export class TechDb extends Dexie {
       outbox: 'id, status, createdAt, visitId',
       meta: 'key',
     })
+    // Step 8: repair jobs assigned to the technician.
+    this.version(2).stores({
+      repairJobs: 'id, elevatorId, status, scheduledAt',
+    })
   }
 }
 
@@ -148,6 +160,7 @@ export const DATA_TABLES = [
   'callbacks',
   'defects',
   'visits',
+  'repairJobs',
 ] as const
 
 export async function getMeta<K extends MetaKey>(key: K): Promise<MetaValues[K] | undefined> {

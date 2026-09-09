@@ -257,6 +257,12 @@ async function customerNamesFor(ctx: Ctx, ids: Array<string | null>) {
   return out
 }
 
+/** Technicians see no prices (office rule since step 6): money fields are zeroed for them. */
+function redactMoney<T extends JobDto>(ctx: Ctx, dto: T): T {
+  if (ctx.role !== 'technician') return dto
+  return { ...dto, netCents: 0, vatCents: 0, totalCents: 0, invoicedCents: 0 }
+}
+
 async function dtos(ctx: Ctx, rows: JobRow[], stages?: StageDef[]): Promise<JobDto[]> {
   const st = stages ?? (await effectiveStages(ctx.tenantId)).stages
   const [names, custs] = await Promise.all([
@@ -269,7 +275,7 @@ async function dtos(ctx: Ctx, rows: JobRow[], stages?: StageDef[]): Promise<JobD
       rows.map((r) => r.customerId),
     ),
   ])
-  return rows.map((r) => toJobDto(r, st, names, custs))
+  return rows.map((r) => redactMoney(ctx, toJobDto(r, st, names, custs)))
 }
 
 // ---- helpers ---------------------------------------------------------------------------------------
@@ -1147,11 +1153,13 @@ export async function get(ctx: Ctx, id: string): Promise<JobDetailDto> {
       : await invoiceIssuer()
           .listForSource(ctx, 'job', j.id)
           .catch(() => [])
-  const dto = toJobDto(j, stages, names, custs)
+  const dto = redactMoney(ctx, toJobDto(j, stages, names, custs))
+  const line = (l: JobLineRow) =>
+    ctx.role === 'technician' ? { ...toLineDto(l), unitCents: 0, totalCents: 0 } : toLineDto(l)
   return {
     ...dto,
-    lines: j.lines.filter((l) => l.quoteVersion === j.quoteVersion).map(toLineDto),
-    previousLines: j.lines.filter((l) => l.quoteVersion !== j.quoteVersion).map(toLineDto),
+    lines: j.lines.filter((l) => l.quoteVersion === j.quoteVersion).map(line),
+    previousLines: j.lines.filter((l) => l.quoteVersion !== j.quoteVersion).map(line),
     events: j.events.map((e) => toEventDto(e, names)),
     invoices,
   }

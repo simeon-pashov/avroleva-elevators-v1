@@ -131,6 +131,8 @@ export function ImportPage() {
             <p>
               {t('import.createdSummary', batch.created)}{' '}
               <Link to="/buildings">{t('nav.buildings')}</Link>
+              {' · '}
+              <Link to="/buildings?geocodeStatus=pending">{t('geo.placeImported')}</Link>
             </p>
           ) : null}
           {batch.issues.length > 0 ? (

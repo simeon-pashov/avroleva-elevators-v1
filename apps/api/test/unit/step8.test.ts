@@ -278,6 +278,27 @@ describe('address search parsing (Nominatim -> building form)', () => {
     expect(r.address.number).toBeUndefined()
   })
 
+  it('a house_number written as "бл. 27" (Sofia OSM data) is the block, not the number', () => {
+    const parts = parseNominatimAddress({
+      lat: '42.6614',
+      lon: '23.3738',
+      type: 'apartments',
+      name: 'бл. 27',
+      address: {
+        house_number: 'бл. 27',
+        suburb: 'ж.к. Младост 1',
+        city: 'София',
+        postcode: '1750',
+      },
+    })
+    expect(parts).toEqual({
+      city: 'София',
+      postcode: '1750',
+      district: 'ж.к. Младост 1',
+      block: '27',
+    })
+  })
+
   it('a house_number in a quarter without a street is the block number', () => {
     const parts = parseNominatimAddress(quarterBlockAsNumber)
     expect(parts.block).toBe('31')

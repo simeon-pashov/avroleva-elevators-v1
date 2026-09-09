@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { DashboardDto } from '@avroleva/contracts'
+import type {
+  BuildingWithElevatorResultDto,
+  DashboardDto,
+  GeoSuggestionDto,
+} from '@avroleva/contracts'
 import { get } from '../lib/api'
 import { useI18n } from '../i18n/I18nProvider'
 import { useAuth } from '../auth/AuthProvider'
@@ -11,6 +15,8 @@ import { PaymentsWidget } from './dashboard/PaymentsWidget'
 import { CallbacksWidget } from './dashboard/CallbacksWidget'
 import { DeadlinesStrip } from './dashboard/DeadlinesStrip'
 import { ThisMonthStrip } from './dashboard/ThisMonthStrip'
+import { JobsStrip } from './dashboard/JobsStrip'
+import { AddElevatorHereDialog } from '../components/AddElevatorHereDialog'
 
 /**
  * "Табло": the map with one pin per elevator (colour = due state), the due today/tomorrow list
@@ -26,6 +32,20 @@ export function DashboardPage() {
   const [panelId, setPanelId] = useState<string | null>(null)
   const bump = useCallback(() => setVersion((v) => v + 1), [])
   const closePanel = useCallback(() => setPanelId(null), [])
+  // Step 8: a dropped pin (from the address search) and the "add an elevator here" dialog.
+  const [dropped, setDropped] = useState<{ lat: number; lng: number } | null>(null)
+  const [picked, setPicked] = useState<GeoSuggestionDto | null>(null)
+  const [adding, setAdding] = useState(false)
+  const [focus, setFocus] = useState<{ lat: number; lng: number; zoom?: number } | null>(null)
+  const onCreated = useCallback((r: BuildingWithElevatorResultDto) => {
+    setAdding(false)
+    setDropped(null)
+    setPicked(null)
+    if (r.building.lat != null && r.building.lng != null)
+      setFocus({ lat: r.building.lat, lng: r.building.lng, zoom: 17 })
+    setVersion((v) => v + 1)
+    setPanelId(r.elevator.id)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -70,10 +90,31 @@ export function DashboardPage() {
             </span>
           ) : null}
         </div>
-        <DashboardMap pins={dash?.pins ?? []} counts={dash?.counts ?? null} onOpen={setPanelId} />
+        <DashboardMap
+          pins={dash?.pins ?? []}
+          counts={dash?.counts ?? null}
+          onOpen={setPanelId}
+          search={hasRole('owner', 'office')}
+          dropped={dropped}
+          onDrop={(p, s) => {
+            setDropped(p)
+            if (s !== undefined) setPicked(s)
+          }}
+          onAddHere={() => setAdding(true)}
+          focus={focus}
+        />
       </div>
+      {adding && dropped ? (
+        <AddElevatorHereDialog
+          point={dropped}
+          suggestion={picked}
+          onClose={() => setAdding(false)}
+          onCreated={onCreated}
+        />
+      ) : null}
       <CallbacksWidget summary={dash?.callbacks ?? null} onOpen={setPanelId} />
       <DeadlinesStrip deadlines={dash?.deadlines ?? null} />
+      {hasRole('owner', 'office') ? <JobsStrip version={version} /> : null}
       <div className="dash-grid">
         <DueWidget
           counts={dash?.counts ?? null}

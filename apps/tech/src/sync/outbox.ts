@@ -2,6 +2,7 @@ import type {
   AttachmentDto,
   CallbackDto,
   DefectDto,
+  JobDto,
   SyncPushItem,
   SyncPushResultDto,
   VisitDto,
@@ -206,6 +207,13 @@ async function sendPush(item: OutboxRow): Promise<void> {
       const c = result as CallbackDto
       if (c.status === 'closed') await db.callbacks.delete(c.id)
       else await db.callbacks.put(c)
+      break
+    }
+    case 'job.event': {
+      const j = result as JobDto
+      // Done / invoiced jobs leave the phone (the next pull would drop them too).
+      if (j.isTerminal || j.status === 'done') await db.repairJobs.delete(j.id)
+      else await db.repairJobs.put(j)
       break
     }
     default:

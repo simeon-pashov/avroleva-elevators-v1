@@ -5,7 +5,7 @@ import { CHECK_VISIT_KINDS } from '@avroleva/contracts'
 import type { SyncJobDto } from '@avroleva/contracts'
 import { useApp } from '../app/AppProvider'
 import { Empty, PageHeader, Section, Spinner, TelLink } from '../components/ui'
-import type { BuildingRow, ContactRow, ElevatorRow } from '../db'
+import type { BuildingRow, ContactRow, ElevatorRow, RepairJobRow } from '../db'
 import { db } from '../db'
 import { useI18n } from '../i18n/I18nProvider'
 import { navigationUrl } from '../lib/maps'
@@ -105,10 +105,51 @@ function usePendingCheckIds(): Set<string> {
   )
 }
 
+/** Repair jobs assigned to me (step 8): scheduled / in progress, soonest first. */
+function RepairJobs({ jobs }: { jobs: RepairJobRow[] }) {
+  const { t, dateTime } = useI18n()
+  if (jobs.length === 0) return null
+  return (
+    <Section title={t('tech.jobs.section', { count: jobs.length })}>
+      <div className="list">
+        {jobs.map((j) => (
+          <Link key={j.id} className="row" to={`/jobs/${j.id}`}>
+            <div className="row-main">
+              <span className="row-title">{j.title}</span>
+              <span className="row-sub">
+                {j.buildingAddressText} · {j.elevatorInternalNo}
+                {j.scheduledAt ? ` · ${dateTime(j.scheduledAt)}` : ''}
+              </span>
+            </div>
+            <span
+              className={`pill ${j.local === 'done' ? 'pill-ok' : j.status === 'in_progress' ? 'pill-warn' : 'pill-muted'}`}
+            >
+              {j.local === 'done' ? t('tech.jobs.completedLocal') : t(`enum.jobStage.${j.status}`)}
+            </span>
+            <span className="row-chevron" aria-hidden="true">
+              ›
+            </span>
+          </Link>
+        ))}
+      </div>
+    </Section>
+  )
+}
+
 export function TodayPage() {
   const { t, dateTime } = useI18n()
   const app = useApp()
   const jobs = useLiveQuery(() => db.jobs.toArray(), [])
+  const repairJobs = useLiveQuery(
+    () =>
+      db.repairJobs
+        .toArray()
+        .then((rows) =>
+          rows.sort((a, b) => (a.scheduledAt ?? '9').localeCompare(b.scheduledAt ?? '9')),
+        ),
+    [],
+    [] as RepairJobRow[],
+  )
   const buildings = useLiveQuery(() => db.buildings.toArray(), [])
   const elevators = useLiveQuery(() => db.elevators.toArray(), [])
   const contacts = useLiveQuery(() => db.contacts.toArray(), [])
@@ -154,7 +195,7 @@ export function TodayPage() {
 
   const loaded = jobs && buildings && elevators && contacts
   const neverPulled = !app.meta.watermark
-  const total = jobs?.length ?? 0
+  const total = (jobs?.length ?? 0) + repairJobs.length
 
   return (
     <>
@@ -190,21 +231,24 @@ export function TodayPage() {
         ) : total === 0 ? (
           <Empty text={t('tech.today.empty')} />
         ) : (
-          STATES.map((s) => {
-            const list = groups.get(s.key) ?? []
-            if (!list.length) return null
-            const count = list.reduce((n, g) => n + g.rows.length, 0)
-            return (
-              <Section
-                key={s.key}
-                title={`${t(s.label)} · ${t('tech.today.elevators', { count })}`}
-              >
-                {list.map((g) => (
-                  <BuildingCard key={g.building.id} group={g} />
-                ))}
-              </Section>
-            )
-          })
+          <>
+            <RepairJobs jobs={repairJobs} />
+            {STATES.map((s) => {
+              const list = groups.get(s.key) ?? []
+              if (!list.length) return null
+              const count = list.reduce((n, g) => n + g.rows.length, 0)
+              return (
+                <Section
+                  key={s.key}
+                  title={`${t(s.label)} · ${t('tech.today.elevators', { count })}`}
+                >
+                  {list.map((g) => (
+                    <BuildingCard key={g.building.id} group={g} />
+                  ))}
+                </Section>
+              )
+            })}
+          </>
         )}
       </div>
     </>

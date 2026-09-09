@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import type { DashboardDto, DashboardPinDto, DueState } from '@avroleva/contracts'
+import type { DashboardDto, DashboardPinDto, DueState, GeoSuggestionDto } from '@avroleva/contracts'
 import { useI18n } from '../../i18n/I18nProvider'
 import type { I18n } from '../../i18n/I18nProvider'
 import { elevatorStatusBadge } from '../elevators/ElevatorsListPage'
+import { AddressSearch } from '../../components/AddressSearch'
 
 const TILES =
   (import.meta.env.VITE_MAP_TILES_URL as string | undefined) ||
@@ -143,14 +144,35 @@ function popupContent(p: DashboardPinDto, i18n: I18n, open: () => void): HTMLEle
   return root
 }
 
+/** The temporary pin dropped by the address search (draggable until the building is saved). */
+const droppedIcon = L.divIcon({
+  className: 'map-pin map-pin-dropped',
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+})
+
 export function DashboardMap({
   pins,
   counts,
   onOpen,
+  search,
+  dropped,
+  onDrop,
+  onAddHere,
+  focus,
 }: {
   pins: DashboardPinDto[]
   counts: DashboardDto['counts'] | null
   onOpen: (elevatorId: string) => void
+  /** Show the address search (owner / office). */
+  search?: boolean
+  /** The dropped pin, if any (controlled by the page). */
+  dropped?: { lat: number; lng: number } | null
+  /** A suggestion was picked (s given) or the pin was dragged (s undefined). */
+  onDrop?: (p: { lat: number; lng: number } | null, s?: GeoSuggestionDto | null) => void
+  onAddHere?: () => void
+  /** Fly here (after a save). */
+  focus?: { lat: number; lng: number; zoom?: number } | null
 }) {
   const i18n = useI18n()
   const { t } = i18n
@@ -160,11 +182,49 @@ export function DashboardMap({
   const placed = useRef<Placed[]>([])
   const fitted = useRef(false)
   const onOpenRef = useRef(onOpen)
+  const onDropRef = useRef(onDrop)
   const i18nRef = useRef(i18n)
+  const droppedMarker = useRef<L.Marker | null>(null)
+  const [centre, setCentre] = useState<{ lat: number; lng: number } | null>(null)
   useEffect(() => {
     onOpenRef.current = onOpen
+    onDropRef.current = onDrop
     i18nRef.current = i18n
   })
+
+  // The dropped pin: created once, moved on every change, draggable (drag = correct the point).
+  useEffect(() => {
+    const m = map.current
+    if (!m) return
+    if (!dropped) {
+      droppedMarker.current?.remove()
+      droppedMarker.current = null
+      return
+    }
+    if (!droppedMarker.current) {
+      const mk = L.marker([dropped.lat, dropped.lng], {
+        icon: droppedIcon,
+        draggable: true,
+        zIndexOffset: 1000,
+      }).addTo(m)
+      mk.on('dragend', () => {
+        const p = mk.getLatLng()
+        onDropRef.current?.({
+          lat: Math.round(p.lat * 1e6) / 1e6,
+          lng: Math.round(p.lng * 1e6) / 1e6,
+        })
+      })
+      droppedMarker.current = mk
+    } else {
+      droppedMarker.current.setLatLng([dropped.lat, dropped.lng])
+    }
+  }, [dropped])
+
+  useEffect(() => {
+    const m = map.current
+    if (!m || !focus) return
+    m.flyTo([focus.lat, focus.lng], focus.zoom ?? Math.max(m.getZoom(), 17), { duration: 0.6 })
+  }, [focus])
 
   // Create the map once; restore the last viewport when there is one.
   useEffect(() => {
@@ -177,7 +237,11 @@ export function DashboardMap({
     L.tileLayer(TILES, { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(m)
     layer.current = L.layerGroup().addTo(m)
     if (stored) fitted.current = true
-    m.on('moveend', () => saveViewport(m))
+    m.on('moveend', () => {
+      saveViewport(m)
+      const c = m.getCenter()
+      setCentre({ lat: c.lat, lng: c.lng })
+    })
     m.on('zoomend', () => spread(m, placed.current))
     map.current = m
     return () => {
@@ -225,6 +289,34 @@ export function DashboardMap({
 
   return (
     <div className="dash-map">
+      {search ? (
+        <div className="map-search">
+          <AddressSearch
+            bias={centre}
+            compact
+            onPick={(s) => {
+              const m = map.current
+              if (m) m.flyTo([s.lat, s.lng], 17, { duration: 0.8 })
+              onDropRef.current?.({ lat: s.lat, lng: s.lng }, s)
+            }}
+          />
+          {dropped ? (
+            <div className="map-search-actions">
+              <button type="button" className="btn btn-small btn-primary" onClick={onAddHere}>
+                {t('geo.addHere')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-small"
+                onClick={() => onDropRef.current?.(null, null)}
+              >
+                {t('common.cancel')}
+              </button>
+              <span className="small muted">{t('geo.dragHint')}</span>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <div ref={el} className="map map-dashboard" />
       <div className="map-legend">
         {DUE_STATES.map((s) => (

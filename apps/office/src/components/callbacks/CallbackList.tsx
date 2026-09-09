@@ -368,6 +368,14 @@ export function CallbackList({
                   {t('callbacks.visit')}
                 </Link>
               ) : null}
+              {canAct && s === 'closed' ? (
+                <Link
+                  className="btn btn-small"
+                  to={`/jobs/new?elevatorId=${c.elevatorId}&callbackId=${c.id}&title=${encodeURIComponent(c.cause ?? c.description)}`}
+                >
+                  {t('jobs.createFromHere')}
+                </Link>
+              ) : null}
             </div>
             {closing === c.id ? (
               <CloseForm

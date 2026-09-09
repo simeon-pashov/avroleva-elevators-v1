@@ -8,6 +8,7 @@ import { TodayPage } from './pages/TodayPage'
 import { ElevatorPage } from './pages/ElevatorPage'
 import { VisitPage } from './pages/VisitPage'
 import { CallbacksPage } from './pages/CallbacksPage'
+import { JobPage } from './pages/JobPage'
 import { OutboxPage } from './pages/OutboxPage'
 import { SettingsPage } from './pages/SettingsPage'
 
@@ -51,6 +52,7 @@ export function App() {
         <Route path="/elevators/:id" element={<ElevatorPage />} />
         <Route path="/elevators/:id/visit" element={<VisitPage />} />
         <Route path="/callbacks" element={<CallbacksPage />} />
+        <Route path="/jobs/:id" element={<JobPage />} />
         <Route path="/outbox" element={<OutboxPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

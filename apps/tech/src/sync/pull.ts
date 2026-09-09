@@ -1,5 +1,10 @@
 import type { EntityTable, IDType } from 'dexie'
-import type { CallbackEventPayload, CallbackStatus, SyncPullDto } from '@avroleva/contracts'
+import type {
+  CallbackEventPayload,
+  CallbackStatus,
+  JobEventPayload,
+  SyncPullDto,
+} from '@avroleva/contracts'
 import type { CallbackRow, OutboxRow } from '../db'
 import { db, setMeta, setMetaMany } from '../db'
 import { getMeta } from '../db'
@@ -105,6 +110,9 @@ async function applyPull(dto: SyncPullDto, offsetMs: number): Promise<void> {
     unsent.filter((i) => i.kind === 'defect.record').map((i) => (i.payload as { id: string }).id),
   )
   const serverDefectIds = new Set(dto.defects.map((d) => d.id))
+  const pendingJobEvents = unsent
+    .filter((i) => i.kind === 'job.event')
+    .map((i) => i.payload as JobEventPayload)
   const now = nowIso()
   const visitCutoff = new Date(Date.now() - VISIT_RETENTION_DAYS * 86_400_000).toISOString()
 
@@ -121,6 +129,7 @@ async function applyPull(dto: SyncPullDto, offsetMs: number): Promise<void> {
       db.callbacks,
       db.defects,
       db.visits,
+      db.repairJobs,
       db.meta,
     ],
     async () => {
@@ -158,6 +167,25 @@ async function applyPull(dto: SyncPullDto, offsetMs: number): Promise<void> {
       await db.defects.bulkPut([
         ...dto.defects.filter((d) => d.status !== 'resolved'),
         ...keepLocalDefects,
+      ])
+
+      // Repair jobs: full replace; a job started / completed on this phone keeps its local state
+      // ahead of the server copy until the outbox item is confirmed.
+      const localJobs = await db.repairJobs.filter((j) => j.local === 'done').toArray()
+      await db.repairJobs.clear()
+      const serverJobs = (dto.repairJobs ?? []).map((j) => {
+        const started = pendingJobEvents.some((p) => p.jobId === j.id && p.type === 'start')
+        const done = pendingJobEvents.some((p) => p.jobId === j.id && p.type === 'complete')
+        if (done) return { ...j, status: 'done', local: 'done' as const }
+        if (started && j.status !== 'in_progress') return { ...j, status: 'in_progress' }
+        return j
+      })
+      const serverJobIds = new Set(serverJobs.map((j) => j.id))
+      await db.repairJobs.bulkPut([
+        ...serverJobs,
+        ...localJobs.filter(
+          (j) => !serverJobIds.has(j.id) && pendingJobEvents.some((p) => p.jobId === j.id),
+        ),
       ])
 
       // Server visits overwrite the local pending copies with the same id (drops `local`).

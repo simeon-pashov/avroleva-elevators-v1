@@ -1633,3 +1633,168 @@ textarea:focus {
   box-shadow: none;
   margin-top: 0.3rem;
 }
+
+/* ---- step 8: repair jobs board, quote lines, address search, dropped pin ---- */
+.job-board {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  align-items: flex-start;
+}
+.job-col {
+  flex: 0 0 240px;
+  background: #f3f4f6;
+  border-radius: 10px;
+  padding: 8px;
+  min-height: 120px;
+}
+.job-col-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 4px 8px;
+}
+.job-col-empty {
+  padding: 8px 4px;
+}
+.job-card {
+  display: block;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+.job-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+.job-card-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.job-list .job-row {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.job-lines input {
+  width: 100%;
+  min-width: 80px;
+}
+.job-lines .num-input {
+  width: 6em;
+  min-width: 5em;
+  text-align: right;
+}
+.job-lines td.num {
+  white-space: nowrap;
+}
+.jobs-strip .strip-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+}
+.jobs-strip .strip-item {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+.seg {
+  display: inline-flex;
+  gap: 4px;
+}
+.address-search {
+  position: relative;
+  flex: 1 1 320px;
+}
+.address-search input {
+  width: 100%;
+}
+.address-search-loading {
+  position: absolute;
+  right: 10px;
+  top: 8px;
+}
+.address-search .search-results {
+  position: absolute;
+  z-index: 1200;
+  left: 0;
+  right: 0;
+  max-height: 280px;
+  overflow: auto;
+}
+.search-results-empty {
+  padding: 8px 10px;
+}
+.dash-map {
+  position: relative;
+}
+.map-search {
+  position: absolute;
+  z-index: 1000;
+  top: 10px;
+  left: 52px;
+  right: 10px;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.map-search .address-search input {
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+.map-search-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 6px 8px;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+.map-pin-dropped {
+  background: #dc2626;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #dc2626;
+  cursor: grab;
+}
+.drawer-wide {
+  width: min(720px, 96vw);
+}
+.add-here-form .sub-head {
+  margin-top: 14px;
+}
+.nearby-box {
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.nearby-box .check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 6px 0;
+}
+.toolbar .field {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.toolbar .field-label {
+  font-size: 0.8em;
+}
+.toolbar select {
+  max-width: 260px;
+}

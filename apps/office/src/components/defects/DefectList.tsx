@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import type { DefectDto, DefectStatus } from '@avroleva/contracts'
-import { ApiError, BASE, patch } from '../../lib/api'
+import { ApiError, BASE, get, patch } from '../../lib/api'
 import { useI18n } from '../../i18n/I18nProvider'
 import { useAuth } from '../../auth/AuthProvider'
 import { Badge, Empty, toast } from '../ui'
@@ -37,6 +37,23 @@ export function DefectList({
   const { hasRole } = useAuth()
   const isOffice = hasRole('owner', 'office')
   const [busyId, setBusyId] = useState<string | null>(null)
+  // Step 8: a defect that already has a repair job links to it instead of offering a new one.
+  const [jobsByDefect, setJobsByDefect] = useState<
+    Record<string, { id: string; status: string; title: string }>
+  >({})
+  const ids = items.map((d) => d.id).join(',')
+  useEffect(() => {
+    if (!isOffice || !ids) return
+    let cancelled = false
+    get<{ items: Record<string, { id: string; status: string; title: string }> }>(
+      `/jobs/by-origin?originType=defect&ids=${ids}`,
+    )
+      .then((r) => !cancelled && setJobsByDefect(r.items))
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [ids, isOffice])
 
   const setStatus = async (d: DefectDto, status: DefectStatus) => {
     setBusyId(d.id)
@@ -107,6 +124,18 @@ export function DefectList({
             </div>
             {isOffice ? (
               <div className="actions cb-actions">
+                {jobsByDefect[d.id] ? (
+                  <Link className="btn btn-small" to={`/jobs/${jobsByDefect[d.id]!.id}`}>
+                    {t('jobs.openJob')}
+                  </Link>
+                ) : open ? (
+                  <Link
+                    className="btn btn-small"
+                    to={`/jobs/new?elevatorId=${d.elevatorId}&defectId=${d.id}&title=${encodeURIComponent(d.description)}`}
+                  >
+                    {t('jobs.createFromHere')}
+                  </Link>
+                ) : null}
                 {open ? (
                   <a
                     className="btn btn-small"

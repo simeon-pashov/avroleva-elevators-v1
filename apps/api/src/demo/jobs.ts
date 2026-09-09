@@ -374,6 +374,9 @@ export async function seedJobs(
     const d = new Date(`${addDays(today, -daysAgo)}T${String(hour).padStart(2, '0')}:00:00+03:00`)
     return d.getTime() > ceiling ? new Date(ceiling) : d
   }
+  // A scheduled date may lie ahead (the office plans next week).
+  const ahead = (daysAhead: number, hour = 9) =>
+    new Date(`${addDays(today, daysAhead)}T${String(hour).padStart(2, '0')}:00:00+03:00`)
 
   let created = 0
   let invoices = 0
@@ -460,7 +463,7 @@ export async function seedJobs(
         stamps.approvedAt = at(s.daysAgo - 6, 18)
       }
       if (reach('scheduled')) {
-        const when = target === 'scheduled' ? at(-(2 + (i % 5)), 9) : at(s.daysAgo - 9, 9)
+        const when = target === 'scheduled' ? ahead(2 + (i % 5), 9) : at(s.daysAgo - 9, 9)
         const who = pair(i)
         if (who.length)
           await jobs.schedule(ctx, job.id, {

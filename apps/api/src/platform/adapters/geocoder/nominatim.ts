@@ -86,6 +86,11 @@ export function parseNominatimAddress(r: NominatimResult): GeoAddressParts {
   const street = a.road ?? a.pedestrian
   let block = blockFrom(a.building) ?? blockFrom(r.name) ?? blockFrom(r.display_name)
   let number = a.house_number
+  // Sofia's OSM data often carries the block as the house number ("бл. 27").
+  if (number && /бл/i.test(number)) {
+    block = block ?? blockFrom(number) ?? number.replace(/^\D+/, '')
+    number = undefined
+  }
   if (!block && number && district && !street && /^\d+[A-Za-zА-Яа-я]?$/.test(number)) {
     block = number
     number = undefined
