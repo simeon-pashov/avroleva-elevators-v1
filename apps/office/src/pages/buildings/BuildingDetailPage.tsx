@@ -12,6 +12,7 @@ import { ContactsPanel } from '../customers/ContactsPanel'
 import { elevatorStatusBadge, dueBadge, overrideBadge } from '../elevators/ElevatorsListPage'
 import { BuildingViberCard } from './BuildingViberCard'
 import { BuildingReportCard } from './BuildingReportCard'
+import { BuildingStatementCard } from './BuildingStatementCard'
 
 export function BuildingDetailPage() {
   const { id } = useParams()
@@ -287,6 +288,11 @@ export function BuildingDetailPage() {
         <BuildingViberCard building={b} />
         {canEdit ? <BuildingReportCard building={b} /> : null}
       </div>
+      {canSeeMoney ? (
+        <div className="grid-2">
+          <BuildingStatementCard building={b} />
+        </div>
+      ) : null}
       {panelId ? (
         <ElevatorPanel elevatorId={panelId} onClose={() => setPanelId(null)} onChanged={load} />
       ) : null}

@@ -22,6 +22,11 @@ import { UsersPage } from './pages/UsersPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { NotificationSettingsPage } from './pages/settings/NotificationSettingsPage'
 import { DataSettingsPage } from './pages/settings/DataSettingsPage'
+import { BillingSettingsPage } from './pages/settings/BillingSettingsPage'
+import { InvoicesListPage } from './pages/invoices/InvoicesListPage'
+import { InvoiceDetailPage } from './pages/invoices/InvoiceDetailPage'
+import { BankImportPage } from './pages/invoices/BankImportPage'
+import { BuildingStatementPage } from './pages/buildings/BuildingStatementPage'
 import { NotificationsLogPage } from './pages/notifications/NotificationsLogPage'
 import { ReportsPage } from './pages/reports/ReportsPage'
 import { ImportPage } from './pages/ImportPage'
@@ -94,6 +99,11 @@ export function App() {
           <Route path="/notifications" element={<NotificationsLogPage />} />
           <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
           <Route path="/settings/data" element={<DataSettingsPage />} />
+          <Route path="/settings/billing" element={<BillingSettingsPage />} />
+          <Route path="/invoices" element={<InvoicesListPage />} />
+          <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
+          <Route path="/billing/bank-import" element={<BankImportPage />} />
+          <Route path="/buildings/:id/statement" element={<BuildingStatementPage />} />
         </Route>
         <Route element={<RequireRole roles={['owner']} />}>
           <Route path="/users" element={<UsersPage />} />

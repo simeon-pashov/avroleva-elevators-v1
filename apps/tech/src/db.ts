@@ -79,6 +79,8 @@ export interface MetaValues {
   session: { sessionId: string; expiresAt: string }
   user: { id: string; name: string; role: string }
   tenant: SyncPullDto['tenant']
+  /** Tenant feature `demoMode` from the enroll response (the pull DTO does not carry it). */
+  demoMode: boolean
   watermark: string
   clockOffsetMs: number
   clockMeasuredAt: string

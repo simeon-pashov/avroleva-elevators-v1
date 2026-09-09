@@ -2,12 +2,13 @@ import { NavLink } from 'react-router'
 import { useAuth } from '../auth/AuthProvider'
 import { useI18n } from '../i18n/I18nProvider'
 
-/** Tabs at the top of every settings page: Общи · Уведомления · Данни (the last two owner/office). */
+/** Tabs at the top of every settings page: Общи · Фактуриране · Уведомления · Данни (all but the first owner/office). */
 export function SettingsNav() {
   const { t } = useI18n()
   const { hasRole } = useAuth()
   const items = [
     { to: '/settings', label: t('settings.navGeneral'), show: true },
+    { to: '/settings/billing', label: t('settings.navBilling'), show: hasRole('owner', 'office') },
     {
       to: '/settings/notifications',
       label: t('settings.navNotifications'),

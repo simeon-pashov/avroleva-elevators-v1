@@ -19,6 +19,7 @@ export function Shell() {
     { to: '/elevators', label: t('nav.elevators') },
     { to: '/customers', label: t('nav.customers') },
     { to: '/contracts', label: t('nav.contracts') },
+    { to: '/invoices', label: t('nav.invoices'), show: hasRole('owner', 'office') },
     { to: '/reports', label: t('nav.reports'), show: hasRole('owner', 'office') },
     { to: '/notifications', label: t('nav.notifications'), show: hasRole('owner', 'office') },
     { to: '/import', label: t('nav.import'), show: hasRole('owner', 'office') },
@@ -26,6 +27,7 @@ export function Shell() {
     { to: '/settings', label: t('nav.settings') },
   ]
   const deletionAt = me?.tenant.status === 'deletion_scheduled' ? me.tenant.deletionAt : null
+  const demoMode = !!me?.tenant.features.demoMode
 
   return (
     <div className="shell">
@@ -66,6 +68,12 @@ export function Shell() {
           </button>
         </div>
       </header>
+      {demoMode ? (
+        <div className="demo-banner" role="status">
+          <strong>{t('shell.demoBadge')}</strong>
+          <span>{t('shell.demoBanner')}</span>
+        </div>
+      ) : null}
       {deletionAt ? (
         <div className="deletion-banner" role="alert">
           <span>{t('shell.deletionBanner', { date: date(deletionAt) })}</span>

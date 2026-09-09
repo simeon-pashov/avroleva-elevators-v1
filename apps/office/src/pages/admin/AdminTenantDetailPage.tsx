@@ -1,10 +1,18 @@
-import { useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import type { AdminTenantDto, UserDto } from '@avroleva/contracts'
 import { get, patch, post } from '../../lib/api'
 import { useI18n } from '../../i18n/I18nProvider'
 import { Badge, ConfirmButton, ErrorBox, PageHeader, Spinner, toast } from '../../components/ui'
 import { tenantStatusBadge } from './AdminTenantsPage'
+
+/** POST /admin/tenants/:id/demo-data */
+interface DemoDataResult {
+  reset: boolean
+  counts: Record<string, number>
+  skipped: boolean
+  registryCreated: boolean
+}
 
 export function AdminTenantDetailPage() {
   const { id } = useParams()
@@ -13,6 +21,8 @@ export function AdminTenantDetailPage() {
   const [error, setError] = useState<unknown>(null)
   const [pwFor, setPwFor] = useState<string | null>(null)
   const [pw, setPw] = useState('')
+  const [demoResult, setDemoResult] = useState<DemoDataResult | null>(null)
+  const [demoBusy, setDemoBusy] = useState(false)
 
   const load = useCallback(
     () =>
@@ -50,6 +60,35 @@ export function AdminTenantDetailPage() {
   }
 
   const scheduled = tenant.status === 'deletion_scheduled'
+  const demoMode = !!tenant.features.demoMode
+
+  const setDemoMode = async (enabled: boolean) => {
+    setDemoBusy(true)
+    try {
+      await post(`/admin/tenants/${tenant.id}/demo-mode`, { enabled })
+      toast(enabled ? t('admin.demoModeOn') : t('admin.demoModeOff'))
+      await load()
+    } catch (e) {
+      setError(e)
+    } finally {
+      setDemoBusy(false)
+    }
+  }
+
+  const generateDemo = async (reset: boolean) => {
+    setDemoBusy(true)
+    try {
+      const r = await post<DemoDataResult>(`/admin/tenants/${tenant.id}/demo-data`, { reset })
+      setDemoResult(r)
+      const total = Object.values(r.counts ?? {}).reduce((s, n) => s + n, 0)
+      toast(r.skipped ? t('admin.demoDataSkipped') : t('admin.demoDataDone', { count: total }))
+      await load()
+    } catch (e) {
+      setError(e)
+    } finally {
+      setDemoBusy(false)
+    }
+  }
 
   return (
     <div>
@@ -128,6 +167,57 @@ export function AdminTenantDetailPage() {
             <dd>{tenant.counts.contracts}</dd>
           </dl>
         </div>
+      </div>
+      <div className="card">
+        <div className="card-head">
+          <h2>{t('admin.demoTitle')}</h2>
+          <Badge kind={demoMode ? 'warn' : 'muted'}>
+            {demoMode ? t('admin.demoModeOnBadge') : t('admin.demoModeOffBadge')}
+          </Badge>
+        </div>
+        <p className="muted small">{t('admin.demoHint')}</p>
+        <div className="actions">
+          <button
+            type="button"
+            className={demoMode ? 'btn' : 'btn btn-primary'}
+            disabled={demoBusy}
+            onClick={() => void setDemoMode(!demoMode)}
+          >
+            {demoMode ? t('admin.demoModeDisable') : t('admin.demoModeEnable')}
+          </button>
+          <ConfirmButton
+            className="btn"
+            label={t('admin.demoGenerate')}
+            disabled={demoBusy}
+            onConfirm={() => generateDemo(false)}
+          />
+          {demoMode ? (
+            <ConfirmButton
+              label={t('admin.demoReset')}
+              disabled={demoBusy}
+              onConfirm={() => generateDemo(true)}
+            />
+          ) : null}
+        </div>
+        {demoResult ? (
+          <div className="demo-result">
+            <p className="small">
+              {demoResult.reset ? t('admin.demoResultReset') : t('admin.demoResultAdded')}
+              {demoResult.skipped ? ` ${t('admin.demoDataSkipped')}` : ''}
+              {demoResult.registryCreated ? ` ${t('admin.demoRegistryCreated')}` : ''}
+            </p>
+            {Object.keys(demoResult.counts ?? {}).length > 0 ? (
+              <dl className="dl compact">
+                {Object.entries(demoResult.counts).map(([k, n]) => (
+                  <Fragment key={k}>
+                    <dt>{k}</dt>
+                    <dd>{n}</dd>
+                  </Fragment>
+                ))}
+              </dl>
+            ) : null}
+          </div>
+        ) : null}
       </div>
       <div className="card">
         <h2>{t('users.title')}</h2>

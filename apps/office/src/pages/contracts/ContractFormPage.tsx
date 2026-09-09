@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import type {
+  BillingCycle,
   BuildingDto,
   ContractDto,
   ContractStatus,
@@ -8,7 +9,10 @@ import type {
   ElevatorDto,
   Page,
 } from '@avroleva/contracts'
-import { ContractStatus as ContractStatusEnum } from '@avroleva/contracts'
+import {
+  BillingCycle as BillingCycleEnum,
+  ContractStatus as ContractStatusEnum,
+} from '@avroleva/contracts'
 import { get, patch, post, qs } from '../../lib/api'
 import { useI18n } from '../../i18n/I18nProvider'
 import { ErrorBox, Field, PageHeader, Spinner, toast } from '../../components/ui'
@@ -27,6 +31,9 @@ interface FormValues {
   endDate: string
   status: ContractStatus
   paymentDay: string
+  billingCycle: BillingCycle
+  billingAnchorDay: string
+  billingExempt: boolean
   notes: string
   lines: Line[]
 }
@@ -43,6 +50,9 @@ export function ContractFormPage() {
     endDate: '',
     status: 'active',
     paymentDay: '10',
+    billingCycle: 'monthly',
+    billingAnchorDay: '',
+    billingExempt: false,
     notes: '',
     lines: [],
   })
@@ -75,6 +85,9 @@ export function ContractFormPage() {
           endDate: c.endDate ?? '',
           status: c.status,
           paymentDay: c.paymentDay?.toString() ?? '',
+          billingCycle: c.billing?.cycle ?? 'monthly',
+          billingAnchorDay: c.billing?.anchorDay?.toString() ?? '',
+          billingExempt: c.billing?.exempt ?? false,
           notes: c.notes ?? '',
           lines: c.lines
             .filter((l) => !l.toDate)
@@ -139,6 +152,15 @@ export function ContractFormPage() {
         endDate: values.endDate || null,
         status: values.status,
         paymentDay: values.paymentDay ? Number(values.paymentDay) : null,
+        // null = the tenant default (monthly, run day, not exempt).
+        billing:
+          values.billingCycle === 'monthly' && !values.billingAnchorDay && !values.billingExempt
+            ? null
+            : {
+                cycle: values.billingCycle,
+                anchorDay: values.billingAnchorDay ? Number(values.billingAnchorDay) : null,
+                exempt: values.billingExempt,
+              },
         notes: values.notes,
         lines: values.lines.map((l) => ({
           elevatorId: l.elevatorId,
@@ -231,6 +253,41 @@ export function ContractFormPage() {
                 onChange={(e) => form.set('paymentDay', e.target.value)}
               />
             </Field>
+          </div>
+          <h3 className="sub-head">{t('contracts.billingTitle')}</h3>
+          <p className="muted small">{t('contracts.billingHint')}</p>
+          <div className="row">
+            <Field label={t('contracts.billingCycle')} error={err['billing.cycle']}>
+              <EnumSelect
+                value={v.billingCycle}
+                options={BillingCycleEnum.options}
+                prefix="enum.billingCycle"
+                onChange={(x) => x && form.set('billingCycle', x)}
+              />
+            </Field>
+            <Field
+              label={t('contracts.billingAnchorDay')}
+              error={err['billing.anchorDay']}
+              hint={t('contracts.billingAnchorDayHint')}
+            >
+              <input
+                type="number"
+                min={1}
+                max={28}
+                value={v.billingAnchorDay}
+                onChange={(e) => form.set('billingAnchorDay', e.target.value)}
+              />
+            </Field>
+          </div>
+          <div className="check-list">
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={v.billingExempt}
+                onChange={(e) => form.set('billingExempt', e.target.checked)}
+              />
+              <span>{t('contracts.billingExempt')}</span>
+            </label>
           </div>
           <Field label={t('common.notes')} error={err.notes}>
             <textarea

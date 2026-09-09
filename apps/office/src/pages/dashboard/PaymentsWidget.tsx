@@ -345,6 +345,9 @@ export function PaymentsWidget({ version, onChanged }: { version: number; onChan
     <div className="card payments-widget">
       <div className="card-head">
         <h2>{t('payments.title')}</h2>
+        <Link className="small" to="/invoices">
+          {t('payments.allInvoices')}
+        </Link>
       </div>
       <ErrorBox error={summaryError} />
       {summary ? (

@@ -37,6 +37,7 @@ export function Shell() {
   const showNewVersion = app.needRefresh && app.pendingCount === 0
   return (
     <div className="app">
+      {app.meta.demoMode ? <div className="banner banner-demo">{t('tech.demoBanner')}</div> : null}
       {!app.online ? <div className="banner banner-offline">{t('tech.offline')}</div> : null}
       {showNewVersion ? (
         <div className="banner banner-info">

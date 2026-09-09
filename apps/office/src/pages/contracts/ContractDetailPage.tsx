@@ -165,6 +165,22 @@ export function ContractDetailPage() {
             <dd>{c.endDate ? date(c.endDate) : <span className="muted">—</span>}</dd>
             <dt>{t('contracts.paymentDay')}</dt>
             <dd>{c.paymentDay ?? <span className="muted">—</span>}</dd>
+            <dt>{t('contracts.billingTitle')}</dt>
+            <dd>
+              {!c.billing ? (
+                <span className="muted">{t('contracts.billingDefault')}</span>
+              ) : (
+                <>
+                  {t(`enum.billingCycle.${c.billing.cycle}`)}
+                  {c.billing.anchorDay != null
+                    ? ` · ${t('contracts.billingAnchorDayValue', { day: c.billing.anchorDay })}`
+                    : ''}{' '}
+                  {c.billing.exempt ? (
+                    <Badge kind="warn">{t('contracts.billingExempt')}</Badge>
+                  ) : null}
+                </>
+              )}
+            </dd>
             {c.terminatedReason ? (
               <>
                 <dt>{t('contracts.reason')}</dt>

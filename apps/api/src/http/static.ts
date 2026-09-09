@@ -18,10 +18,13 @@ export function mountOffice(app: Express, distDir: string): void {
     return
   }
   app.use(express.static(distDir, { index: false, maxAge: '1h' }))
-  app.get(/^(?!\/api\/|\/print\/|\/p\/|\/pay\/|\/webhooks\/|\/files\/|\/tech(\/|$)).*/, (_req, res) => {
-    res.setHeader('Cache-Control', 'no-cache')
-    res.sendFile(index)
-  })
+  app.get(
+    /^(?!\/api\/|\/print\/|\/p\/|\/pay\/|\/webhooks\/|\/files\/|\/tech(\/|$)).*/,
+    (_req, res) => {
+      res.setHeader('Cache-Control', 'no-cache')
+      res.sendFile(index)
+    },
+  )
 }
 
 /**

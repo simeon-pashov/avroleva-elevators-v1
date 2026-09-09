@@ -33,6 +33,7 @@ export async function saveSession(r: EnrollResponse, deviceName: string): Promis
       },
       features: { gpsCapture: r.tenant.features.gpsCapture },
     },
+    demoMode: !!r.tenant.features.demoMode,
     deviceName,
     needsReenroll: false,
   })

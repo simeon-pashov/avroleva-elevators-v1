@@ -1486,3 +1486,140 @@ textarea:focus {
     flex: 1;
   }
 }
+
+/* ---- billing (step 7) */
+.demo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.35rem 1rem;
+  background: var(--warn);
+  color: #fff;
+  font-size: 0.9rem;
+}
+.demo-banner strong {
+  letter-spacing: 0.08em;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 4px;
+  padding: 0 0.4rem;
+}
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  background: #eff6ff;
+  border: 1px solid #c7dbf7;
+  border-radius: var(--radius);
+}
+.bulk-bar .inline-form-row {
+  margin-left: auto;
+}
+.row-picked td {
+  background: #eff6ff;
+}
+.invoices-table code {
+  white-space: nowrap;
+}
+.pay-block .pay-dl dd code {
+  font-size: 0.95em;
+}
+.copy-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.copy-btn {
+  padding: 0.05rem 0.5rem;
+}
+.pay-qr-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+.pay-qr {
+  flex: 0 0 160px;
+  width: 160px;
+  height: 160px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px;
+}
+.pay-qr svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.totals-dl {
+  margin-top: 0.75rem;
+  max-width: 420px;
+}
+.totals-dl dd {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.invoice-grid > div > .card,
+.statement-grid > div > .card {
+  margin-bottom: 1rem;
+}
+.link-url {
+  word-break: break-all;
+  font-size: 0.85rem;
+}
+.stage-table input[type='number'] {
+  width: 5.5rem;
+}
+.stage-table input[type='text'],
+.stage-table input:not([type]) {
+  width: 9rem;
+}
+.stage-table select {
+  max-width: 12rem;
+}
+.csv-text {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  white-space: pre;
+}
+.mapping-details {
+  margin: 0.5rem 0 0.75rem;
+}
+.mapping-details summary {
+  cursor: pointer;
+  color: var(--primary);
+}
+.mapping-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0 0.75rem;
+  align-items: end;
+}
+.import-row .field {
+  flex: 1;
+}
+.import-desc {
+  max-width: 320px;
+  font-size: 0.85rem;
+}
+.import-table .row-actions {
+  min-width: 260px;
+}
+.parse-errors {
+  margin: 0.3rem 0 0;
+  padding-left: 1.1rem;
+}
+.picker {
+  position: relative;
+}
+.search-results.static {
+  position: static;
+  box-shadow: none;
+  margin-top: 0.3rem;
+}
