@@ -12,6 +12,8 @@
 export { billingRouter } from './http/router.js'
 export {
   generate,
+  issueInvoice,
+  listForSource,
   list,
   get,
   detail,
@@ -34,7 +36,7 @@ export {
   toCreditNoteDto,
   withCustomerNames,
 } from './service.js'
-export type { RecordPaymentInput, RecordPaymentResult } from './service.js'
+export type { RecordPaymentInput, RecordPaymentResult, IssueInvoiceInput } from './service.js'
 export { runScheduled } from './run.js'
 export {
   runDunning,

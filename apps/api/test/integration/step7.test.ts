@@ -778,6 +778,15 @@ describe('invoice document, EPC QR and the public page', () => {
       .expect(200)
     const e = await request(server).get(`/api/v1/elevators/${elevatorId}`).set(bearer(A.ownerToken))
     const token = e.body.publicUrl.split('/p/')[1]
+    // Step 8: the block is OFF by default (arrears are not for whoever scans the cabin QR).
+    const current = await request(server).get('/api/v1/tenant').set(bearer(A.ownerToken))
+    await request(server)
+      .patch('/api/v1/tenant')
+      .set(bearer(A.ownerToken))
+      .send({
+        settings: { billing: { ...current.body.settings.billing, showPaymentOnPublicPage: true } },
+      })
+      .expect(200)
     const page = await request(server).get(`/p/${token}`)
     expect(page.status).toBe(200)
     expect(page.text).toContain('BG80 BNBG 9661 1020 3456 78')

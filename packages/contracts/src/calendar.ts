@@ -99,6 +99,7 @@ export const CalendarItemKind = z.enum([
   'defect_follow_up',
   'callback_sla',
   'alarm_test_due',
+  'job_approval',
 ])
 export type CalendarItemKind = z.infer<typeof CalendarItemKind>
 
@@ -109,7 +110,7 @@ export interface CalendarItemDto {
   /** `${kind}:${refId}` */
   id: string
   kind: CalendarItemKind
-  refType: 'elevator' | 'defect' | 'callback' | 'inspection'
+  refType: 'elevator' | 'defect' | 'callback' | 'inspection' | 'job'
   refId: string
   elevatorId: string
   elevatorInternalNo: string

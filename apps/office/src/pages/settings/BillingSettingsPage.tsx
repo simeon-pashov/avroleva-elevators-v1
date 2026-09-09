@@ -68,7 +68,7 @@ export function BillingSettingsPage() {
     bic: '',
     bankName: '',
     paymentProvider: 'none',
-    showPaymentOnPublicPage: true,
+    showPaymentOnPublicPage: false,
   })
 
   const loadConfig = useCallback(async () => {

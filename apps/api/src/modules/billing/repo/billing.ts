@@ -85,6 +85,19 @@ export function findByContractPeriod(
   return db.invoice.findFirst({ where: { tenantId, contractId, periodStart } })
 }
 
+/** Invoices created from a source (job invoices), newest first. */
+export function listBySource(
+  tenantId: string,
+  sourceType: string,
+  sourceId: string,
+): Promise<InvoiceRow[]> {
+  return prisma.invoice.findMany({
+    where: { tenantId, sourceType, sourceId },
+    include: invoiceInclude,
+    orderBy: [{ number: 'desc' }],
+  })
+}
+
 export function findByReference(tenantId: string, paymentReference: string) {
   return prisma.invoice.findFirst({
     where: { tenantId, paymentReference },
@@ -93,7 +106,8 @@ export function findByReference(tenantId: string, paymentReference: string) {
 }
 
 export interface InvoiceInput {
-  contractId: string
+  /** null for invoices without a contract (job invoices): sourceType/sourceId carry the origin. */
+  contractId: string | null
   buildingId: string
   customerId: string
   number: number

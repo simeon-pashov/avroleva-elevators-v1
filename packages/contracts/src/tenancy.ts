@@ -36,10 +36,24 @@ export const tenantBillingSettings = z.object({
   paymentProvider: z.enum(['none', 'demo', 'iris', 'stripe']).default('none'),
   /** Last bank CSV column mapping used by the import page. */
   bankCsvMapping: bankCsvMapping.nullable().optional(),
-  /** Show bank details + EPC QR for the open balance on the public QR page. */
-  showPaymentOnPublicPage: z.boolean().default(true),
+  /**
+   * Show bank details + EPC QR for the open balance on the public QR page. OFF by default (step 8):
+   * anyone who scans the cabin QR would otherwise see the building's arrears; a firm opts in.
+   */
+  showPaymentOnPublicPage: z.boolean().default(false),
 })
 export type TenantBillingSettings = z.infer<typeof tenantBillingSettings>
+
+/** Step 8: repair jobs / quotes. */
+export const tenantJobsSettings = z.object({
+  /** Jobs awaiting approval longer than this get an in-app reminder for the office (and a calendar item). */
+  approvalReminderDays: z.number().int().min(1).max(365).default(14),
+  /** Warranty proposed when a job is completed. */
+  defaultWarrantyMonths: z.number().int().min(0).max(120).default(12),
+  /** Validity printed on the quote. */
+  quoteValidDays: z.number().int().min(1).max(365).default(30),
+})
+export type TenantJobsSettings = z.infer<typeof tenantJobsSettings>
 
 export const username = z
   .string()
@@ -97,6 +111,7 @@ export const tenantSettings = z.object({
       other: 1,
     }),
   billing: tenantBillingSettings.prefault({}),
+  jobs: tenantJobsSettings.prefault({}),
 })
 export type TenantSettings = z.infer<typeof tenantSettings>
 

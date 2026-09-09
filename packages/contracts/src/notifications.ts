@@ -226,4 +226,6 @@ export const SYSTEM_TEMPLATE_KEYS = [
   'dunning_second',
   'dunning_final',
   'statement_sent',
+  'quote_sent',
+  'job_approval_reminder',
 ] as const

@@ -108,7 +108,8 @@ export interface InvoiceDto {
   number: number
   /** Printed on every document; what the payer writes on the transfer. */
   paymentReference: string
-  contractId: string
+  /** null for invoices that did not come from a contract (job invoices). */
+  contractId: string | null
   buildingId: string
   buildingAddressText?: string
   customerId: string
@@ -135,6 +136,9 @@ export interface InvoiceDto {
   dunningStageKey: string | null
   dunningAt: string | null
   sourceType: string
+  sourceId: string | null
+  /** The repair job this invoice was created from (sourceType 'job'), else null. */
+  jobId: string | null
   lines: InvoiceLineDto[]
   paidAt: string | null
   createdAt: string

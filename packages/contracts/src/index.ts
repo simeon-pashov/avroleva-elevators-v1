@@ -15,6 +15,8 @@ export * from './sync.js'
 export * from './notifications.js'
 export * from './exports.js'
 export * from './iban.js'
+export * from './jobs.js'
+export * from './geo.js'
 
 export interface JobStatusDto {
   name: string

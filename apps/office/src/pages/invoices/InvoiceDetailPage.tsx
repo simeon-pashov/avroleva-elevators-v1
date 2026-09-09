@@ -419,10 +419,22 @@ export function InvoiceDetailPage() {
               <dd>
                 <Link to={`/buildings/${inv.buildingId}`}>{inv.buildingAddressText}</Link>
               </dd>
-              <dt>{t('contracts.one')}</dt>
-              <dd>
-                <Link to={`/contracts/${inv.contractId}`}>{t('invoices.openContract')}</Link>
-              </dd>
+              {inv.contractId ? (
+                <>
+                  <dt>{t('contracts.one')}</dt>
+                  <dd>
+                    <Link to={`/contracts/${inv.contractId}`}>{t('invoices.openContract')}</Link>
+                  </dd>
+                </>
+              ) : null}
+              {inv.jobId ? (
+                <>
+                  <dt>{t('jobs.one')}</dt>
+                  <dd>
+                    <Link to={`/jobs/${inv.jobId}`}>{t('invoices.openJob')}</Link>
+                  </dd>
+                </>
+              ) : null}
               <dt>{t('billing.doc.issuedAt')}</dt>
               <dd>{date(inv.issuedAt)}</dd>
               <dt>{t('billing.doc.period')}</dt>

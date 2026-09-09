@@ -3,6 +3,8 @@ import { isoDateTime, nullableText, uuid } from './common.js'
 import type { DoorType, DriveType, ElevatorStatus } from './enums.js'
 import { amendVisitBody, createVisitBody } from './visits.js'
 import { createDefectBody } from './defects.js'
+import { jobEventPayload } from './jobs.js'
+import type { JobDto } from './jobs.js'
 import type { CallbackDto } from './callbacks.js'
 import type { DefectCatalogItemDto, DefectDto } from './defects.js'
 import type { ChecklistTemplateDto } from './checklists.js'
@@ -116,6 +118,8 @@ export interface SyncPullDto {
   defects: DefectDto[]
   /** Visits recorded since the watermark (first pull: last 90 days). */
   visits: VisitDto[]
+  /** Repair jobs assigned to me that are approved / scheduled / in progress. Full replace. */
+  repairJobs: JobDto[]
 }
 
 // ---- push ------------------------------------------------------------------------------------
@@ -162,6 +166,7 @@ export const syncPushItem = z.discriminatedUnion('kind', [
   item('visit.amend', visitAmendPayload),
   item('callback.event', callbackEventPayload),
   item('defect.record', defectRecordPayload),
+  item('job.event', jobEventPayload),
 ])
 export type SyncPushItem = z.infer<typeof syncPushItem>
 export type SyncPushKind = SyncPushItem['kind']
@@ -172,7 +177,7 @@ export interface SyncPushResultDto {
   /** applied = processed now; replayed = stored response of an earlier identical request. */
   status: 'applied' | 'replayed'
   serverTime: string
-  result: VisitDto | CallbackDto | DefectDto
+  result: VisitDto | CallbackDto | DefectDto | JobDto
 }
 
 export const IDEMPOTENCY_HEADER = 'idempotency-key'

@@ -643,7 +643,8 @@ model InvoiceSequence {
 model Invoice {
   id               String        @id @db.Uuid
   tenantId         String        @db.Uuid
-  contractId       String        @db.Uuid
+  /// NULL for invoices that do not come from a contract (job invoices, step 8): sourceType/sourceId say where from.
+  contractId       String?       @db.Uuid
   buildingId       String        @db.Uuid
   customerId       String        @db.Uuid
   number           Int

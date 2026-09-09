@@ -13,6 +13,7 @@ import type {
   InvoiceDto,
   InvoiceLineDto,
   InvoiceListQuery,
+  JobInvoiceRefDto,
   Page,
   PayInvoiceBody,
   PaymentDto,
@@ -38,7 +39,7 @@ import { transaction } from '../../platform/db/prisma.js'
 import type { Tx } from '../../platform/db/prisma.js'
 import { paymentProvider } from '../../platform/adapters/payments/index.js'
 import { getTenant, getTenantFeatures, getTenantSettings } from '../tenancy/index.js'
-import { buildings, contracts, elevators } from '../registry/index.js'
+import { buildings, contracts, customers, elevators } from '../registry/index.js'
 import * as repo from './repo/billing.js'
 import type {
   AdjustmentRow,
@@ -88,6 +89,8 @@ export function toInvoiceDto(i: InvoiceRow, today: string = todayInSofia()): Inv
     dunningStageKey: i.dunningStageKey,
     dunningAt: i.dunningAt ? iso(i.dunningAt) : null,
     sourceType: i.sourceType,
+    sourceId: i.sourceId,
+    jobId: i.sourceType === 'job' ? i.sourceId : null,
     lines: (i.lines as unknown as InvoiceLineDto[]) ?? [],
     paidAt: toDateOnly(i.paidAt),
     createdAt: iso(i.createdAt),
@@ -313,6 +316,121 @@ export async function generate(
       customerName: customerNames.get(r.customerId),
     })),
   }
+}
+
+export interface IssueInvoiceInput {
+  /** Where the invoice comes from when not a contract: `job` (step 8). */
+  sourceType: 'job'
+  sourceId: string
+  buildingId: string
+  customerId: string
+  lines: InvoiceLineDto[]
+  /** YYYY-MM-DD; default today (Sofia). */
+  issuedAt?: string
+  /** YYYY-MM-DD; default issuedAt + the tenant's due days. */
+  dueAt?: string
+  actor?: AuditActor
+}
+
+/**
+ * One invoice from explicit lines (HANDOFF-STEP7 section 8): the entry point for repair jobs.
+ * Numbering and the payer reference are taken in the same transaction as the row (gapless), the
+ * VAT is rounded once per invoice like the contract run, `contractId` stays NULL and
+ * `(sourceType, sourceId)` say where the invoice came from. Emits InvoiceIssued; payments,
+ * dunning, statements and links then work unchanged. Nothing outside billing touches numbering.
+ */
+export async function issueInvoice(ctx: Ctx, input: IssueInvoiceInput): Promise<InvoiceDto> {
+  const [settings, tenant] = await Promise.all([
+    getTenantSettings(ctx.tenantId),
+    getTenant(ctx.tenantId),
+  ])
+  const eff = effectiveBilling(settings)
+  const lines = input.lines.filter((l) => l.amountCents !== 0)
+  const amountCents = lines.reduce((s, l) => s + l.amountCents, 0)
+  if (lines.length === 0 || amountCents <= 0) throw new AppError(400, 'billing.emptyInvoice')
+  if (!(await buildings.find(ctx.tenantId, input.buildingId))) throw notFound()
+  const vatCents = Math.round((amountCents * eff.vatRatePercent) / 100)
+  const issuedAt = input.issuedAt ?? todayInSofia()
+  const dueAt = input.dueAt ?? addDays(issuedAt, eff.invoiceDueDays)
+  const actor = input.actor ?? (ctx.userId ? actorOf(ctx) : systemActorOf(ctx.tenantId))
+  const row = await transaction(async (tx) => {
+    const number = await repo.nextInvoiceNumber(ctx.tenantId, tx)
+    const created = await repo.createInvoice(
+      ctx.tenantId,
+      {
+        contractId: null,
+        buildingId: input.buildingId,
+        customerId: input.customerId,
+        number,
+        paymentReference: paymentReferenceFor(tenant.eik, number),
+        periodStart: fromDateOnly(issuedAt)!,
+        periodEnd: fromDateOnly(issuedAt)!,
+        issuedAt: fromDateOnly(issuedAt)!,
+        dueAt: fromDateOnly(dueAt)!,
+        amountCents,
+        vatCents,
+        totalCents: amountCents + vatCents,
+        status: 'issued',
+        lines,
+        sourceType: input.sourceType,
+        sourceId: input.sourceId,
+      },
+      tx,
+    )
+    await audit(
+      actor,
+      {
+        action: 'invoice.issue',
+        entityType: 'invoice',
+        entityId: created.id,
+        after: {
+          number,
+          paymentReference: created.paymentReference,
+          totalCents: created.totalCents,
+          sourceType: input.sourceType,
+          sourceId: input.sourceId,
+        },
+      },
+      tx,
+    )
+    return created
+  })
+  await events.publish(ctx, {
+    type: 'InvoiceIssued',
+    aggregateType: 'invoice',
+    aggregateId: row.id,
+    payload: {
+      number: row.number,
+      paymentReference: row.paymentReference,
+      period: issuedAt.slice(0, 7),
+      totalCents: row.totalCents,
+      dueAt: toDateOnly(row.dueAt),
+      buildingId: row.buildingId,
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+    },
+  })
+  return toInvoiceDto(row)
+}
+
+/** Invoices created from a job (the jobs module reads them through its InvoiceIssuer port). */
+export async function listForSource(
+  ctx: Ctx,
+  sourceType: 'job',
+  sourceId: string,
+): Promise<JobInvoiceRefDto[]> {
+  await rollStatuses(ctx.tenantId)
+  return (await repo.listBySource(ctx.tenantId, sourceType, sourceId)).map((i) => {
+    const d = toInvoiceDto(i)
+    return {
+      id: d.id,
+      number: d.number,
+      totalCents: d.totalCents,
+      openCents: d.openCents,
+      status: d.status,
+      issuedAt: d.issuedAt,
+    }
+  })
 }
 
 export async function list(ctx: Ctx, q: InvoiceListQuery): Promise<Page<InvoiceDto>> {
@@ -657,13 +775,25 @@ async function billingFor(ctx: Ctx, buildingId: string): Promise<BuildingBilling
   }
 }
 
-/** Customer names come from the registry (one query per distinct contract, cached per call). */
+/**
+ * Customer names come from the registry (one query per distinct contract, cached per call);
+ * invoices without a contract (job invoices) resolve the customer by id.
+ */
 export async function withCustomerNames(ctx: Ctx, dtos: InvoiceDto[]): Promise<InvoiceDto[]> {
-  const ids = [...new Set(dtos.map((d) => d.contractId))]
+  const ids = [...new Set(dtos.map((d) => d.contractId).filter((x): x is string => !!x))]
   const found = await Promise.all(ids.map((id) => contracts.findDto(ctx.tenantId, id)))
   const names = new Map<string, string | undefined>()
   for (const c of found) if (c) names.set(c.id, c.customerName)
-  return dtos.map((d) => ({ ...d, customerName: names.get(d.contractId) }))
+  const customerIds = [...new Set(dtos.filter((d) => !d.contractId).map((d) => d.customerId))]
+  const customerNames = new Map<string, string>()
+  for (const id of customerIds) {
+    const c = await customers.get(ctx, id).catch(() => null)
+    if (c) customerNames.set(id, c.name)
+  }
+  return dtos.map((d) => ({
+    ...d,
+    customerName: d.contractId ? names.get(d.contractId) : customerNames.get(d.customerId),
+  }))
 }
 
 // ---- credit notes & late fees ------------------------------------------------------------------
