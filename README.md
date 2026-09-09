@@ -13,12 +13,12 @@ The office app is a desktop-first React SPA in Bulgarian (English available) wit
 - **Callbacks (аварии)**: intake by phone/office or from the public QR page, dispatch, on-site, close-out with cause/action and an automatic visit record; SLA timer with at-risk and breached events.
 - **Defects**: catalogue of the 17 stop-lift items plus free text, follow-up clock, notice to the building, "customer requested repair", stop-lift ring on the map until resolved.
 - **Calendar**: inspections (periodic, after repair, after stop) with alert steps, alarm-device tests, overdue checks, defect follow-ups — one deadlines view.
-- **Money (light)**: monthly invoices per contract with gapless numbering and VAT, payments (full/partial/unallocated), overdue roll, dashboard totals.
+- **Money**: scheduled monthly (or quarterly / yearly) invoices per contract with gapless numbering, VAT and a payer reference; dunning as data (reminder stages per tenant, optional late fee); credit notes; payments (partial, over-payment, unallocated) by hand, from a bank-statement CSV import (auto-match by reference or amount + name, manual match for the rest) or through a payment provider port (demo adapter, IRIS/Stripe stubs); EPC QR code + IBAN block on every invoice, statement and the public page; statement per building (print + e-mail); invoices list with bulk actions.
 - **Notifications**: rule matrix per event × channel (in-app, e-mail, SMS, Viber deep link) × recipient (building contact, owner, office, technician); Handlebars templates in bg/en with per-tenant overrides; delivery log; bell inbox.
 - **Reports and exports**: monthly building report (print + e-mail attachment), 13 CSV datasets, full zip export with SHA-256 manifest, delete-my-data with 30-day grace.
 - **Technician PWA**: QR enrollment with device sessions, Today list with call/navigate buttons, visit form with checklist, camera, second technician, outbox with retries, forced-update header.
-- **Platform admin**: register/deactivate tenants, reset owner passwords, system page (health, worker jobs, failed deliveries, scheduled deletions).
-- **Scheduler**: pg-boss in the same Postgres (no Redis) — hourly recompute, daily overdue roll, calendar alerts, SLA watch every minute, retention sweep, orphan cleanup, tenant purge, outbox catch-up.
+- **Platform admin**: register/deactivate tenants, reset owner passwords, system page (health, worker jobs, failed deliveries, scheduled deletions), demo mode per tenant (a year of believable data generated on demand, reset nightly).
+- **Scheduler**: pg-boss in the same Postgres (no Redis) — hourly recompute, daily billing run, daily dunning, daily overdue roll, calendar alerts, SLA watch every minute, retention sweep, orphan cleanup, tenant purge, nightly demo reset, outbox catch-up.
 
 ## Screenshots
 
@@ -71,7 +71,8 @@ docs/             screenshots, QA log
 | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Modular monolith design: modules and boundaries, adjustability, data model, offline-first PWA, API, cross-cutting concerns, deployment, testing, decisions log. |
 | [`MVP-PLAN.md`](./MVP-PLAN.md) | Build plan: phases 0–9, the 2-week demo, the founding-customer import plan, risks, definition of done. |
 | [`DEPLOY.md`](./DEPLOY.md) | VPS runbook: deploy key, `.env`, compose, nginx include, backups, restore drill, rollback, decisions before go-live. |
-| [`HANDOFF-STEP1.md`](./HANDOFF-STEP1.md) … [`HANDOFF-STEP5.md`](./HANDOFF-STEP5.md) | Per-step handoffs: foundation; dashboard; callbacks/defects/calendar/public page; offline technician app; scheduler/notifications/exports/reports. |
+| [`HANDOFF-STEP1.md`](./HANDOFF-STEP1.md) … [`HANDOFF-STEP7.md`](./HANDOFF-STEP7.md) | Per-step handoffs: foundation; dashboard; callbacks/defects/calendar/public page; offline technician app; scheduler/notifications/exports/reports; billing that runs itself, payments, demo mode. |
+| [`docs/adr/0001-billing-jobs-payments.md`](./docs/adr/0001-billing-jobs-payments.md) | ADR: billing runs, dunning as data, state machines, payment port, reconciliation, demo mode. |
 | [`docs/QA-2026-09-08.md`](./docs/QA-2026-09-08.md) | The QA pass: bugs found and fixed, what was exercised, security quick-check. |
 | `../Elevator Business Due Diligence/` | The research this design rests on (start with `00-SYNTHESIS.md`). |
 | `../Elevator Businesses Data/` | ДАМТН register of licensed firms — the lead list. |

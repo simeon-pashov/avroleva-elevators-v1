@@ -501,10 +501,10 @@ describe('billing: generate (idempotent, gapless), pay, summary, building/elevat
       .send({ paidAt: today, method: 'bank', amountCents: 10001 })
     expect(full.status, full.text).toBe(200)
     expect(full.body.paidCents).toBe(12000)
-    const unallocated = await prismaBase.payment.findFirst({
+    const remainder = await prismaBase.payment.findFirst({
       where: { tenantId: A.tenantId, buildingId: july.buildingId, invoiceId: null, amountCents: 1 },
     })
-    expect(unallocated).not.toBeNull()
+    expect(remainder).not.toBeNull()
     expect(full.body.status).toBe('paid')
     expect(full.body.paidAt).toBe(today)
     expect(full.body.openCents).toBe(0)
@@ -550,14 +550,15 @@ describe('billing: generate (idempotent, gapless), pay, summary, building/elevat
       .get('/api/v1/billing/payments')
       .query({ month: thisMonth, buildingId: bld.buildingId })
       .set(bearer(A.ownerToken))
-    expect(payments.body.items).toHaveLength(3)
+    // 3 payments + the 1-cent over-payment remainder booked as unallocated (step 7).
+    expect(payments.body.items).toHaveLength(4)
 
     const bb = await request(server)
       .get(`/api/v1/buildings/${bld.buildingId}/billing`)
       .set(bearer(A.ownerToken))
     expect(bb.body.invoices).toHaveLength(2)
     expect(bb.body.pendingCents).toBe(12000)
-    expect(bb.body.payments).toHaveLength(3)
+    expect(bb.body.payments).toHaveLength(4)
     const eb = await request(server)
       .get(`/api/v1/elevators/${e2}/billing`)
       .set(bearer(A.ownerToken))

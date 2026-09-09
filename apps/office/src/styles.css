@@ -1569,6 +1569,16 @@ textarea:focus {
 .statement-grid > div > .card {
   margin-bottom: 1rem;
 }
+/* Grid children must be allowed to shrink so a wide ledger scrolls inside its card. */
+.invoice-grid > div,
+.statement-grid > div {
+  min-width: 0;
+}
+@media (min-width: 1100px) {
+  .statement-grid {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
 .link-url {
   word-break: break-all;
   font-size: 0.85rem;
