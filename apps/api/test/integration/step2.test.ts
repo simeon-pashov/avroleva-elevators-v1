@@ -494,15 +494,17 @@ describe('billing: generate (idempotent, gapless), pay, summary, building/elevat
     expect(partial.body.status).toBe('overdue')
     expect(partial.body.paidCents).toBe(2000)
     expect(partial.body.openCents).toBe(10000)
-    const tooMuch = await request(server)
-      .post(`/api/v1/billing/invoices/${july.id}/pay`)
-      .set(bearer(A.ownerToken))
-      .send({ paidAt: today, method: 'bank', amountCents: 10001 })
-    expect(tooMuch.status).toBe(400)
+    // Step 7 (ADR 0001): an over-payment settles the invoice and leaves the rest unallocated.
     const full = await request(server)
       .post(`/api/v1/billing/invoices/${july.id}/pay`)
       .set(bearer(A.ownerToken))
-      .send({ paidAt: today, method: 'bank' })
+      .send({ paidAt: today, method: 'bank', amountCents: 10001 })
+    expect(full.status, full.text).toBe(200)
+    expect(full.body.paidCents).toBe(12000)
+    const unallocated = await prismaBase.payment.findFirst({
+      where: { tenantId: A.tenantId, buildingId: july.buildingId, invoiceId: null, amountCents: 1 },
+    })
+    expect(unallocated).not.toBeNull()
     expect(full.body.status).toBe('paid')
     expect(full.body.paidAt).toBe(today)
     expect(full.body.openCents).toBe(0)
@@ -522,8 +524,8 @@ describe('billing: generate (idempotent, gapless), pay, summary, building/elevat
       pendingCount: 1,
       overdueCents: 12000,
       overdueCount: 1,
-      paidThisMonthCents: 12000,
-      paidThisMonthCount: 2,
+      paidThisMonthCents: 12001,
+      paidThisMonthCount: 3,
     })
 
     const paidList = await request(server)

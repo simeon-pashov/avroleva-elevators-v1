@@ -1,15 +1,15 @@
-import { prismaBase as db } from '../../src/platform/db/prisma.js'
-import { newId } from '../../src/platform/ids.js'
-import * as notifications from '../../src/modules/notifications/index.js'
-import { runFullExport, useReportNotifier } from '../../src/modules/reporting/index.js'
+import { prismaBase as db } from '../platform/db/prisma.js'
+import { newId } from '../platform/ids.js'
+import * as notifications from '../modules/notifications/index.js'
+import { runFullExport, useReportNotifier } from '../modules/reporting/index.js'
 
 /**
- * Step 5 demo data: the default notification rules, a handful of delivery-log rows (in-app for
+ * Demo notifications (moved from the step 5 seed): the default notification rules, a handful of delivery-log rows (in-app for
  * the office, one e-mail, one Viber link waiting to be sent, one skipped) and one completed full
  * export. Idempotent: rules are upserted only when missing; log rows and the export run only while
  * the tenant has none.
  */
-export async function seedStep5(tenantId: string): Promise<Record<string, number>> {
+export async function seedNotifications(tenantId: string): Promise<Record<string, number>> {
   const counts = { notificationRules: 0, notifications: 0, exportRuns: 0 }
   counts.notificationRules = await notifications.ensureDefaultRules(tenantId)
   useReportNotifier({ sendEmail: notifications.sendEmail, notifyUsers: notifications.notifyUsers })

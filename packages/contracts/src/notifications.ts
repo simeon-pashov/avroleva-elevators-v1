@@ -25,6 +25,9 @@ export const NotifiableEventType = z.enum([
   'DefectFollowUpDue',
   'CheckOverdue',
   'StopLiftRequired',
+  'DunningStageReached',
+  'PaymentMatched',
+  'CreditNoteIssued',
 ])
 export type NotifiableEventType = z.infer<typeof NotifiableEventType>
 
@@ -185,6 +188,13 @@ export const RULE_MATRIX: ReadonlyArray<{
   { eventType: 'DefectFollowUpDue', channel: 'in_app', recipientKind: 'office' },
   { eventType: 'CheckOverdue', channel: 'in_app', recipientKind: 'office' },
   { eventType: 'StopLiftRequired', channel: 'in_app', recipientKind: 'office' },
+  // Dunning (ADR 0001): the stage row decides channel + template; these rules only allow recipients.
+  { eventType: 'DunningStageReached', channel: 'email', recipientKind: 'building_contact' },
+  { eventType: 'DunningStageReached', channel: 'viber_link', recipientKind: 'building_contact' },
+  { eventType: 'DunningStageReached', channel: 'in_app', recipientKind: 'office' },
+  { eventType: 'PaymentMatched', channel: 'in_app', recipientKind: 'office' },
+  { eventType: 'CreditNoteIssued', channel: 'email', recipientKind: 'building_contact' },
+  { eventType: 'CreditNoteIssued', channel: 'in_app', recipientKind: 'office' },
 ]
 
 /** Template key of an event (one key per event; channel + locale select the row). */
@@ -200,13 +210,20 @@ export const TEMPLATE_KEY_BY_EVENT: Record<NotifiableEventType, string> = {
   DefectFollowUpDue: 'defect_follow_up_due',
   CheckOverdue: 'check_overdue',
   StopLiftRequired: 'stop_lift_required',
+  /** Default only: the DunningStageReached payload carries the stage's own templateKey. */
+  DunningStageReached: 'dunning_reminder',
+  PaymentMatched: 'payment_matched',
+  CreditNoteIssued: 'credit_note_issued',
 }
 
-/** Templates that are not bound to an event (used by reporting / exports / tenancy). */
+/** Templates that are not bound to an event (used by reporting / exports / tenancy / dunning stages). */
 export const SYSTEM_TEMPLATE_KEYS = [
   'building_report',
   'export_ready',
   'tenant_deletion_scheduled',
   'tenant_deletion_cancelled',
   'test_message',
+  'dunning_second',
+  'dunning_final',
+  'statement_sent',
 ] as const

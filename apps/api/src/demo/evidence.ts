@@ -1,20 +1,20 @@
 import sharp from 'sharp'
 import { applicableItems } from '@avroleva/contracts'
 import type { ChecklistItemDef, ChecklistResult } from '@avroleva/contracts'
-import { prismaBase as db } from '../../src/platform/db/prisma.js'
-import { Prisma } from '../../src/generated/prisma/index.js'
-import { newId } from '../../src/platform/ids.js'
-import { adapters } from '../../src/platform/adapters/index.js'
-import { checklists } from '../../src/modules/maintenance/index.js'
-import { sha256Of, storageKeyFor } from '../../src/modules/documents/index.js'
+import { prismaBase as db } from '../platform/db/prisma.js'
+import { Prisma } from '../generated/prisma/index.js'
+import { newId } from '../platform/ids.js'
+import { adapters } from '../platform/adapters/index.js'
+import { checklists } from '../modules/maintenance/index.js'
+import { sha256Of, storageKeyFor } from '../modules/documents/index.js'
 
 /**
- * Step 4 demo data: the newest functional checks of the demo tenant get a checklist snapshot
+ * Demo evidence (moved from the step 4 seed): the newest functional checks of the demo tenant get a checklist snapshot
  * (recorded "from the app"), one or two generated placeholder photos and, on a few, a photo of
  * the logbook page - so the office shows thumbnails and the print page has content. Idempotent:
  * runs only while the tenant has no attachments.
  */
-export async function seedStep4(tenantId: string): Promise<Record<string, number>> {
+export async function seedEvidence(tenantId: string): Promise<Record<string, number>> {
   const counts = { checklistVisits: 0, attachments: 0 }
   if ((await db.attachment.count({ where: { tenantId } })) > 0) return counts
 

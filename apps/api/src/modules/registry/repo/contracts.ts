@@ -85,6 +85,7 @@ export interface ContractData {
   endDate?: Date | null
   status: ContractStatus
   paymentDay?: number | null
+  billing?: Prisma.InputJsonValue | null
   notes?: string | null
   createdBy?: string | null
 }
@@ -101,6 +102,7 @@ export function createContract(
       id: newId(),
       tenantId,
       ...data,
+      billing: data.billing ?? undefined,
       lines: {
         create: lines.map((l) => ({
           id: newId(),

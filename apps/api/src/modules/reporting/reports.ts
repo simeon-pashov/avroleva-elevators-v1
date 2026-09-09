@@ -6,7 +6,9 @@ import type {
   ReportListQuery,
   ReportRunDto,
   SendBuildingReportBody,
+  SendStatementBody,
 } from '@avroleva/contracts'
+import { formatDate } from '@avroleva/i18n'
 import { prismaBase } from '../../platform/db/prisma.js'
 import type { Ctx } from '../../platform/http/ctx.js'
 import { actorOf } from '../../platform/http/ctx.js'
@@ -166,7 +168,7 @@ interface RunRow {
 function toRunDto(r: RunRow, addressText: string | null): ReportRunDto {
   return {
     id: r.id,
-    kind: 'building_month',
+    kind: r.kind === 'statement' ? 'statement' : 'building_month',
     buildingId: r.buildingId,
     buildingAddressText: addressText,
     period: r.period,
@@ -176,13 +178,23 @@ function toRunDto(r: RunRow, addressText: string | null): ReportRunDto {
     error: r.error,
     byUserId: r.byUserId,
     createdAt: r.createdAt.toISOString(),
-    printUrl: r.buildingId ? printUrl(r.buildingId, r.period) : null,
+    printUrl: r.buildingId
+      ? r.kind === 'statement'
+        ? statementPrintUrl(r.buildingId, r.period)
+        : printUrl(r.buildingId, r.period)
+      : null,
   }
+}
+
+function statementPrintUrl(buildingId: string, period: string): string {
+  const base = config.BASE_PATH === '/' ? '' : config.BASE_PATH
+  const [from, to] = period.split('..')
+  return `${base}/print/statement/${buildingId}?from=${from ?? ''}&to=${to ?? ''}`
 }
 
 async function logRun(
   ctx: Ctx,
-  data: Omit<RunRow, 'id' | 'createdAt' | 'kind' | 'byUserId'>,
+  data: Omit<RunRow, 'id' | 'createdAt' | 'kind' | 'byUserId'> & { kind?: string },
 ): Promise<RunRow> {
   return prismaBase.reportRun.create({
     data: {
@@ -193,6 +205,109 @@ async function logRun(
       ...data,
     },
   })
+}
+
+/**
+ * Statement per building by e-mail (ADR 0001): the same HTML as /print/statement as an
+ * attachment, through the `statement_sent` template, logged as a `report_run` of kind
+ * `statement` with the window as the period ("from..to").
+ */
+export async function sendStatement(
+  ctx: Ctx,
+  buildingId: string,
+  body: SendStatementBody,
+): Promise<ReportRunDto> {
+  const st = await billing.statement(ctx, buildingId, { from: body.from, to: body.to })
+  const to = body.email ?? st.contactEmail
+  const period = `${st.from}..${st.to}`
+  if (!to) {
+    const run = await logRun(ctx, {
+      kind: 'statement',
+      buildingId,
+      period,
+      status: 'skipped',
+      sentTo: null,
+      notificationId: null,
+      error: 'reports.noEmail',
+    })
+    throw new AppError(400, 'reports.noEmail', { detail: run.id })
+  }
+  const tenant = await getTenant(ctx.tenantId)
+  const html = billing.renderStatementHtml(st, tenant, ctx.t, { lang: ctx.locale })
+  const openCents = st.openInvoices.reduce((s, i) => s + i.openCents, 0)
+  const label = `${formatDate(st.from, ctx.locale)} – ${formatDate(st.to, ctx.locale)}`
+  try {
+    const n = await reportNotifier().sendEmail(ctx.tenantId, {
+      key: 'statement_sent',
+      to,
+      data: {
+        building: {
+          id: buildingId,
+          addressText: st.buildingAddressText,
+          customerName: st.customerName,
+        },
+        contact: { name: st.contactName ?? '', email: to },
+        bank: st.bank ?? { iban: '' },
+        statement: {
+          periodLabel: label,
+          closingBalanceCents: st.closingBalanceCents,
+          openCount: st.openInvoices.length,
+          openCents,
+          reference: st.epc?.reference ?? st.openInvoices.map((i) => i.paymentReference).join(', '),
+        },
+      },
+      relatedType: 'building',
+      relatedId: buildingId,
+      attachments: [
+        {
+          filename: `izvlechenie-${st.from}-${st.to}.html`,
+          content: html,
+          contentType: 'text/html; charset=utf-8',
+        },
+      ],
+    })
+    const run = await logRun(ctx, {
+      kind: 'statement',
+      buildingId,
+      period,
+      status: 'sent',
+      sentTo: to,
+      notificationId: n.id,
+      error: null,
+    })
+    await reportNotifier().notifyUsers(ctx.tenantId, {
+      key: 'statement_sent',
+      roles: ['owner', 'office'],
+      data: {
+        building: { id: buildingId, addressText: st.buildingAddressText },
+        contact: { name: st.contactName ?? '', email: to },
+        statement: { periodLabel: label, closingBalanceCents: st.closingBalanceCents },
+      },
+      relatedType: 'building',
+      relatedId: buildingId,
+      link: `/buildings/${buildingId}/statement`,
+    })
+    await audit(actorOf(ctx), {
+      action: 'statement.send',
+      entityType: 'report_run',
+      entityId: run.id,
+      after: { buildingId, from: st.from, to: st.to, to_email: to },
+    })
+    return toRunDto(run, st.buildingAddressText)
+  } catch (err) {
+    if (err instanceof AppError) throw err
+    logger.error({ err, buildingId }, 'statement send failed')
+    const run = await logRun(ctx, {
+      kind: 'statement',
+      buildingId,
+      period,
+      status: 'failed',
+      sentTo: to,
+      notificationId: null,
+      error: String((err as Error)?.message ?? err).slice(0, 500),
+    })
+    throw new AppError(500, 'reports.sendFailed', { detail: run.id })
+  }
 }
 
 /** "Generate" without sending: logs the run so the office sees when a report was produced. */

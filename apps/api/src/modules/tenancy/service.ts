@@ -503,6 +503,27 @@ export async function registerTenant(
   return { tenant: toTenantDto(result.tenant), users: [toUserDto(result.owner)] }
 }
 
+/** Platform admin flips one feature flag (demoMode) without touching the rest. */
+export async function adminSetFeature(
+  actor: AuditActor,
+  id: string,
+  key: keyof TenantFeatures,
+  enabled: boolean,
+): Promise<TenantDto> {
+  const current = await tenants.findTenant(id)
+  if (!current) throw notFound()
+  const features = { ...parseFeatures(current.features), [key]: enabled }
+  const updated = await tenants.updateTenant(id, { features })
+  await audit(actor, {
+    action: 'tenant.feature',
+    entityType: 'tenant',
+    entityId: id,
+    before: { [key]: parseFeatures(current.features)[key] },
+    after: { [key]: enabled },
+  })
+  return toTenantDto(updated)
+}
+
 export async function adminListTenants(): Promise<TenantDto[]> {
   return (await tenants.listTenants()).map(toTenantDto)
 }

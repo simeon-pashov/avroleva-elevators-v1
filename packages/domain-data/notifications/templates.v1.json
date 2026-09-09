@@ -436,11 +436,19 @@
         "bg": {
           "body": "Avroleva Elevators: изтриването на данните на {{tenant.name}} е отказано."
         },
-        "en": { "body": "Avroleva Elevators: the data deletion of {{tenant.name}} was cancelled." }
+        "en": {
+          "body": "Avroleva Elevators: the data deletion of {{tenant.name}} was cancelled."
+        }
       },
       "in_app": {
-        "bg": { "subject": "Изтриването на данните е отказано", "body": "Данните остават." },
-        "en": { "subject": "Data deletion cancelled", "body": "The data stays." }
+        "bg": {
+          "subject": "Изтриването на данните е отказано",
+          "body": "Данните остават."
+        },
+        "en": {
+          "subject": "Data deletion cancelled",
+          "body": "The data stays."
+        }
       }
     },
     "test_message": {
@@ -455,12 +463,202 @@
         }
       },
       "sms": {
-        "bg": { "body": "Avroleva Elevators тест за {{tenant.name}}, {{datetime now}}." },
-        "en": { "body": "Avroleva Elevators test for {{tenant.name}}, {{datetime now}}." }
+        "bg": {
+          "body": "Avroleva Elevators тест за {{tenant.name}}, {{datetime now}}."
+        },
+        "en": {
+          "body": "Avroleva Elevators test for {{tenant.name}}, {{datetime now}}."
+        }
       },
       "in_app": {
-        "bg": { "subject": "Тестово уведомление", "body": "Изпратено на {{datetime now}}." },
-        "en": { "subject": "Test notification", "body": "Sent on {{datetime now}}." }
+        "bg": {
+          "subject": "Тестово уведомление",
+          "body": "Изпратено на {{datetime now}}."
+        },
+        "en": {
+          "subject": "Test notification",
+          "body": "Sent on {{datetime now}}."
+        }
+      }
+    },
+    "dunning_reminder": {
+      "email": {
+        "bg": {
+          "subject": "{{tenant.name}}: напомняне за фактура № {{invoice.number}}",
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nНапомняме, че фактура № {{invoice.number}} за {{invoice.period}} ({{building.addressText}}) с падеж {{date invoice.dueAt}} все още не е платена. Дължима сума: {{money invoice.openCents}}.\n{{#if bank.iban}}Плащане по банков път: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Основание: {{invoice.paymentReference}}.\n{{/if}}\nАко вече сте платили, моля, приемете това съобщение за неотправено.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        },
+        "en": {
+          "subject": "{{tenant.name}}: reminder for invoice no. {{invoice.number}}",
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nThis is a reminder that invoice no. {{invoice.number}} for {{invoice.period}} ({{building.addressText}}), due on {{date invoice.dueAt}}, is still unpaid. Amount due: {{money invoice.openCents}}.\n{{#if bank.iban}}Bank transfer: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Reference: {{invoice.paymentReference}}.\n{{/if}}\nIf you have already paid, please disregard this message.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "{{tenant.name}}: напомняне – фактура № {{invoice.number}} ({{building.addressText}}), дължими {{money invoice.openCents}}, падеж {{date invoice.dueAt}}. Основание за плащане: {{invoice.paymentReference}}."
+        },
+        "en": {
+          "body": "{{tenant.name}}: reminder – invoice no. {{invoice.number}} ({{building.addressText}}), {{money invoice.openCents}} due since {{date invoice.dueAt}}. Payment reference: {{invoice.paymentReference}}."
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Напомняне изпратено: фактура № {{invoice.number}}",
+          "body": "{{building.addressText}} – дължими {{money invoice.openCents}}, {{dunning.daysOverdue}} дни след падежа ({{dunning.stageKey}})."
+        },
+        "en": {
+          "subject": "Reminder sent: invoice no. {{invoice.number}}",
+          "body": "{{building.addressText}} – {{money invoice.openCents}} due, {{dunning.daysOverdue}} days past due ({{dunning.stageKey}})."
+        }
+      }
+    },
+    "dunning_second": {
+      "email": {
+        "bg": {
+          "subject": "{{tenant.name}}: второ напомняне за фактура № {{invoice.number}}",
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nФактура № {{invoice.number}} за {{invoice.period}} ({{building.addressText}}) е с изтекъл падеж от {{date invoice.dueAt}} – {{dunning.daysOverdue}} дни. Дължима сума: {{money invoice.openCents}}.\n{{#if bank.iban}}Плащане по банков път: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Основание: {{invoice.paymentReference}}.\n{{/if}}\nМоля, погасете сумата в следващите дни, за да продължим обслужването без прекъсване.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        },
+        "en": {
+          "subject": "{{tenant.name}}: second reminder for invoice no. {{invoice.number}}",
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nInvoice no. {{invoice.number}} for {{invoice.period}} ({{building.addressText}}) has been overdue since {{date invoice.dueAt}} – {{dunning.daysOverdue}} days. Amount due: {{money invoice.openCents}}.\n{{#if bank.iban}}Bank transfer: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Reference: {{invoice.paymentReference}}.\n{{/if}}\nPlease settle the amount in the coming days so that the service continues without interruption.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "{{tenant.name}}: второ напомняне – фактура № {{invoice.number}} ({{building.addressText}}), {{money invoice.openCents}}, {{dunning.daysOverdue}} дни след падежа. Основание: {{invoice.paymentReference}}."
+        },
+        "en": {
+          "body": "{{tenant.name}}: second reminder – invoice no. {{invoice.number}} ({{building.addressText}}), {{money invoice.openCents}}, {{dunning.daysOverdue}} days overdue. Reference: {{invoice.paymentReference}}."
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Второ напомняне: фактура № {{invoice.number}}",
+          "body": "{{building.addressText}} – дължими {{money invoice.openCents}}, {{dunning.daysOverdue}} дни след падежа."
+        },
+        "en": {
+          "subject": "Second reminder: invoice no. {{invoice.number}}",
+          "body": "{{building.addressText}} – {{money invoice.openCents}} due, {{dunning.daysOverdue}} days past due."
+        }
+      }
+    },
+    "dunning_final": {
+      "email": {
+        "bg": {
+          "subject": "{{tenant.name}}: последно напомняне за фактура № {{invoice.number}}",
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nВъпреки предишните напомняния фактура № {{invoice.number}} за {{invoice.period}} ({{building.addressText}}) остава неплатена {{dunning.daysOverdue}} дни след падежа {{date invoice.dueAt}}. Дължима сума: {{money invoice.openCents}}{{#if dunning.lateFeeCents}} (включително такса за забава {{money dunning.lateFeeCents}}){{/if}}.\n{{#if bank.iban}}Плащане по банков път: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Основание: {{invoice.paymentReference}}.\n{{/if}}\nАко сумата не бъде платена, ще се наложи да преразгледаме условията на обслужването. За въпроси: {{tenant.phone}}.\n\n{{tenant.name}}"
+        },
+        "en": {
+          "subject": "{{tenant.name}}: final notice for invoice no. {{invoice.number}}",
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nDespite earlier reminders invoice no. {{invoice.number}} for {{invoice.period}} ({{building.addressText}}) remains unpaid {{dunning.daysOverdue}} days after its due date {{date invoice.dueAt}}. Amount due: {{money invoice.openCents}}{{#if dunning.lateFeeCents}} (including a late fee of {{money dunning.lateFeeCents}}){{/if}}.\n{{#if bank.iban}}Bank transfer: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}{{#if bank.bic}}, BIC {{bank.bic}}{{/if}}. Reference: {{invoice.paymentReference}}.\n{{/if}}\nIf the amount is not paid we will have to review the terms of service. Questions: {{tenant.phone}}.\n\n{{tenant.name}}"
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "{{tenant.name}}: последно напомняне – фактура № {{invoice.number}} ({{building.addressText}}), {{money invoice.openCents}}, {{dunning.daysOverdue}} дни след падежа. Основание: {{invoice.paymentReference}}. Тел. {{tenant.phone}}"
+        },
+        "en": {
+          "body": "{{tenant.name}}: final notice – invoice no. {{invoice.number}} ({{building.addressText}}), {{money invoice.openCents}}, {{dunning.daysOverdue}} days overdue. Reference: {{invoice.paymentReference}}. Tel. {{tenant.phone}}"
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Последно напомняне: фактура № {{invoice.number}}",
+          "body": "{{building.addressText}} – дължими {{money invoice.openCents}}, {{dunning.daysOverdue}} дни след падежа{{#if dunning.lateFeeCents}}, такса за забава {{money dunning.lateFeeCents}}{{/if}}."
+        },
+        "en": {
+          "subject": "Final notice: invoice no. {{invoice.number}}",
+          "body": "{{building.addressText}} – {{money invoice.openCents}} due, {{dunning.daysOverdue}} days past due{{#if dunning.lateFeeCents}}, late fee {{money dunning.lateFeeCents}}{{/if}}."
+        }
+      }
+    },
+    "payment_matched": {
+      "email": {
+        "bg": {
+          "subject": "Постъпило плащане: {{money payment.amountCents}} – {{building.addressText}}",
+          "body": "Постъпило плащане ({{payment.sourceLabel}}) за {{money payment.amountCents}}{{#if invoice.number}} по фактура № {{invoice.number}}{{/if}} ({{building.addressText}}).{{#if payment.reference}} Основание: {{payment.reference}}.{{/if}}\n\n{{tenant.name}}"
+        },
+        "en": {
+          "subject": "Payment received: {{money payment.amountCents}} – {{building.addressText}}",
+          "body": "A payment of {{money payment.amountCents}} arrived ({{payment.sourceLabel}}){{#if invoice.number}} for invoice no. {{invoice.number}}{{/if}} ({{building.addressText}}).{{#if payment.reference}} Reference: {{payment.reference}}.{{/if}}\n\n{{tenant.name}}"
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "Плащане {{money payment.amountCents}}{{#if invoice.number}} по фактура № {{invoice.number}}{{/if}} – {{building.addressText}}."
+        },
+        "en": {
+          "body": "Payment {{money payment.amountCents}}{{#if invoice.number}} for invoice no. {{invoice.number}}{{/if}} – {{building.addressText}}."
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Плащане: {{money payment.amountCents}} – {{building.addressText}}",
+          "body": "{{#if invoice.number}}Фактура № {{invoice.number}}{{#if payment.settled}} е платена изцяло{{else}} – частично плащане{{/if}}.{{else}}Неразпределено плащане за обекта.{{/if}} Източник: {{payment.sourceLabel}}."
+        },
+        "en": {
+          "subject": "Payment: {{money payment.amountCents}} – {{building.addressText}}",
+          "body": "{{#if invoice.number}}Invoice no. {{invoice.number}}{{#if payment.settled}} is paid in full{{else}} – partial payment{{/if}}.{{else}}Unallocated payment for the building.{{/if}} Source: {{payment.sourceLabel}}."
+        }
+      }
+    },
+    "credit_note_issued": {
+      "email": {
+        "bg": {
+          "subject": "{{tenant.name}}: кредитно известие № {{creditNote.number}} към фактура № {{invoice.number}}",
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nИздадохме кредитно известие № {{creditNote.number}} за {{money creditNote.totalCents}} към фактура № {{invoice.number}} ({{building.addressText}}). Основание: {{creditNote.reason}}.\nОстатък за плащане по фактурата: {{money invoice.openCents}}.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        },
+        "en": {
+          "subject": "{{tenant.name}}: credit note no. {{creditNote.number}} to invoice no. {{invoice.number}}",
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nWe issued credit note no. {{creditNote.number}} for {{money creditNote.totalCents}} against invoice no. {{invoice.number}} ({{building.addressText}}). Reason: {{creditNote.reason}}.\nRemaining balance of the invoice: {{money invoice.openCents}}.\n\n{{tenant.name}}\n{{tenant.phone}}"
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "{{tenant.name}}: кредитно известие № {{creditNote.number}} за {{money creditNote.totalCents}} към фактура № {{invoice.number}}. Остатък: {{money invoice.openCents}}."
+        },
+        "en": {
+          "body": "{{tenant.name}}: credit note no. {{creditNote.number}} for {{money creditNote.totalCents}} against invoice no. {{invoice.number}}. Remaining: {{money invoice.openCents}}."
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Кредитно известие № {{creditNote.number}}: фактура № {{invoice.number}}",
+          "body": "{{building.addressText}} – {{money creditNote.totalCents}}, {{creditNote.reason}}. Остатък {{money invoice.openCents}}."
+        },
+        "en": {
+          "subject": "Credit note no. {{creditNote.number}}: invoice no. {{invoice.number}}",
+          "body": "{{building.addressText}} – {{money creditNote.totalCents}}, {{creditNote.reason}}. Remaining {{money invoice.openCents}}."
+        }
+      }
+    },
+    "statement_sent": {
+      "email": {
+        "bg": {
+          "subject": "{{tenant.name}}: извлечение за {{building.addressText}} ({{statement.periodLabel}})",
+          "body": "Здравейте{{#if contact.name}}, {{contact.name}}{{/if}},\n\nПрилагаме извлечението по сметката на {{building.addressText}} за периода {{statement.periodLabel}}: издадени фактури, постъпили плащания и текущо салдо {{money statement.closingBalanceCents}}.{{#if statement.openCount}}\nОтворени фактури: {{statement.openCount}} на обща стойност {{money statement.openCents}}.{{/if}}\n{{#if bank.iban}}Плащане по банков път: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}. Основание: {{statement.reference}}.\n{{/if}}\n{{tenant.name}}\n{{tenant.phone}}"
+        },
+        "en": {
+          "subject": "{{tenant.name}}: statement for {{building.addressText}} ({{statement.periodLabel}})",
+          "body": "Hello{{#if contact.name}}, {{contact.name}}{{/if}},\n\nAttached is the account statement for {{building.addressText}} for {{statement.periodLabel}}: invoices issued, payments received and the current balance of {{money statement.closingBalanceCents}}.{{#if statement.openCount}}\nOpen invoices: {{statement.openCount}} totalling {{money statement.openCents}}.{{/if}}\n{{#if bank.iban}}Bank transfer: {{bank.beneficiary}}, IBAN {{bank.ibanFormatted}}. Reference: {{statement.reference}}.\n{{/if}}\n{{tenant.name}}\n{{tenant.phone}}"
+        }
+      },
+      "sms": {
+        "bg": {
+          "body": "{{tenant.name}}: извлечение за {{building.addressText}}, салдо {{money statement.closingBalanceCents}}."
+        },
+        "en": {
+          "body": "{{tenant.name}}: statement for {{building.addressText}}, balance {{money statement.closingBalanceCents}}."
+        }
+      },
+      "in_app": {
+        "bg": {
+          "subject": "Извлечение изпратено: {{building.addressText}}",
+          "body": "{{statement.periodLabel}} – салдо {{money statement.closingBalanceCents}}, изпратено на {{contact.email}}."
+        },
+        "en": {
+          "subject": "Statement sent: {{building.addressText}}",
+          "body": "{{statement.periodLabel}} – balance {{money statement.closingBalanceCents}}, sent to {{contact.email}}."
+        }
       }
     }
   }

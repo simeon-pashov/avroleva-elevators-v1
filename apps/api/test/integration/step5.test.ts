@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import request from 'supertest'
+import { RULE_MATRIX } from '@avroleva/contracts'
 import type { Express } from 'express'
 import { randomUUID } from 'node:crypto'
 import { disconnectDb, prismaBase } from '../../src/platform/db/prisma.js'
@@ -162,7 +163,7 @@ describe('notification rules and templates', () => {
   it('lists the default rule set (seeded on first read) and toggles a rule', async () => {
     const res = await request(server).get('/api/v1/notifications/rules').set(bearer(A.ownerToken))
     expect(res.status, res.text).toBe(200)
-    expect(res.body.items.length).toBe(18)
+    expect(res.body.items.length).toBe(RULE_MATRIX.length)
     const visitEmail = res.body.items.find(
       (r: { eventType: string; channel: string; recipientKind: string }) =>
         r.eventType === 'VisitRecorded' &&

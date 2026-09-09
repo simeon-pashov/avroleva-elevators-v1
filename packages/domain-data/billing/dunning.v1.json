@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "stages": [
+    {
+      "key": "reminder",
+      "offsetDays": 3,
+      "channel": "email",
+      "templateKey": "dunning_reminder",
+      "lateFeeRuleKey": null
+    },
+    {
+      "key": "second_reminder",
+      "offsetDays": 14,
+      "channel": "email",
+      "templateKey": "dunning_second",
+      "lateFeeRuleKey": null
+    },
+    {
+      "key": "final_notice",
+      "offsetDays": 30,
+      "channel": "viber_link",
+      "templateKey": "dunning_final",
+      "lateFeeRuleKey": "late_fee"
+    }
+  ],
+  "lateFeeRules": [
+    {
+      "key": "late_fee",
+      "kind": "flat",
+      "amountCents": 1000,
+      "percentBp": 0,
+      "graceDays": 30,
+      "capCents": 5000,
+      "enabled": false
+    }
+  ]
+}

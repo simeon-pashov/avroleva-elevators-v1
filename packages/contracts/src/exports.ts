@@ -70,7 +70,7 @@ export type ReportRunStatus = z.infer<typeof ReportRunStatus>
 
 export interface ReportRunDto {
   id: string
-  kind: 'building_month'
+  kind: 'building_month' | 'statement'
   buildingId: string | null
   buildingAddressText: string | null
   period: string

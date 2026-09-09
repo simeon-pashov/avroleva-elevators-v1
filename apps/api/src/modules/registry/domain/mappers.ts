@@ -1,3 +1,4 @@
+import { contractBilling } from '@avroleva/contracts'
 import type {
   Address,
   BuildingDto,
@@ -182,6 +183,7 @@ export function toContractDto(
     endDate: toDateOnly(c.endDate),
     status: c.status,
     paymentDay: c.paymentDay,
+    billing: parseContractBilling(c.billing),
     notes: c.notes,
     terminatedReason: c.terminatedReason,
     lines: c.lines.map(toContractLineDto),
@@ -206,4 +208,11 @@ export function toImportBatchDto(b: ImportBatch): ImportBatchDto {
     created: created ?? null,
     createdAt: iso(b.createdAt),
   }
+}
+
+/** The per-contract billing override (ADR 0001) or null; a malformed value reads as null. */
+export function parseContractBilling(raw: unknown): ContractDto['billing'] {
+  if (raw == null) return null
+  const r = contractBilling.safeParse(raw)
+  return r.success ? { ...r.data, anchorDay: r.data.anchorDay ?? null } : null
 }

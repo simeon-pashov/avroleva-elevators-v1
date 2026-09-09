@@ -26,6 +26,9 @@ export const NOTIFIABLE_EVENTS = [
   'DefectFollowUpDue',
   'CheckOverdue',
   'StopLiftRequired',
+  'DunningStageReached',
+  'PaymentMatched',
+  'CreditNoteIssued',
 ] as const
 
 /** Every (event type, handler name) pair registered below - the seed uses it to acknowledge history. */

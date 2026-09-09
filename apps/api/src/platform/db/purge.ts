@@ -27,9 +27,17 @@ export const PURGE_ORDER: readonly string[] = [
   'defect',
   'callback_event',
   'callback',
+  'payment_link',
+  'bank_import_row',
+  'bank_import',
+  'invoice_adjustment',
+  'credit_note',
+  'credit_note_sequence',
   'payment',
   'invoice',
   'invoice_sequence',
+  'dunning_stage',
+  'late_fee_rule',
   'visit_technician',
   'visit',
   'import_batch',
@@ -89,5 +97,83 @@ export async function purgeTenantData(
     },
   )
   logger.info({ tenantId, rows, files }, 'tenant purged')
+  return { tenantId, rows, files }
+}
+
+/**
+ * Operational data only (ADR 0001 section 6, demo reset): everything a year of running the
+ * business produced - visits, callbacks, defects, inspections, money, notifications, reports,
+ * exports, events - while the tenant, its users, settings, customers, buildings, elevators and
+ * contracts stay. Only the demo reset calls this, and only for tenants with `demoMode` on (the
+ * caller checks). Attachments' files go through the storage port first.
+ */
+export const OPERATIONAL_PURGE_ORDER: readonly string[] = [
+  'idempotency_key',
+  'notification',
+  'report_run',
+  'export_job',
+  'visit_attachment',
+  'attachment',
+  'alarm_device_test',
+  'inspection',
+  'defect',
+  'callback_event',
+  'callback',
+  'payment_link',
+  'bank_import_row',
+  'bank_import',
+  'invoice_adjustment',
+  'credit_note',
+  'credit_note_sequence',
+  'payment',
+  'invoice',
+  'invoice_sequence',
+  'visit_technician',
+  'visit',
+  'domain_event',
+]
+
+export async function purgeOperationalData(
+  tenantId: string,
+  fileKeys: string[],
+  actorNote: string,
+): Promise<PurgeResult> {
+  let files = 0
+  for (const key of fileKeys) {
+    try {
+      await adapters.storage.remove(key)
+      files++
+    } catch (err) {
+      logger.warn({ err, key }, 'demo reset: file removal failed (continuing)')
+    }
+  }
+  const rows: Record<string, number> = {}
+  await prismaBase.$transaction(async (tx) => {
+    rows.event_delivery = await tx.$executeRawUnsafe(
+      `DELETE FROM "event_delivery" WHERE "eventId" IN (SELECT id FROM "domain_event" WHERE "tenantId" = $1::uuid)`,
+      tenantId,
+    )
+    for (const table of OPERATIONAL_PURGE_ORDER) {
+      rows[table] = await tx.$executeRawUnsafe(
+        `DELETE FROM "${table}" WHERE "tenantId" = $1::uuid`,
+        tenantId,
+      )
+    }
+    // The registry keeps its rows but forgets the derived evidence dates.
+    rows.elevator_reset = await tx.$executeRawUnsafe(
+      `UPDATE "elevator" SET "lastCheckAt" = NULL, "nextCheckDueAt" = NULL, "nextCheckOverrideAt" = NULL WHERE "tenantId" = $1::uuid`,
+      tenantId,
+    )
+  })
+  await audit(
+    { tenantId, actorType: 'system', actorId: null, requestId: 'tenancy.demoReset' },
+    {
+      action: 'tenant.demoReset',
+      entityType: 'tenant',
+      entityId: tenantId,
+      after: { rows, files, note: actorNote },
+    },
+  )
+  logger.info({ tenantId, rows, files }, 'demo tenant operational data purged')
   return { tenantId, rows, files }
 }

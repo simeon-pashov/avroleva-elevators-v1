@@ -21,7 +21,7 @@ import { actorOf, systemCtx } from '../../platform/http/ctx.js'
 import { AppError, notFound } from '../../platform/http/errors.js'
 import { audit } from '../../platform/audit.js'
 import { adapters } from '../../platform/adapters/index.js'
-import { clock } from '../../platform/clock.js'
+import { clock, todayInSofia } from '../../platform/clock.js'
 import { logger } from '../../platform/logger.js'
 import { urls } from '../../platform/urls.js'
 import { config } from '../../platform/config.js'
@@ -29,8 +29,8 @@ import { enqueue } from '../../platform/jobs/boss.js'
 import { defineJob } from '../../platform/jobs/registry.js'
 import type { PublishedEvent } from '../../platform/events/bus.js'
 import type { EmailAttachment } from '../../platform/ports/notifications.js'
-import { getTenant, listNotifiableUsers } from '../tenancy/index.js'
-import { contacts as contactsApi, elevators } from '../registry/index.js'
+import { getTenant, getTenantSettings, listNotifiableUsers } from '../tenancy/index.js'
+import { buildings, contacts as contactsApi, elevators } from '../registry/index.js'
 import * as visits from '../visits/index.js'
 import * as callbacks from '../callbacks/index.js'
 import * as billing from '../billing/index.js'
@@ -632,8 +632,16 @@ async function contextFor(
       }
     }
     case 'InvoiceIssued':
-    case 'InvoiceOverdue': {
+    case 'InvoiceOverdue':
+    case 'DunningStageReached':
+    case 'CreditNoteIssued': {
       const inv = await billing.get(ctx, event.aggregateId)
+      const settings = await getTenantSettings(tenantId)
+      const bank = billing.bankDetailsOf(settings, tenant.name)
+      const daysOverdue =
+        typeof p.dueAt === 'string'
+          ? Math.max(0, Math.round((Date.parse(todayInSofia()) - Date.parse(p.dueAt)) / 86_400_000))
+          : inv.daysOverdue
       return {
         data: {
           ...base,
@@ -641,10 +649,22 @@ async function contextFor(
           elevator: { internalNo: '' },
           invoice: {
             number: inv.number,
+            paymentReference: inv.paymentReference,
             period: inv.period,
             totalCents: inv.totalCents,
             openCents: inv.openCents,
             dueAt: inv.dueAt,
+          },
+          bank: bank ?? { iban: '' },
+          dunning: {
+            stageKey: p.stageKey ?? null,
+            daysOverdue,
+            lateFeeCents: typeof p.lateFeeCents === 'number' ? p.lateFeeCents : 0,
+          },
+          creditNote: {
+            number: p.number ?? null,
+            totalCents: typeof p.totalCents === 'number' ? p.totalCents : 0,
+            reason: p.reason ?? '',
           },
         },
         buildingId: inv.buildingId,
@@ -652,7 +672,45 @@ async function contextFor(
         assignedUserId: null,
         relatedType: 'invoice',
         relatedId: inv.id,
-        link: officeLink(`/buildings/${inv.buildingId}`),
+        link: officeLink(`/invoices/${inv.id}`),
+      }
+    }
+    case 'PaymentMatched': {
+      const invoiceId = typeof p.invoiceId === 'string' ? p.invoiceId : null
+      const inv = invoiceId ? await billing.get(ctx, invoiceId) : null
+      const buildingId = String(p.buildingId ?? inv?.buildingId ?? '')
+      const b = buildingId ? await buildings.find(tenantId, buildingId) : null
+      const source = String(p.source ?? 'manual')
+      return {
+        data: {
+          ...base,
+          building: {
+            id: buildingId,
+            addressText: b?.addressText ?? inv?.buildingAddressText ?? '',
+          },
+          elevator: { internalNo: '' },
+          invoice: inv
+            ? {
+                number: inv.number,
+                paymentReference: inv.paymentReference,
+                openCents: inv.openCents,
+              }
+            : { number: null },
+          payment: {
+            amountCents: typeof p.amountCents === 'number' ? p.amountCents : 0,
+            source,
+            sourceLabel: t(`enum.paymentSource.${source}`),
+            provider: p.provider ?? null,
+            reference: p.reference ?? null,
+            settled: p.settled === true,
+          },
+        },
+        buildingId: buildingId || null,
+        elevatorId: null,
+        assignedUserId: null,
+        relatedType: inv ? 'invoice' : 'payment',
+        relatedId: inv ? inv.id : event.aggregateId,
+        link: officeLink(inv ? `/invoices/${inv.id}` : `/buildings/${buildingId}`),
       }
     }
     case 'InspectionDueSoon':
@@ -739,11 +797,23 @@ export async function handleEvent(event: PublishedEvent): Promise<void> {
   const locale = resolveLocale(tenant.locale)
   const cx = await contextFor(tenantId, locale, event)
   if (!cx) return
-  const key = templateKeyFor(event.type)
+  // Dunning as data (ADR 0001): the stage row names the template and the contact channel.
+  const stageTemplate =
+    event.type === 'DunningStageReached' && typeof event.payload.templateKey === 'string'
+      ? event.payload.templateKey
+      : null
+  const stageChannel =
+    event.type === 'DunningStageReached' && typeof event.payload.channel === 'string'
+      ? (event.payload.channel as NotificationChannel)
+      : null
+  const key = stageTemplate ?? templateKeyFor(event.type)
   const users = await listNotifiableUsers(tenantId)
   const contacts = cx.buildingId ? await buildingContacts(tenantId, cx.buildingId) : []
 
   for (const rule of rules) {
+    // A building-contact rule fires only on the stage's channel (in_app stages reach the office only).
+    if (stageChannel && rule.recipientKind === 'building_contact' && rule.channel !== stageChannel)
+      continue
     const common = {
       key,
       ruleId: rule.id,

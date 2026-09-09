@@ -55,6 +55,12 @@ export interface EventBus {
     tenantId: string,
     handlers: ReadonlyArray<{ type: string; name: string }>,
   ): Promise<number>
+  /**
+   * Runs `fn` with dispatch suppressed: events are still written to `domain_event` (history,
+   * dedupe) but no handler is enqueued. The demo-data generator uses it and then acknowledges
+   * the tenant's events, so a year of generated history never reaches an inbox or an SMTP server.
+   */
+  runQuiet<T>(fn: () => Promise<T>): Promise<T>
 }
 
 export const MAX_DELIVERY_ATTEMPTS = 5
@@ -68,6 +74,16 @@ interface Subscription {
 class OutboxEventBus implements EventBus {
   private handlers = new Map<string, Subscription[]>()
   private anon = 0
+  private quiet = 0
+
+  async runQuiet<T>(fn: () => Promise<T>): Promise<T> {
+    this.quiet++
+    try {
+      return await fn()
+    } finally {
+      this.quiet--
+    }
+  }
 
   async publish(ctx: EventContext, event: DomainEventInput, tx?: Tx): Promise<PublishedEvent> {
     const db: Tx = tx ?? (prismaBase as unknown as Tx)
@@ -93,7 +109,7 @@ class OutboxEventBus implements EventBus {
     }
     // Dispatch after the caller's transaction has a chance to commit (next tick). With pg-boss the
     // job may still run before the commit lands: the dispatcher then finds no row and retries.
-    setImmediate(() => void this.dispatch(published))
+    if (this.quiet === 0) setImmediate(() => void this.dispatch(published))
     return published
   }
 

@@ -45,6 +45,17 @@ const schema = z.object({
   /** Generic HTTP SMS gateway: POST {to, text} as JSON with `Authorization: Bearer SMS_HTTP_TOKEN`. */
   SMS_HTTP_URL: z.string().optional(),
   SMS_HTTP_TOKEN: z.string().optional(),
+  /** Payment provider stubs (ADR 0001 section 3): keys are validated, the adapters stay disabled until integrated. */
+  IRIS_API_KEY: z.string().min(8).optional(),
+  IRIS_WEBHOOK_SECRET: z.string().min(8).optional(),
+  STRIPE_SECRET_KEY: z
+    .string()
+    .regex(/^(sk|rk)_/, 'must start with sk_ or rk_')
+    .optional(),
+  STRIPE_WEBHOOK_SECRET: z
+    .string()
+    .regex(/^whsec_/, 'must start with whsec_')
+    .optional(),
   /** api | worker | all (ARCHITECTURE section 6). `all` runs the pg-boss worker inside the API process. */
   ROLE: z.enum(['api', 'worker', 'all']).default('all'),
   /** false = no pg-boss at all: events are delivered in-process, crons do not run (tests). */

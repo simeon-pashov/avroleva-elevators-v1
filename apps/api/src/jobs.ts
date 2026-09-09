@@ -14,6 +14,7 @@ import * as documents from './modules/documents/index.js'
 import * as calendar from './modules/calendar/index.js'
 import { calendarItems, exportStorageKeys, runFullExport } from './modules/reporting/index.js'
 import * as notifications from './modules/notifications/index.js'
+import { listDemoTenantIds, resetDemoTenant } from './demo/reset.js'
 
 /**
  * Scheduled jobs (ARCHITECTURE section 6, D9) - the composition root of the worker. Every cron is
@@ -54,6 +55,22 @@ export function registerJobs(): void {
     description:
       'Daily 00:10: issued -> overdue when dueAt < today; emits InvoiceOverdue once per invoice.',
     handler: () => forEachTenant('billing.rollOverdue', (t) => billing.rollStatuses(t.id)),
+  })
+
+  defineJob({
+    name: 'billing.run',
+    cron: '0 6 * * *',
+    description:
+      'Daily 06:00: from tenant.settings.billing.runDay, issues the invoices of the current month for every active contract (idempotent per contract + period).',
+    handler: () => forEachTenant('billing.run', (t) => billing.runScheduled(t.id)),
+  })
+
+  defineJob({
+    name: 'billing.dunning',
+    cron: '30 6 * * *',
+    description:
+      'Daily 06:30: moves open invoices to the dunning stage whose day has come (data-driven stages), applies late fees, emits DunningStageReached.',
+    handler: () => forEachTenant('billing.dunning', (t) => billing.runDunning(t.id)),
   })
 
   defineJob({
@@ -228,6 +245,26 @@ export function registerJobs(): void {
         }
       }
       return { purged }
+    },
+  })
+
+  defineJob({
+    name: 'tenancy.demoReset',
+    cron: '0 4 * * *',
+    description:
+      'Daily 04:00: tenants with features.demoMode - operational data deleted and regenerated from the demo generator (audit entry).',
+    handler: async () => {
+      const out: Record<string, unknown> = {}
+      for (const id of await listDemoTenantIds()) {
+        try {
+          const r = await resetDemoTenant(id, { note: 'nightly reset' })
+          out[id] = { files: r.files, ...r.generated.counts }
+        } catch (err) {
+          logger.error({ err, tenantId: id }, 'demo reset failed')
+          out[id] = { error: String((err as Error)?.message ?? err).slice(0, 500) }
+        }
+      }
+      return out
     },
   })
 

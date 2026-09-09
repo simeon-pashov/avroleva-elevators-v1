@@ -272,6 +272,16 @@ export const contractLine = z.object({
 })
 export type ContractLine = z.infer<typeof contractLine>
 
+/** Per-contract billing override (ADR 0001): cycle, run day and exemption; null = tenant default. */
+export const contractBilling = z.object({
+  cycle: z.enum(['monthly', 'quarterly', 'yearly']).default('monthly'),
+  /** Day of month this contract is billed on (overrides the tenant run day); null = tenant default. */
+  anchorDay: z.number().int().min(1).max(28).nullable().optional(),
+  /** Never generate invoices for this contract (billed outside the product). */
+  exempt: z.boolean().default(false),
+})
+export type ContractBilling = z.infer<typeof contractBilling>
+
 export const createContractBody = z.object({
   customerId: uuid,
   buildingId: uuid,
@@ -279,6 +289,7 @@ export const createContractBody = z.object({
   endDate: nullableDate,
   status: ContractStatus.default('active'),
   paymentDay: nullableNumber(z.number().int().min(1).max(28)),
+  billing: contractBilling.nullable().optional(),
   notes: nullableText(4000),
   lines: z.array(contractLine).min(1),
 })
@@ -312,6 +323,7 @@ export interface ContractDto {
   endDate: string | null
   status: z.infer<typeof ContractStatus>
   paymentDay: number | null
+  billing: ContractBilling | null
   notes: string | null
   terminatedReason: string | null
   lines: ContractLineDto[]

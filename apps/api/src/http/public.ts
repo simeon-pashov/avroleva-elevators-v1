@@ -11,6 +11,8 @@ import { getTenant, getTenantFeatures } from '../modules/tenancy/index.js'
 import { elevators } from '../modules/registry/index.js'
 import { latestVisitAt } from '../modules/visits/index.js'
 import * as callbacks from '../modules/callbacks/index.js'
+import * as billing from '../modules/billing/index.js'
+import { formatMoney } from '@avroleva/i18n'
 import { esc, page } from './templates/html.js'
 
 /**
@@ -78,6 +80,11 @@ const CSS = `
   .err { background: #fee2e2; color: #991b1b; padding: 10px 12px; border-radius: 8px; margin-bottom: 10px; }
   .ok-box { background: #dcfce7; color: #166534; padding: 12px; border-radius: 8px; font-weight: 600; }
   footer { color: #777; font-size: .8em; text-align: center; padding: 12px; }
+  .pay { display: flex; gap: 14px; align-items: flex-start; }
+  .pay svg { width: 120px; height: 120px; flex: none; }
+  .iban { font-family: ui-monospace, Consolas, monospace; font-size: 1.05em; letter-spacing: .04em; }
+  .ref { font-family: ui-monospace, Consolas, monospace; font-weight: 700; }
+  .copy { font: inherit; font-size: .8em; padding: 2px 8px; border: 1px solid #1d4ed8; border-radius: 4px; background: #fff; color: #1d4ed8; cursor: pointer; margin-left: 6px; }
 `
 
 async function resolve(req: Request) {
@@ -124,6 +131,10 @@ async function render(
     : '—'
   const v = opts.values ?? {}
   const tel = tenant.emergencyPhone.replace(/\s+/g, '')
+  const pay = await billing.publicPayment(e.tenantId, e.buildingId)
+  const payCard = pay
+    ? `<div class="card"><h2>${esc(t('public.payTitle'))}</h2><p class="small muted">${esc(t('public.payHint', { count: pay.openCount }))}</p>${billing.payBlock(t, pay.bank, pay.epc, pay.reference, formatMoney(pay.openCents, locale))}</div>`
+    : ''
   const form = features.publicFaultReport
     ? opts.done
       ? `<div class="card"><div class="ok-box">${esc(t('public.thanks'))}</div><p class="small muted" style="margin-top:10px">${esc(t('public.thanksHint'))}</p></div>`
@@ -165,8 +176,12 @@ async function render(
         </dl>
       </div>
       ${form}
+      ${payCard}
       <footer>${esc(t('public.footer'))}</footer>
     </div>`,
+    script: pay
+      ? `${config.BASE_PATH === '/' ? '' : config.BASE_PATH}/print/assets/print.js`
+      : undefined,
   })
 }
 

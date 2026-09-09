@@ -1,16 +1,16 @@
-import { prismaBase as db } from '../../src/platform/db/prisma.js'
-import { newId } from '../../src/platform/ids.js'
-import { addDays, fromDateOnly } from '../../src/platform/clock.js'
-import { addMonthsDateOnly } from '../../src/modules/calendar/index.js'
+import { prismaBase as db } from '../platform/db/prisma.js'
+import { newId } from '../platform/ids.js'
+import { addDays, fromDateOnly } from '../platform/clock.js'
+import { addMonthsDateOnly } from '../modules/calendar/index.js'
 import { defectCatalog } from '@avroleva/domain-data'
 import type {
   CallbackClassification,
   CallbackChannel,
   ElevatorStatus,
-} from '../../src/generated/prisma/index.js'
+} from '../generated/prisma/index.js'
 
 /**
- * Step 3 demo data: callbacks with realistic timelines (some over the 60-minute limit), open
+ * Demo incidents (moved from the step 3 seed): callbacks with realistic timelines (some over the 60-minute limit), open
  * defects (two stop-lift ones on the already-stopped elevators), an inspection per elevator with
  * the next date spread over the next 14 months (a few overdue), alarm-device tests. Idempotent:
  * callbacks / defects / alarm tests are only created when the tenant has none; inspections are
@@ -237,27 +237,27 @@ const CALLBACKS: CallbackSeed[] = [
   },
 ]
 
-export async function seedStep3(
+export async function seedIncidents(
   tenantId: string,
   elevators: SeedElevator[],
   today: string,
 ): Promise<Record<string, number>> {
   const counts = { callbacks: 0, defects: 0, inspections: 0, alarmTests: 0 }
-  const ivan = await db.user.findUnique({ where: { username: 'ivan' }, select: { id: true } })
-  const demo = await db.user.findUnique({ where: { username: 'demo' }, select: { id: true } })
+  const ivan = await db.user.findFirst({
+    where: { tenantId, role: 'technician', isActive: true, deletedAt: null },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true, name: true },
+  })
+  const demo = await db.user.findFirst({
+    where: { tenantId, role: 'owner', isActive: true, deletedAt: null },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true },
+  })
   const active = elevators.filter((e) => e.status === 'active')
   const stopped = elevators.filter(
     (e) => e.status === 'stopped_by_firm' || e.status === 'stopped_by_authority',
   )
   const now = new Date()
-
-  // Demo tenant: flags on, alarm-test cadence tracked (settings merge keeps the rest).
-  const tenant = await db.tenant.findUnique({ where: { id: tenantId } })
-  if (tenant) {
-    const settings = { ...(tenant.settings as object), alarmTestIntervalMonths: 6 }
-    const features = { ...(tenant.features as object), publicQrPage: true, publicFaultReport: true }
-    await db.tenant.update({ where: { id: tenantId }, data: { settings, features } })
-  }
 
   // ---- callbacks
   if ((await db.callback.count({ where: { tenantId } })) === 0 && active.length > 0) {
@@ -320,7 +320,7 @@ export async function seedStep3(
                   tenantId,
                   userId: ivan?.id ?? null,
                   position: 1,
-                  name: 'Иван Петров',
+                  name: ivan?.name ?? 'Иван Петров',
                 },
               ],
             },

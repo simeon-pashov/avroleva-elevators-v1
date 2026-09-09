@@ -368,6 +368,8 @@ model Contract {
   endDate          DateTime?      @db.Date
   status           ContractStatus @default(active)
   paymentDay       Int?
+  /// Billing override (ADR 0001): {cycle: monthly|quarterly|yearly, anchorDay?, exempt}; null = tenant default.
+  billing          Json?
   notes            String?
   terminatedReason String?
   createdBy        String?        @db.Uuid
@@ -580,6 +582,48 @@ enum InvoiceStatus {
   paid
   overdue
   void
+  partially_paid
+}
+
+enum PaymentSource {
+  manual
+  bank_import
+  provider
+}
+
+enum AdjustmentKind {
+  late_fee
+}
+
+enum LateFeeKind {
+  flat
+  percent
+}
+
+enum BankImportStatus {
+  preview
+  committed
+}
+
+enum BankRowStatus {
+  proposed
+  matched
+  unallocated
+  ignored
+  booked
+}
+
+enum BankMatchKind {
+  reference
+  amount_name
+  manual
+  none
+}
+
+enum PaymentLinkStatus {
+  open
+  paid
+  expired
 }
 
 enum PaymentMethod {
@@ -597,36 +641,52 @@ model InvoiceSequence {
 }
 
 model Invoice {
-  id          String        @id @db.Uuid
-  tenantId    String        @db.Uuid
-  contractId  String        @db.Uuid
-  buildingId  String        @db.Uuid
-  customerId  String        @db.Uuid
-  number      Int
-  periodStart DateTime      @db.Date
-  periodEnd   DateTime      @db.Date
-  issuedAt    DateTime      @db.Date
-  dueAt       DateTime      @db.Date
-  amountCents Int
-  vatCents    Int
-  totalCents  Int
-  paidCents   Int           @default(0)
-  currency    String        @default("EUR")
-  status      InvoiceStatus @default(issued)
+  id               String        @id @db.Uuid
+  tenantId         String        @db.Uuid
+  contractId       String        @db.Uuid
+  buildingId       String        @db.Uuid
+  customerId       String        @db.Uuid
+  number           Int
+  periodStart      DateTime      @db.Date
+  periodEnd        DateTime      @db.Date
+  issuedAt         DateTime      @db.Date
+  dueAt            DateTime      @db.Date
+  amountCents      Int
+  vatCents         Int
+  totalCents       Int
+  paidCents        Int           @default(0)
+  currency         String        @default("EUR")
+  status           InvoiceStatus @default(issued)
   /// [{elevatorId, description, amountCents}]
-  lines       Json          @default("[]")
-  paidAt      DateTime?     @db.Date
-  voidedAt    DateTime?     @db.Timestamptz
-  voidReason  String?
-  createdAt   DateTime      @default(now()) @db.Timestamptz
-  updatedAt   DateTime      @updatedAt @db.Timestamptz
+  lines            Json          @default("[]")
+  paidAt           DateTime?     @db.Date
+  voidedAt         DateTime?     @db.Timestamptz
+  voidReason       String?
+  /// Immutable payer reference printed on every document: AE-<last 4 of EIK>-<6-digit number>.
+  paymentReference String        @default("")
+  /// 0 = no dunning yet, else the position of the last stage reached (ADR 0001).
+  dunningStage     Int           @default(0)
+  dunningStageKey  String?
+  dunningAt        DateTime?     @db.Timestamptz
+  /// Denormalised sums: late-fee adjustments and credit notes (open = total + lateFee - credited - paid).
+  lateFeeCents     Int           @default(0)
+  creditedCents    Int           @default(0)
+  /// contract (billing run) today; job (repair jobs / quotes) from step 8.
+  sourceType       String        @default("contract")
+  sourceId         String?       @db.Uuid
+  createdAt        DateTime      @default(now()) @db.Timestamptz
+  updatedAt        DateTime      @updatedAt @db.Timestamptz
 
-  tenant   Tenant    @relation(fields: [tenantId], references: [id])
-  building Building  @relation(fields: [buildingId], references: [id])
-  payments Payment[]
+  tenant       Tenant              @relation(fields: [tenantId], references: [id])
+  building     Building            @relation(fields: [buildingId], references: [id])
+  payments     Payment[]
+  creditNotes  CreditNote[]
+  adjustments  InvoiceAdjustment[]
+  paymentLinks PaymentLink[]
 
   @@unique([tenantId, number])
   @@unique([tenantId, contractId, periodStart])
+  @@unique([tenantId, paymentReference])
   @@index([tenantId, status, dueAt])
   @@index([tenantId, buildingId, periodStart(sort: Desc)])
   @@index([tenantId, periodStart(sort: Desc)])
@@ -642,6 +702,13 @@ model Payment {
   paidAt          DateTime      @db.Date
   method          PaymentMethod @default(bank)
   note            String?
+  /// What the payer wrote (the invoice's paymentReference when matched by it).
+  reference       String?
+  source          PaymentSource @default(manual)
+  provider        String?
+  providerRef     String?
+  counterparty    String?
+  bankImportRowId String?       @db.Uuid
   createdByUserId String?       @db.Uuid
   createdAt       DateTime      @default(now()) @db.Timestamptz
 
@@ -652,7 +719,156 @@ model Payment {
   @@index([tenantId, invoiceId])
   @@index([tenantId, buildingId, paidAt(sort: Desc)])
   @@index([tenantId, paidAt(sort: Desc)])
+  @@index([tenantId, providerRef])
   @@map("payment")
+}
+
+/// Credit notes (ADR 0001): a numbered document that reduces an issued invoice's open balance.
+model CreditNote {
+  id              String   @id @db.Uuid
+  tenantId        String   @db.Uuid
+  invoiceId       String   @db.Uuid
+  number          Int
+  issuedAt        DateTime @db.Date
+  amountCents     Int
+  vatCents        Int
+  totalCents      Int
+  reason          String
+  createdByUserId String?  @db.Uuid
+  createdAt       DateTime @default(now()) @db.Timestamptz
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@unique([tenantId, number])
+  @@index([tenantId, invoiceId])
+  @@index([tenantId, issuedAt(sort: Desc)])
+  @@map("credit_note")
+}
+
+model CreditNoteSequence {
+  tenantId   String @id @db.Uuid
+  nextNumber Int    @default(1)
+
+  @@map("credit_note_sequence")
+}
+
+/// Late fees and similar additions to an invoice's balance; the invoice row is never edited.
+model InvoiceAdjustment {
+  id          String         @id @db.Uuid
+  tenantId    String         @db.Uuid
+  invoiceId   String         @db.Uuid
+  kind        AdjustmentKind @default(late_fee)
+  amountCents Int
+  reason      String?
+  stageKey    String?
+  createdAt   DateTime       @default(now()) @db.Timestamptz
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@index([tenantId, invoiceId])
+  @@map("invoice_adjustment")
+}
+
+/// Dunning as data: system rows (tenantId NULL) and tenant rows; a tenant with rows uses only its own.
+model DunningStage {
+  id             String              @id @db.Uuid
+  tenantId       String?             @db.Uuid
+  key            String
+  position       Int
+  offsetDays     Int
+  channel        NotificationChannel
+  templateKey    String
+  lateFeeRuleKey String?
+  active         Boolean             @default(true)
+  createdAt      DateTime            @default(now()) @db.Timestamptz
+  updatedAt      DateTime            @updatedAt @db.Timestamptz
+
+  @@unique([tenantId, key])
+  @@index([tenantId, position])
+  @@map("dunning_stage")
+}
+
+model LateFeeRule {
+  id          String      @id @db.Uuid
+  tenantId    String?     @db.Uuid
+  key         String
+  kind        LateFeeKind @default(flat)
+  amountCents Int         @default(0)
+  /// Basis points (100 = 1 %) of the invoice total, for kind = percent.
+  percentBp   Int         @default(0)
+  graceDays   Int         @default(0)
+  capCents    Int?
+  enabled     Boolean     @default(false)
+  createdAt   DateTime    @default(now()) @db.Timestamptz
+  updatedAt   DateTime    @updatedAt @db.Timestamptz
+
+  @@unique([tenantId, key])
+  @@map("late_fee_rule")
+}
+
+/// Bank-statement CSV import: preview -> match -> commit (ADR 0001 section 4).
+model BankImport {
+  id              String           @id @db.Uuid
+  tenantId        String           @db.Uuid
+  filename        String
+  status          BankImportStatus @default(preview)
+  mapping         Json
+  rowCount        Int              @default(0)
+  matchedCount    Int              @default(0)
+  bookedCount     Int              @default(0)
+  createdByUserId String?          @db.Uuid
+  createdAt       DateTime         @default(now()) @db.Timestamptz
+  committedAt     DateTime?        @db.Timestamptz
+
+  rows BankImportRow[]
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("bank_import")
+}
+
+model BankImportRow {
+  id           String        @id @db.Uuid
+  tenantId     String        @db.Uuid
+  importId     String        @db.Uuid
+  position     Int
+  bookedAt     DateTime      @db.Date
+  amountCents  Int
+  counterparty String
+  description  String
+  reference    String?
+  matchKind    BankMatchKind @default(none)
+  invoiceId    String?       @db.Uuid
+  buildingId   String?       @db.Uuid
+  paymentId    String?       @db.Uuid
+  status       BankRowStatus @default(unallocated)
+  note         String?
+
+  import BankImport @relation(fields: [importId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, importId, position])
+  @@index([tenantId, status])
+  @@map("bank_import_row")
+}
+
+/// Hosted-page payment links created through the PaymentProvider port (demo / iris / stripe).
+model PaymentLink {
+  id          String            @id @db.Uuid
+  tenantId    String            @db.Uuid
+  invoiceId   String            @db.Uuid
+  provider    String
+  token       String            @unique
+  url         String
+  amountCents Int
+  status      PaymentLinkStatus @default(open)
+  providerRef String?
+  createdAt   DateTime          @default(now()) @db.Timestamptz
+  expiresAt   DateTime          @db.Timestamptz
+  paidAt      DateTime?         @db.Timestamptz
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@index([tenantId, invoiceId])
+  @@map("payment_link")
 }
 
 // ---------------------------------------------------------------- callbacks (L3)

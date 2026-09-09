@@ -1,6 +1,45 @@
 import { z } from 'zod'
 import { TenantStatus, UserRole } from './enums.js'
 import { nullableText, optionalText, patchOf, phone } from './common.js'
+import { isValidBic, isValidIban, normalizeIban } from './iban.js'
+import { bankCsvMapping } from './billing.js'
+
+/** Bank details printed on invoices and statements; the IBAN checksum is verified (ISO 13616). */
+export const tenantBankDetails = z.object({
+  beneficiary: z.string().trim().max(70).default(''),
+  iban: z
+    .string()
+    .trim()
+    .max(40)
+    .default('')
+    .transform((v) => (v ? normalizeIban(v) : ''))
+    .refine((v) => v === '' || isValidIban(v), { message: 'validation.iban' }),
+  bic: z
+    .string()
+    .trim()
+    .max(11)
+    .default('')
+    .transform((v) => v.toUpperCase())
+    .refine((v) => v === '' || isValidBic(v), { message: 'validation.bic' }),
+  bankName: z.string().trim().max(120).default(''),
+})
+export type TenantBankDetails = z.infer<typeof tenantBankDetails>
+
+/** ADR 0001: the billing run, dunning defaults, bank details and the payment provider. */
+export const tenantBillingSettings = z.object({
+  /** Day of month the scheduled run issues the month's invoices (clamped to the month length). */
+  runDay: z.number().int().min(1).max(28).default(1),
+  runEnabled: z.boolean().default(true),
+  /** Due date = issue date + N days (a contract's paymentDay still wins). Absent = invoiceDueDays. */
+  dueDays: z.number().int().min(0).max(120).optional(),
+  bank: tenantBankDetails.default({ beneficiary: '', iban: '', bic: '', bankName: '' }),
+  paymentProvider: z.enum(['none', 'demo', 'iris', 'stripe']).default('none'),
+  /** Last bank CSV column mapping used by the import page. */
+  bankCsvMapping: bankCsvMapping.nullable().optional(),
+  /** Show bank details + EPC QR for the open balance on the public QR page. */
+  showPaymentOnPublicPage: z.boolean().default(true),
+})
+export type TenantBillingSettings = z.infer<typeof tenantBillingSettings>
 
 export const username = z
   .string()
@@ -57,6 +96,7 @@ export const tenantSettings = z.object({
       callback: 1,
       other: 1,
     }),
+  billing: tenantBillingSettings.prefault({}),
 })
 export type TenantSettings = z.infer<typeof tenantSettings>
 
@@ -68,6 +108,8 @@ export const tenantFeatures = z.object({
   publicFaultReport: z.boolean().default(false),
   /** Technician app records a GPS point at submit (off by default: technicians read it as surveillance). */
   gpsCapture: z.boolean().default(false),
+  /** Demo tenant (ADR 0001 section 6): demo payment adapter allowed, "ДЕМО" banner, nightly reset. */
+  demoMode: z.boolean().default(false),
 })
 export type TenantFeatures = z.infer<typeof tenantFeatures>
 export const FEATURE_KEYS = Object.keys(tenantFeatures.shape) as Array<keyof TenantFeatures>

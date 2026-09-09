@@ -52,6 +52,7 @@
     "@types/nodemailer": "^8.0.1",
     "@types/qrcode": "^1.5.5",
     "@types/supertest": "^6.0.3",
+    "jsqr": "^1.4.0",
     "pino-pretty": "^13.1.0",
     "prisma": "^6.19.0",
     "supertest": "^7.1.0",

@@ -11,6 +11,7 @@ import {
   calendarQuery,
   reportListQuery,
   sendBuildingReportBody,
+  sendStatementBody,
 } from '@avroleva/contracts'
 import { ctxOf, requireAuth, requireRole } from '../../platform/http/ctx.js'
 import { notFound } from '../../platform/http/errors.js'
@@ -31,6 +32,7 @@ import {
   getReportRun,
   listReportRuns,
   sendBuildingReport,
+  sendStatement,
 } from './reports.js'
 
 export { dashboard, calendarItems }
@@ -51,6 +53,7 @@ export {
   generateBuildingReport,
   bulkBuildingReports,
   listReportRuns,
+  sendStatement,
 } from './reports.js'
 export { useReportNotifier } from './domain/ports.js'
 export type { ReportNotifier } from './domain/ports.js'
@@ -120,6 +123,11 @@ reportsRouter.post('/reports/building/:id/send', async (req, res) => {
     .json(
       await sendBuildingReport(ctxOf(req), parseId(req), parseBody(sendBuildingReportBody, req)),
     )
+})
+reportsRouter.post('/reports/statement/:id/send', async (req, res) => {
+  res
+    .status(201)
+    .json(await sendStatement(ctxOf(req), parseId(req), parseBody(sendStatementBody, req)))
 })
 reportsRouter.post('/reports/building/bulk', async (req, res) => {
   res.json(await bulkBuildingReports(ctxOf(req), parseBody(bulkBuildingReportBody, req)))

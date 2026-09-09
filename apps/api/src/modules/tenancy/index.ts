@@ -35,6 +35,7 @@ export {
   adminListTenants,
   adminGetTenant,
   adminUpdateTenant,
+  adminSetFeature,
   adminResetUserPassword,
   requestDeletion,
   cancelDeletion,

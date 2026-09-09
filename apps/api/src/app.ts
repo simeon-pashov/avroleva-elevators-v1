@@ -20,6 +20,7 @@ import { exportFilesRouter, useReportNotifier } from './modules/reporting/index.
 import * as notifications from './modules/notifications/index.js'
 import { printRouter } from './http/print.js'
 import { publicRouter } from './http/public.js'
+import { payRouter, webhookRouter } from './http/pay.js'
 import { apiV1 } from './http/router.js'
 import { mountOffice, mountTech } from './http/static.js'
 import { MIN_CLIENT_VERSION_HEADER } from '@avroleva/contracts'
@@ -104,6 +105,9 @@ export function createApp(opts: AppOptions = {}): Express {
   // CSRF header) and the public QR page + fault form (no auth, rate-limited, form-encoded).
   app.use('/print', authenticate, printRouter)
   app.use('/p', express.urlencoded({ extended: false, limit: '32kb' }), publicRouter)
+  // Hosted payment pages (demo adapter, token-authorised) and provider webhooks (raw body).
+  app.use('/pay', payRouter)
+  app.use('/webhooks/payments', webhookRouter)
   // Signed file URLs: the signature is the authorisation (no cookie, no CSRF header), so <img>
   // tags in the office and in the technician app just work.
   app.use('/files/export', exportFilesRouter)

@@ -16,7 +16,8 @@ import { buildings, elevators } from '../modules/registry/index.js'
 import * as defects from '../modules/defects/index.js'
 import * as visits from '../modules/visits/index.js'
 import { buildingReport, buildingReportHtml } from '../modules/reporting/index.js'
-import { buildingReportQuery } from '@avroleva/contracts'
+import * as billing from '../modules/billing/index.js'
+import { buildingReportQuery, statementQuery } from '@avroleva/contracts'
 import { DOC_CSS, esc, page, paragraphs } from './templates/html.js'
 
 /**
@@ -28,6 +29,10 @@ export const printRouter = Router()
 
 const PRINT_JS = `document.addEventListener('DOMContentLoaded',function(){
   for (const b of document.querySelectorAll('[data-print]')) b.addEventListener('click',function(){window.print()});
+  for (const b of document.querySelectorAll('[data-copy]')) b.addEventListener('click',function(){
+    var v=b.getAttribute('data-copy')||'';var done=function(){var t=b.textContent;b.textContent='\u2713';setTimeout(function(){b.textContent=t},1200)};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(v).then(done,function(){window.prompt('',v)})}else{window.prompt('',v)}
+  });
   if (new URLSearchParams(location.search).get('auto')==='1') setTimeout(function(){window.print()},300);
 });`
 
@@ -375,6 +380,45 @@ printRouter.get('/building-report/:id', async (req, res) => {
     buildingReportHtml(ctx, report, {
       toolbar: true,
       scriptUrl: `${base}/print/assets/print.js`,
+    }),
+  )
+})
+
+// ---- invoice and statement (ADR 0001) ------------------------------------------------------------
+
+/** `/print/invoice/:id`: the invoice document with bank details, payer reference and EPC QR. */
+printRouter.get('/invoice/:id', async (req, res) => {
+  const ctx = guard(req, res, ['owner', 'office'])
+  if (!ctx) return
+  const [inv, tenant] = await Promise.all([
+    billing.detail(ctx, parseId(req)),
+    getTenant(ctx.tenantId),
+  ])
+  const base = config.BASE_PATH === '/' ? '' : config.BASE_PATH
+  res.type('html').send(
+    billing.renderInvoiceHtml(inv, tenant, ctx.t, {
+      toolbar: true,
+      scriptUrl: `${base}/print/assets/print.js`,
+      lang: ctx.locale,
+    }),
+  )
+})
+
+/** `/print/statement/:buildingId?from&to`: the building's ledger with the open balance to pay. */
+printRouter.get('/statement/:buildingId', async (req, res) => {
+  const ctx = guard(req, res, ['owner', 'office'])
+  if (!ctx) return
+  const q = parseQuery(statementQuery, req)
+  const [st, tenant] = await Promise.all([
+    billing.statement(ctx, parseId(req, 'buildingId'), q),
+    getTenant(ctx.tenantId),
+  ])
+  const base = config.BASE_PATH === '/' ? '' : config.BASE_PATH
+  res.type('html').send(
+    billing.renderStatementHtml(st, tenant, ctx.t, {
+      toolbar: true,
+      scriptUrl: `${base}/print/assets/print.js`,
+      lang: ctx.locale,
     }),
   )
 })

@@ -2,6 +2,7 @@ import { Router } from 'express'
 import {
   adminLoginBody,
   adminUpdateTenantBody,
+  demoDataBody,
   registerTenantBody,
   setPasswordBody,
 } from '@avroleva/contracts'
@@ -12,6 +13,9 @@ import * as tenancy from '../modules/tenancy/index.js'
 import * as registry from '../modules/registry/index.js'
 import { prismaBase } from '../platform/db/prisma.js'
 import { health } from './health.js'
+import { generateDemoData } from '../demo/generator.js'
+import { resetDemoTenant } from '../demo/reset.js'
+import { AppError } from '../platform/http/errors.js'
 
 /**
  * Platform-admin facade (L4 http/admin). Talks to tenancy and registry through their index.ts only.
@@ -140,4 +144,30 @@ adminRouter.post('/admin/tenants/:id/users/:userId/password', async (req, res) =
     parseBody(setPasswordBody, req).password,
   )
   res.status(204).end()
+})
+
+/**
+ * Demo data for ANY tenant (ADR 0001 section 6): registry sample data when the tenant is empty,
+ * else only a year of operational data. `reset: true` deletes the operational data first and is
+ * allowed for tenants with `features.demoMode` only.
+ */
+adminRouter.post('/admin/tenants/:id/demo-data', async (req, res) => {
+  const id = parseId(req)
+  const body = parseBody(demoDataBody, req)
+  const t = await tenancy.adminGetTenant(id)
+  const actor = adminActorOf(adminOf(req))
+  if (body.reset) {
+    if (!t.tenant.features.demoMode) throw new AppError(409, 'admin.demoModeRequired')
+    const r = await resetDemoTenant(id, { actor, note: 'platform admin', months: body.months })
+    return res.json({ reset: true, purged: r.purged, ...r.generated })
+  }
+  res.json({ reset: false, ...(await generateDemoData(id, { actor, months: body.months })) })
+})
+
+/** Toggles the demo feature of a tenant (the owner cannot switch it on alone). */
+adminRouter.post('/admin/tenants/:id/demo-mode', async (req, res) => {
+  const id = parseId(req)
+  const enabled = req.body?.enabled === true
+  const t = await tenancy.adminSetFeature(adminActorOf(adminOf(req)), id, 'demoMode', enabled)
+  res.json(await withCounts(t))
 })

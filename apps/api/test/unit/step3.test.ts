@@ -159,6 +159,7 @@ describe('public token', () => {
       publicQrPage: false,
       publicFaultReport: false,
       gpsCapture: false,
+      demoMode: false,
     })
   })
 })

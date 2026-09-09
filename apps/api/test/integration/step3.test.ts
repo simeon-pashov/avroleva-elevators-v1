@@ -705,6 +705,7 @@ describe('public QR page and fault report', () => {
       publicQrPage: true,
       publicFaultReport: false,
       gpsCapture: false,
+      demoMode: false,
     })
     const res = await request(server).get(`/p/${token}`)
     expect(res.status).toBe(200)

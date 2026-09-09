@@ -71,6 +71,7 @@ describe('billing.rollStatuses under concurrency', () => {
           buildingId: b.body.id,
           customerId,
           number: i + 1,
+          paymentReference: `AE-TEST-${String(i + 1).padStart(6, '0')}`,
           periodStart: new Date(`2026-0${i + 1}-01T00:00:00Z`),
           periodEnd: new Date(`2026-0${i + 1}-28T00:00:00Z`),
           issuedAt: new Date(`2026-0${i + 1}-01T00:00:00Z`),

@@ -18,6 +18,7 @@ import * as customers from '../repo/customers.js'
 import * as buildings from '../repo/buildings.js'
 import * as elevators from '../repo/elevators.js'
 import { toContractDto } from '../domain/mappers.js'
+import { Prisma } from '../../../generated/prisma/index.js'
 import type { ContractStatus } from '../../../generated/prisma/index.js'
 
 export async function list(
@@ -75,6 +76,7 @@ export async function create(ctx: Ctx, body: CreateContractBody): Promise<Contra
         endDate: fromDateOnly(body.endDate),
         status: body.status,
         paymentDay: body.paymentDay ?? null,
+        billing: body.billing ?? null,
         notes: body.notes ?? null,
         createdBy: ctx.userId,
       },
@@ -138,6 +140,7 @@ export async function update(ctx: Ctx, id: string, body: UpdateContractBody): Pr
         ...(body.endDate !== undefined ? { endDate: fromDateOnly(body.endDate) } : {}),
         ...(body.status !== undefined ? { status: body.status } : {}),
         ...(body.paymentDay !== undefined ? { paymentDay: body.paymentDay } : {}),
+        ...(body.billing !== undefined ? { billing: body.billing ?? Prisma.JsonNull } : {}),
         ...(body.notes !== undefined ? { notes: body.notes } : {}),
         updatedBy: ctx.userId,
       },

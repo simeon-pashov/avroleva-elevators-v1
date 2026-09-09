@@ -4,6 +4,7 @@ import { disconnectDb } from '../src/platform/db/prisma.js'
 import { ensurePlatformAdmin } from '../src/modules/tenancy/index.js'
 import { checklists } from '../src/modules/maintenance/index.js'
 import * as notifications from '../src/modules/notifications/index.js'
+import { ensureSystemBillingDefaults } from '../src/modules/billing/index.js'
 import { events } from '../src/platform/events/bus.js'
 import { SUBSCRIPTIONS } from '../src/subscribers.js'
 import { seedDemoTenant } from './seed/demo.js'
@@ -19,6 +20,9 @@ async function main() {
   // System notification templates (tenantId NULL) from packages/domain-data - every deployment.
   const notificationTemplates = await notifications.ensureSystemTemplates()
   logger.info(notificationTemplates, 'system notification templates ensured')
+  // System dunning stages + late-fee rule (tenantId NULL) from packages/domain-data - every deployment.
+  const billingDefaults = await ensureSystemBillingDefaults()
+  logger.info(billingDefaults, 'system billing defaults ensured')
   if (config.ADMIN_PASSWORD) {
     await ensurePlatformAdmin(config.ADMIN_USERNAME, config.ADMIN_PASSWORD)
     logger.info({ username: config.ADMIN_USERNAME }, 'platform admin ensured')

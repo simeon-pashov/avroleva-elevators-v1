@@ -103,6 +103,35 @@ export const notificationTemplates: NotificationTemplatesData = load(
   '../notifications/templates.v1.json',
 )
 
+// ---- Billing defaults (ADR 0001: dunning as data) --------------------------------------------
+
+export interface DunningStageData {
+  key: string
+  offsetDays: number
+  channel: 'email' | 'sms' | 'in_app' | 'viber_link'
+  templateKey: string
+  lateFeeRuleKey: string | null
+}
+
+export interface LateFeeRuleData {
+  key: string
+  kind: 'flat' | 'percent'
+  amountCents: number
+  percentBp: number
+  graceDays: number
+  capCents: number | null
+  enabled: boolean
+}
+
+export interface BillingDefaultsData {
+  version: number
+  stages: DunningStageData[]
+  lateFeeRules: LateFeeRuleData[]
+}
+
+/** System dunning stages (+3 reminder, +14 second reminder, +30 final notice) and one disabled late-fee rule. */
+export const billingDefaults: BillingDefaultsData = load('../billing/dunning.v1.json')
+
 /** Flat list for seeding `notification_template` system rows. */
 export function listNotificationTemplates(): Array<{
   key: string
