@@ -11,7 +11,7 @@ import { uuidv7 } from '../lib/ids'
 import { navigationUrl } from '../lib/maps'
 import { processPhoto } from '../lib/photos'
 import { platform } from '../platform'
-import { buildOutboxRow, deviceTime, requestDrain } from '../sync'
+import { buildOutboxRow, completePlanStops, deviceTime, requestDrain } from '../sync'
 import { houseManager } from './TodayPage'
 
 interface Photo {
@@ -166,7 +166,7 @@ export function JobPage() {
           })
         }),
       ]
-      await db.transaction('rw', [db.repairJobs, db.blobs, db.outbox], async () => {
+      await db.transaction('rw', [db.repairJobs, db.blobs, db.outbox, db.dayPlans], async () => {
         if (blobRows.length) await db.blobs.bulkAdd(blobRows)
         await db.outbox.bulkAdd(rows)
         await db.repairJobs.update(job.id, {
@@ -175,6 +175,8 @@ export function JobPage() {
           visitId,
           local: 'done',
         })
+        // The job's stop in today's plan is done with it (step 9).
+        await completePlanStops({ kind: 'job', refId: job.id }, dt)
       })
       void requestDrain()
       toast.show(t('tech.jobs.done'))

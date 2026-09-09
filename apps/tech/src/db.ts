@@ -4,6 +4,7 @@ import type {
   AttachmentRole,
   CallbackDto,
   ChecklistTemplateDto,
+  DayPlanDto,
   DefectCatalogItemDto,
   DefectDto,
   JobDto,
@@ -43,6 +44,12 @@ export type VisitRow = VisitDto & { local?: boolean }
  * item not confirmed yet (the pull keeps the row until the server says done / drops it).
  */
 export type RepairJobRow = JobDto & { local?: 'done' }
+
+/**
+ * My published day plan (step 9). A stop done / skipped on this phone is flipped in place and
+ * re-applied from the pending `plan.stop` outbox items on every pull until the server confirms it.
+ */
+export type DayPlanRow = DayPlanDto
 
 export interface BlobRow {
   id: string
@@ -119,6 +126,7 @@ export class TechDb extends Dexie {
   defects!: EntityTable<DefectRow, 'id'>
   visits!: EntityTable<VisitRow, 'id'>
   repairJobs!: EntityTable<RepairJobRow, 'id'>
+  dayPlans!: EntityTable<DayPlanRow, 'id'>
   blobs!: EntityTable<BlobRow, 'id'>
   outbox!: EntityTable<OutboxRow, 'id'>
   meta!: EntityTable<MetaRow, 'key'>
@@ -144,6 +152,10 @@ export class TechDb extends Dexie {
     this.version(2).stores({
       repairJobs: 'id, elevatorId, status, scheduledAt',
     })
+    // Step 9: my published day plans (today / tomorrow).
+    this.version(3).stores({
+      dayPlans: 'id, date',
+    })
   }
 }
 
@@ -161,6 +173,7 @@ export const DATA_TABLES = [
   'defects',
   'visits',
   'repairJobs',
+  'dayPlans',
 ] as const
 
 export async function getMeta<K extends MetaKey>(key: K): Promise<MetaValues[K] | undefined> {

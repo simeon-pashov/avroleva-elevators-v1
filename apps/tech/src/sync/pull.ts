@@ -3,11 +3,13 @@ import type {
   CallbackEventPayload,
   CallbackStatus,
   JobEventPayload,
+  PlanStopEventPayload,
   SyncPullDto,
 } from '@avroleva/contracts'
 import type { CallbackRow, OutboxRow } from '../db'
 import { db, setMeta, setMetaMany } from '../db'
 import { getMeta } from '../db'
+import { applyPlanStopEvents } from '../lib/plans'
 import { ApiError, platform } from '../platform'
 import { hasSession } from '../app/session'
 import { emitSync, errorText, nowIso, setClockOffsetMs } from './state'
@@ -113,6 +115,10 @@ async function applyPull(dto: SyncPullDto, offsetMs: number): Promise<void> {
   const pendingJobEvents = unsent
     .filter((i) => i.kind === 'job.event')
     .map((i) => i.payload as JobEventPayload)
+  const pendingPlanStops = unsent
+    .filter((i) => i.kind === 'plan.stop')
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .map((i) => i.payload as PlanStopEventPayload)
   const now = nowIso()
   const visitCutoff = new Date(Date.now() - VISIT_RETENTION_DAYS * 86_400_000).toISOString()
 
@@ -130,6 +136,7 @@ async function applyPull(dto: SyncPullDto, offsetMs: number): Promise<void> {
       db.defects,
       db.visits,
       db.repairJobs,
+      db.dayPlans,
       db.meta,
     ],
     async () => {
@@ -187,6 +194,12 @@ async function applyPull(dto: SyncPullDto, offsetMs: number): Promise<void> {
           (j) => !serverJobIds.has(j.id) && pendingJobEvents.some((p) => p.jobId === j.id),
         ),
       ])
+
+      // Day plans (step 9): full replace of my published plans for today / tomorrow; a stop done
+      // or skipped on this phone stays so until the server copy confirms it.
+      await db.dayPlans.clear()
+      const plans = (dto.dayPlans ?? []).map((p) => applyPlanStopEvents(p, pendingPlanStops))
+      if (plans.length) await db.dayPlans.bulkPut(plans)
 
       // Server visits overwrite the local pending copies with the same id (drops `local`).
       if (dto.visits.length) await db.visits.bulkPut(dto.visits)

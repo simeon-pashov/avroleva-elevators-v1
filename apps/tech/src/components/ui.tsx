@@ -59,11 +59,22 @@ export function Empty({ text }: { text: string }) {
   return <p className="empty muted">{text}</p>
 }
 
-export function TelLink({ phone, label }: { phone: string | null | undefined; label?: string }) {
+export function TelLink({
+  phone,
+  label,
+  small,
+}: {
+  phone: string | null | undefined
+  label?: string
+  small?: boolean
+}) {
   const t = useT()
   if (!phone) return null
   return (
-    <a className="btn btn-outline" href={`tel:${phone.replace(/[^+0-9]/g, '')}`}>
+    <a
+      className={`btn btn-outline${small ? ' btn-sm' : ''}`}
+      href={`tel:${phone.replace(/[^+0-9]/g, '')}`}
+    >
       {label ?? t('tech.today.call')}
       <span className="btn-detail">{phone}</span>
     </a>

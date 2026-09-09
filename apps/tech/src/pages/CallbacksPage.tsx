@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { CallbackEventPayload, CallbackStatus } from '@avroleva/contracts'
 import { useToast } from '../components/Toast'
@@ -6,7 +7,7 @@ import { Empty, PageHeader, Spinner, StatusPill, TelLink } from '../components/u
 import type { CallbackRow } from '../db'
 import { db } from '../db'
 import { useI18n } from '../i18n/I18nProvider'
-import { buildOutboxRow, deviceTime, requestDrain } from '../sync'
+import { buildOutboxRow, completePlanStops, deviceTime, requestDrain } from '../sync'
 
 type EventType = CallbackEventPayload['type']
 
@@ -28,7 +29,7 @@ function CallbackCard({
   const [busy, setBusy] = useState(false)
   const trapped = cb.classification === 'trapped_persons'
   return (
-    <div className="card">
+    <div className="card" id={`cb-${cb.id}`}>
       <div className="card-title">{cb.buildingAddressText}</div>
       <div className="inline">
         <span className="strong">{`${t('callbacks.elevator')} ${cb.elevatorInternalNo}`}</span>
@@ -97,6 +98,18 @@ export function CallbacksPage() {
     [],
   )
 
+  // A plan stop links here as /callbacks#<callbackId>: bring that card into view once it renders.
+  const { hash } = useLocation()
+  const focused = useRef<string | null>(null)
+  useEffect(() => {
+    const target = hash.slice(1)
+    if (!target || !callbacks || focused.current === target) return
+    const el = document.getElementById(`cb-${target}`)
+    if (!el) return
+    focused.current = target
+    el.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  }, [hash, callbacks])
+
   async function onEvent(cb: CallbackRow, type: EventType, note: string) {
     const dt = deviceTime()
     const payload: CallbackEventPayload = {
@@ -108,7 +121,7 @@ export function CallbacksPage() {
       notes: note.trim() || null,
     }
     // Optimistic: the buttons progress offline; the server copy replaces this on push/pull.
-    await db.transaction('rw', [db.callbacks, db.outbox], async () => {
+    await db.transaction('rw', [db.callbacks, db.outbox, db.dayPlans], async () => {
       await db.outbox.add(
         buildOutboxRow({ kind: 'callback.event', payload, elevatorId: cb.elevatorId }),
       )
@@ -118,6 +131,8 @@ export function CallbacksPage() {
         releasedAt: type === 'released' ? dt.at : cb.releasedAt,
         restoredAt: type === 'restored' ? dt.at : cb.restoredAt,
       })
+      // "Възстановен" completes the callback's stop in today's plan (step 9).
+      if (type === 'restored') await completePlanStops({ kind: 'callback', refId: cb.id }, dt)
     })
     void requestDrain()
     toast.show(t('tech.callbacks.done'))

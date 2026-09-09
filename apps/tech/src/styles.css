@@ -699,3 +699,87 @@ details.advanced summary {
   color: var(--ok);
   font-weight: 700;
 }
+
+/* ---- day plan (step 9) ---------------------------------------------------------------------- */
+
+.pre {
+  white-space: pre-wrap;
+}
+.plan-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.plan-stop {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 4px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.plan-stop-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--touch);
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.plan-stop-main:active {
+  background: var(--primary-soft);
+}
+.plan-seq {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.plan-stop.is-done .plan-seq {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.plan-stop.is-done .row-title,
+.plan-stop.is-skipped .row-title {
+  color: var(--muted);
+  font-weight: 500;
+}
+.plan-stop.is-skipped {
+  opacity: 0.65;
+}
+.plan-stop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-left: 38px;
+}
+.plan-stop-actions .btn {
+  flex: 1 1 auto;
+}
+.plan-others > summary {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px 2px 0;
+}
+.plan-others[open] > summary {
+  margin-bottom: 8px;
+}
+.card[id] {
+  scroll-margin-top: 72px;
+}

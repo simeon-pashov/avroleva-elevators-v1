@@ -1,5 +1,7 @@
 export { pull, isPulling } from './pull'
 export { drain, enqueue, buildOutboxRow, requestDrain, retryItem, isDraining } from './outbox'
 export type { EnqueueInput } from './outbox'
+export { markPlanStop, completePlanStops } from './plans'
+export type { StopMatch } from './plans'
 export { startSyncEngine } from './engine'
 export { onSync, deviceTime, nowIso, getClockOffsetMs, errorText, CLOCK_SUSPECT_MS } from './state'

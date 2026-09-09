@@ -20,7 +20,7 @@ import { useI18n } from '../i18n/I18nProvider'
 import { uuidv7 } from '../lib/ids'
 import { processPhoto } from '../lib/photos'
 import { platform } from '../platform'
-import { buildOutboxRow, getClockOffsetMs, nowIso, requestDrain } from '../sync'
+import { buildOutboxRow, completePlanStops, getClockOffsetMs, nowIso, requestDrain } from '../sync'
 
 const KINDS: VisitKind[] = ['functional_check', 'technical_maintenance', 'repair', 'other']
 const RESULTS: ChecklistResult[] = ['ok', 'defect', 'na']
@@ -373,12 +373,23 @@ export function VisitPage() {
         ),
       ]
 
-      await db.transaction('rw', [db.visits, db.blobs, db.defects, db.outbox], async () => {
-        await db.visits.add(localVisit)
-        if (blobRows.length) await db.blobs.bulkAdd(blobRows)
-        if (defectRows.length) await db.defects.bulkAdd(defectRows)
-        await db.outbox.bulkAdd(outboxRows)
-      })
+      await db.transaction(
+        'rw',
+        [db.visits, db.blobs, db.defects, db.outbox, db.dayPlans],
+        async () => {
+          await db.visits.add(localVisit)
+          if (blobRows.length) await db.blobs.bulkAdd(blobRows)
+          if (defectRows.length) await db.defects.bulkAdd(defectRows)
+          await db.outbox.bulkAdd(outboxRows)
+          // A check visit completes the lift's stop in today's plan (step 9).
+          if (CHECK_VISIT_KINDS.includes(kind)) {
+            await completePlanStops(
+              { kind: 'check', elevatorId: elevator.id },
+              { at: endedAt, clientOffsetMs, timestampSource: 'device' },
+            )
+          }
+        },
+      )
       void requestDrain()
       toast.show(
         gps ? `${t('tech.visit.saved')} ${t('tech.visit.gpsCaptured')}` : t('tech.visit.saved'),

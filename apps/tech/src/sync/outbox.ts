@@ -1,8 +1,10 @@
 import type {
   AttachmentDto,
   CallbackDto,
+  DayPlanDto,
   DefectDto,
   JobDto,
+  PlanStopEventPayload,
   SyncPushItem,
   SyncPushResultDto,
   VisitDto,
@@ -10,6 +12,7 @@ import type {
 import type { AttachmentUploadPayload, OutboxKind, OutboxRow } from '../db'
 import { db, getMeta, setMeta } from '../db'
 import { uuidv7 } from '../lib/ids'
+import { applyPlanStopEvents } from '../lib/plans'
 import { ApiError, NetworkError, platform } from '../platform'
 import { pull } from './pull'
 import { emitSync, errorText, nowIso } from './state'
@@ -214,6 +217,18 @@ async function sendPush(item: OutboxRow): Promise<void> {
       // Done / invoiced jobs leave the phone (the next pull would drop them too).
       if (j.isTerminal || j.status === 'done') await db.repairJobs.delete(j.id)
       else await db.repairJobs.put(j)
+      break
+    }
+    case 'plan.stop': {
+      const p = result as DayPlanDto
+      if (!p || !Array.isArray(p.stops)) break
+      // Other stops of the same plan may still wait in the queue: keep them ahead of this copy.
+      const queued = await db.outbox.where('status').anyOf('pending', 'sending', 'failed').toArray()
+      const events = queued
+        .filter((i) => i.kind === 'plan.stop' && i.id !== item.id)
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+        .map((i) => i.payload as PlanStopEventPayload)
+      await db.dayPlans.put(applyPlanStopEvents(p, events))
       break
     }
     default:

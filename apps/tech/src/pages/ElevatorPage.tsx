@@ -4,6 +4,8 @@ import { Empty, PageHeader, Section, Spinner, StatusPill, TelLink } from '../com
 import type { VisitRow } from '../db'
 import { db } from '../db'
 import { useI18n } from '../i18n/I18nProvider'
+import { todayInSofia } from '../lib/dates'
+import { orderedStops } from '../lib/plans'
 import { platform } from '../platform'
 import { buildingTitle, houseManager } from './TodayPage'
 
@@ -77,6 +79,18 @@ export function ElevatorPage() {
     () => db.visits.where('elevatorId').equals(id).reverse().sortBy('startedAt'),
     [id],
   )
+  // Step 9: is this lift a stop of today's plan, and which one?
+  const today = todayInSofia()
+  const planStop = useLiveQuery(async () => {
+    const plans = await db.dayPlans.where('date').equals(today).toArray()
+    for (const p of plans) {
+      const stops = orderedStops(p)
+      const i = stops.findIndex((s) => s.elevatorId === id)
+      const s = stops[i]
+      if (s) return { n: i + 1, status: s.status }
+    }
+    return null
+  }, [id, today])
 
   if (elevator === undefined) {
     return (
@@ -110,6 +124,14 @@ export function ElevatorPage() {
         <Link className="btn btn-primary btn-big" to={`/elevators/${elevator.id}/visit`}>
           {t('tech.elevator.recordVisit')}
         </Link>
+        {planStop ? (
+          <div className="inline">
+            <StatusPill
+              tone={planStop.status === 'done' ? 'ok' : 'warn'}
+              text={t('tech.plan.inPlan', { n: planStop.n })}
+            />
+          </div>
+        ) : null}
 
         <div className="card">
           <dl className="kv">
