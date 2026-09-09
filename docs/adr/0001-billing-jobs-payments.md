@@ -23,7 +23,7 @@ Constraints kept: money in integer cents, EUR; invoices are immutable after issu
 | `bank_import`, `bank_import_row` (billing, new) | One import = filename, the column mapping used, status (`preview` \| `committed`), counts. Rows: bookedAt, amountCents, counterparty, description, extracted reference, `matchKind` (`reference` \| `amount_name` \| `manual` \| `none`), invoiceId?, buildingId?, paymentId?, status (`proposed` \| `matched` \| `unallocated` \| `ignored` \| `booked`). |
 | `payment_link` (billing, new) | token, invoiceId, provider, url, amountCents, status (`open` \| `paid` \| `expired`), paidAt. Backs the hosted-page adapters. |
 | `contract.billing` JSONB (registry) | `{cycle: monthly \| quarterly \| yearly, anchorDay?, exempt}`; registry owns the column and exposes it on `ContractDto`; billing only reads it. |
-| `tenant.settings.billing` (tenancy) | `runDay` (1–28, default 1), `runEnabled` (true), `dueDays` (14; `invoiceDueDays` stays as the fallback), `bank {beneficiary, iban, bic, bankName}` (IBAN mod-97 checked), `paymentProvider` (`none` \| `demo` \| `iris` \| `stripe`), `bankCsvMapping` (last used mapping), `showPaymentOnPublicPage` (true). |
+| `tenant.settings.billing` (tenancy) | `runDay` (1–28, default 1), `runEnabled` (true), `dueDays` (14; `invoiceDueDays` stays as the fallback), `bank {beneficiary, iban, bic, bankName}` (IBAN mod-97 checked), `paymentProvider` (`none` \| `demo` \| `iris` \| `stripe`), `bankCsvMapping` (last used mapping), `showPaymentOnPublicPage` (**false since step 8** — arrears are not for whoever scans the cabin QR; a firm opts in). |
 | `tenant.features.demoMode` (tenancy) | New flag, off by default. |
 
 ### 2. State machines
@@ -95,7 +95,7 @@ One migration adds the columns, enum values and tables. Backfill: `paymentRefere
 
 - Invoices remain append-only: every correction is a row of its own with a number or a stage key, and the statement is a pure fold over invoices, adjustments, credit notes and payments.
 - The dunning schedule, channels, templates and fees are rows; the state machine and stage list reach the UI as data, so a tenant can be changed without a deploy.
-- Step 8 gets `createInvoice({sourceType:'job', lines})` and `issueCreditNote()` as the two entry points it needs; nothing in step 8 should touch numbering or payments directly.
+- Step 8 gets `createInvoice({sourceType:'job', lines})` and `issueCreditNote()` as the two entry points it needs; nothing in step 8 should touch numbering or payments directly. *(Done in step 8 as `billing.issueInvoice`; `invoice.contractId` became nullable — migration `20260910000000`; the jobs module reaches it only through its `InvoiceIssuer` port, see `HANDOFF-STEP8.md`.)*
 
 ## Deferred (deliberately)
 

@@ -4,7 +4,7 @@ Avroleva Elevators is the elevator product of Avroleva; technical identifiers (p
 
 Avroleva Elevators is a multi-tenant SaaS for Bulgarian elevator-maintenance firms (асансьорни сервизи). It is the business-operations and customer-evidence layer on top of the paper logbook (дневник): the 30-day functional checks with two technicians, the emergency-call response timer, the 17-item stop-defect catalogue, inspection dates, the monthly report to the building, light invoicing, and the long-term dossier a firm keeps for every lift. Each firm is a tenant with strict data isolation, can export all of its data at any time as CSV or a full zip, and can delete it after a 30-day grace period — the product holds the firm's own operational record for the firm alone.
 
-The office app is a desktop-first React SPA in Bulgarian (English available) with a map of the portfolio, a due board, callbacks, defects, calendar, contracts, invoices, notifications and printable pages (logbook page, defect notice, inspection request, QR labels, monthly building report). Technicians use an offline-first PWA on their phone: enrolled by QR code, it caches today's lifts, records visits with checklist, photos and a second technician's name without a network, and syncs when one returns. Regulator-facing outputs are deliberately out of scope; the vocabulary everywhere is operational.
+The office app is a desktop-first React SPA in Bulgarian (English available) with a map of the portfolio, a due board, callbacks, defects, repair jobs and quotes, calendar, contracts, invoices, notifications and printable pages (logbook page, defect notice, inspection request, QR labels, monthly building report, quote). Technicians use an offline-first PWA on their phone: enrolled by QR code, it caches today's lifts, records visits with checklist, photos and a second technician's name without a network, and syncs when one returns. Regulator-facing outputs are deliberately out of scope; the vocabulary everywhere is operational.
 
 ## Features
 
@@ -12,13 +12,15 @@ The office app is a desktop-first React SPA in Bulgarian (English available) wit
 - **Maintenance cycle**: per-elevator interval (30 days by default, rolling or calendar), due board (overdue / today / tomorrow), map pins coloured by due state, "record a visit" from the board or the elevator page, visits with checklist snapshot, photos and quality flags.
 - **Callbacks (аварии)**: intake by phone/office or from the public QR page, dispatch, on-site, close-out with cause/action and an automatic visit record; SLA timer with at-risk and breached events.
 - **Defects**: catalogue of the 17 stop-lift items plus free text, follow-up clock, notice to the building, "customer requested repair", stop-lift ring on the map until resolved.
-- **Calendar**: inspections (periodic, after repair, after stop) with alert steps, alarm-device tests, overdue checks, defect follow-ups — one deadlines view.
+- **Calendar**: inspections (periodic, after repair, after stop) with alert steps, alarm-device tests, overdue checks, defect follow-ups, quotes without an answer — one deadlines view.
+- **Repair jobs and quotes** (step 8): a job is the quote (lines with quantity, unit price, VAT once on the total) walking through stages that are data — draft, quoted, awaiting approval, approved (with evidence: assembly protocol, e-mail, Viber, verbal, manager's signature), scheduled with a technician pair, in progress, done, invoiced, plus rejected / cancelled; system defaults with per-tenant overrides. Created from the office, a defect, a closed callback, a visit or an elevator; printable quote, sent by e-mail or as a Viber link; quote revisions keep the old lines; completion records a repair visit (also from the technician's phone, offline); invoices (full or deposit) go through billing; reminders for quotes without an answer; board / list with filters; dashboard strip with the "done, not invoiced" value.
+- **Address search and "add an elevator here"**: as-you-type suggestions (Nominatim behind the Geocoder port, Bulgarian labels, biased to the firm's pins) on the dashboard map, the building form and the "place on the map" dialog for buildings without coordinates; the pin is draggable, nearby buildings are offered to attach to, and building + elevator (+ customer) are created in one call.
 - **Money**: scheduled monthly (or quarterly / yearly) invoices per contract with gapless numbering, VAT and a payer reference; dunning as data (reminder stages per tenant, optional late fee); credit notes; payments (partial, over-payment, unallocated) by hand, from a bank-statement CSV import (auto-match by reference or amount + name, manual match for the rest) or through a payment provider port (demo adapter, IRIS/Stripe stubs); EPC QR code + IBAN block on every invoice, statement and the public page; statement per building (print + e-mail); invoices list with bulk actions.
 - **Notifications**: rule matrix per event × channel (in-app, e-mail, SMS, Viber deep link) × recipient (building contact, owner, office, technician); Handlebars templates in bg/en with per-tenant overrides; delivery log; bell inbox.
 - **Reports and exports**: monthly building report (print + e-mail attachment), 13 CSV datasets, full zip export with SHA-256 manifest, delete-my-data with 30-day grace.
-- **Technician PWA**: QR enrollment with device sessions, Today list with call/navigate buttons, visit form with checklist, camera, second technician, outbox with retries, forced-update header.
+- **Technician PWA**: QR enrollment with device sessions, Today list with call/navigate buttons and the repair jobs assigned to me (start, notes, photos, complete — offline, through the outbox), visit form with checklist, camera, second technician, outbox with retries, forced-update header.
 - **Platform admin**: register/deactivate tenants, reset owner passwords, system page (health, worker jobs, failed deliveries, scheduled deletions), demo mode per tenant (a year of believable data generated on demand, reset nightly).
-- **Scheduler**: pg-boss in the same Postgres (no Redis) — hourly recompute, daily billing run, daily dunning, daily overdue roll, calendar alerts, SLA watch every minute, retention sweep, orphan cleanup, tenant purge, nightly demo reset, outbox catch-up.
+- **Scheduler**: pg-boss in the same Postgres (no Redis) — hourly recompute, daily billing run, daily dunning, daily overdue roll, calendar alerts, quote-approval reminders, SLA watch every minute, retention sweep, orphan cleanup, tenant purge, nightly demo reset, outbox catch-up.
 
 ## Screenshots
 
@@ -32,6 +34,8 @@ The office app is a desktop-first React SPA in Bulgarian (English available) wit
 | ![QR labels](docs/screenshots/qr-labels.png) QR label sheet | ![Public page](docs/screenshots/public-page.png) Public QR page with fault form |
 | ![Tech today](docs/screenshots/tech-today.png) Technician app: Today | ![Tech visit](docs/screenshots/tech-visit.png) Technician app: visit form |
 | ![Tech outbox offline](docs/screenshots/tech-outbox-offline.png) Technician app: outbox while offline | ![Admin](docs/screenshots/admin-tenants.png) Platform admin |
+| ![Jobs board](docs/screenshots/jobs.png) Repair jobs board by stage | ![Job detail](docs/screenshots/job-detail.png) Job: quote lines, evidence, timeline |
+| ![Add an elevator here](docs/screenshots/add-elevator-search.png) Address search and "add an elevator here" | |
 
 ## Quickstart (local)
 
@@ -55,7 +59,7 @@ apps/api/         Express 5 + Prisma + pg-boss: src/{main.ts, app.ts, worker.ts,
 apps/office/      React 19 + Vite 7 office SPA (desktop-first, Leaflet map), built with VITE_BASE
 apps/tech/        React 19 + Vite 7 + vite-plugin-pwa + Dexie technician app, served by the API at /tech/
 packages/contracts/   zod schemas and DTO types shared by API and clients
-packages/domain-data/ checklists, defect catalogue, notification templates, calendar rules
+packages/domain-data/ checklists, defect catalogue, notification templates, calendar rules, billing and job-stage defaults
 packages/i18n/        bg.json (source) + en.json, t() for server and clients
 docker/           Dockerfile (multi-stage) + entrypoint (migrate -> seed -> start)
 deploy/           nginx snippet for the /avroleva/ path prefix
@@ -71,7 +75,7 @@ docs/             screenshots, QA log
 | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Modular monolith design: modules and boundaries, adjustability, data model, offline-first PWA, API, cross-cutting concerns, deployment, testing, decisions log. |
 | [`MVP-PLAN.md`](./MVP-PLAN.md) | Build plan: phases 0–9, the 2-week demo, the founding-customer import plan, risks, definition of done. |
 | [`DEPLOY.md`](./DEPLOY.md) | VPS runbook: deploy key, `.env`, compose, nginx include, backups, restore drill, rollback, decisions before go-live. |
-| [`HANDOFF-STEP1.md`](./HANDOFF-STEP1.md) … [`HANDOFF-STEP7.md`](./HANDOFF-STEP7.md) | Per-step handoffs: foundation; dashboard; callbacks/defects/calendar/public page; offline technician app; scheduler/notifications/exports/reports; billing that runs itself, payments, demo mode. |
+| [`HANDOFF-STEP1.md`](./HANDOFF-STEP1.md) … [`HANDOFF-STEP8.md`](./HANDOFF-STEP8.md) | Per-step handoffs: foundation; dashboard; callbacks/defects/calendar/public page; offline technician app; scheduler/notifications/exports/reports; billing that runs itself, payments, demo mode; repair jobs and quotes, address search. |
 | [`docs/adr/0001-billing-jobs-payments.md`](./docs/adr/0001-billing-jobs-payments.md) | ADR: billing runs, dunning as data, state machines, payment port, reconciliation, demo mode. |
 | [`docs/QA-2026-09-08.md`](./docs/QA-2026-09-08.md) | The QA pass: bugs found and fixed, what was exercised, security quick-check. |
 | `../Elevator Business Due Diligence/` | The research this design rests on (start with `00-SYNTHESIS.md`). |
