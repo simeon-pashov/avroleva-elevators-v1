@@ -47,7 +47,7 @@ function guard(
       .type('html')
       .send(
         page({
-          title: 'Avroleva',
+          title: 'Avroleva Elevators',
           body: `<div class="toolbar"><a class="btn" href="${esc(config.BASE_PATH === '/' ? '/login' : `${config.BASE_PATH}/login`)}">${esc('Вход')}</a></div>`,
         }),
       )

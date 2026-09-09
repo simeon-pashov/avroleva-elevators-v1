@@ -31,7 +31,7 @@ const server = app
           email: config.EMAIL_PROVIDER,
           sms: config.SMS_PROVIDER,
         },
-        `Avroleva API listening on http://localhost:${config.PORT}/api/v1/health`,
+        `Avroleva Elevators API listening on http://localhost:${config.PORT}/api/v1/health`,
       )
     })
   : null

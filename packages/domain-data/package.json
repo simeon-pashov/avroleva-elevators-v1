@@ -1,6 +1,7 @@
 {
   "name": "@avroleva/domain-data",
   "version": "0.1.0",
+  "description": "Avroleva Elevators reference data (checklists, defects, templates)",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",

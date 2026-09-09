@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Avroleva - backup on the VPS: pg_dump (custom format) of the database + tar of the data volume
+# Avroleva Elevators - backup on the VPS: pg_dump (custom format) of the database + tar of the data volume
 # (attachments, exports) into /root/backups/avroleva/, 30-day retention, appended log.
 # Same pattern as /root/backup-kontira.sh and /root/backup-rumen-site.sh (VPS-GUIDE). Cron:
 #   35 3 * * * /var/www/avroleva/scripts/backup.sh

@@ -1,6 +1,7 @@
 {
   "name": "@avroleva/office",
   "version": "0.1.0",
+  "description": "Avroleva Elevators office app (React SPA)",
   "private": true,
   "type": "module",
   "scripts": {

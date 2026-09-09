@@ -1,6 +1,7 @@
 {
   "name": "@avroleva/tech",
   "version": "0.4.0",
+  "description": "Avroleva Elevators technician app (offline-first PWA)",
   "private": true,
   "type": "module",
   "scripts": {

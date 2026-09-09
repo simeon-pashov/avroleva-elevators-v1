@@ -1,4 +1,4 @@
-# Avroleva — Handoff after step 4 (offline technician app, attachments, sync)
+# Avroleva Elevators — Handoff after step 4 (offline technician app, attachments, sync)
 
 Date: 2026-09-08. Read `ARCHITECTURE.md` (§4 offline PWA, §5 API, §6 file storage), `MVP-PLAN.md` and `HANDOFF-STEP1..3.md` first; this file says what step 4 added, how a phone is enrolled, how the sync protocol works, where files live, what is missing, and what step 5 needs.
 

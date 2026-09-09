@@ -31,7 +31,7 @@ export function Shell() {
     <div className="shell">
       <header className="topbar">
         <div className="brand">
-          <span className="brand-name">{'Avroleva'}</span>
+          <span className="brand-name">{t('app.name')}</span>
           <span className="brand-tenant">{me?.tenant.name}</span>
         </div>
         <nav className="nav">

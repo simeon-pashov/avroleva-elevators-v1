@@ -1,4 +1,4 @@
-# Avroleva — Handoff after step 3 (callbacks, defects, calendar, public QR page)
+# Avroleva Elevators — Handoff after step 3 (callbacks, defects, calendar, public QR page)
 
 Date: 2026-09-08. Read `ARCHITECTURE.md`, `MVP-PLAN.md` (phases 4–5), `HANDOFF-STEP1.md` and `HANDOFF-STEP2.md` first; this file says what step 3 added, how it is wired, and what step 4 (the offline technician PWA) needs from the API.
 

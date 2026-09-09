@@ -928,12 +928,12 @@ function readme(tenantName: string, generatedAt: string, summary: Record<string,
   const lines = Object.entries(summary)
     .map(([k, v]) => `  ${k}: ${v}`)
     .join('\n')
-  return `AVROLEVA – ПЪЛЕН ЕКСПОРТ НА ДАННИТЕ / FULL DATA EXPORT
+  return `AVROLEVA ELEVATORS – ПЪЛЕН ЕКСПОРТ НА ДАННИТЕ / FULL DATA EXPORT
 Фирма / Firm: ${tenantName}
 Генериран на / Generated at: ${generatedAt}
 
 BG
-Този архив съдържа всички данни на фирмата, така както са записани в Avroleva:
+Този архив съдържа всички данни на фирмата, така както са записани в Avroleva Elevators:
 - csv/<набор>.csv – по един файл за всяка таблица (UTF-8 с BOM, разделител запетая; отваря се
   директно в Excel / LibreOffice). Парите са в евроцентове (amountCents = 1234 → 12,34 EUR).
   Датите са в ISO формат (UTC за момент, ГГГГ-ММ-ДД за дата).
@@ -945,7 +945,7 @@ BG
 Хартиеният дневник остава законовият документ; този експорт е записът на офиса.
 
 EN
-This archive contains every record of the firm as stored in Avroleva:
+This archive contains every record of the firm as stored in Avroleva Elevators:
 - csv/<dataset>.csv – one file per table (UTF-8 with BOM, comma separated; opens directly in
   Excel / LibreOffice). Money is in euro cents (amountCents = 1234 → 12.34 EUR). Dates are ISO
   (UTC for instants, YYYY-MM-DD for dates).

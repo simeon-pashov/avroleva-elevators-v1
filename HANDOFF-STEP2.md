@@ -1,4 +1,4 @@
-# Avroleva — Handoff after step 2 (dashboard)
+# Avroleva Elevators — Handoff after step 2 (dashboard)
 
 Date: 2026-09-08. Read `ARCHITECTURE.md`, `MVP-PLAN.md` and `HANDOFF-STEP1.md` first; this file says what step 2 added, how it is wired, and what the next steps (callbacks, calendar/inspections, technician PWA, notifications, exports) will need from it.
 

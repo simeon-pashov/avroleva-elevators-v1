@@ -1,6 +1,6 @@
 # Local development database ONLY (the API and office run on the host with `npm run dev`).
 # By convention on this PC every project has its own postgres container on its own host port.
-# Avroleva reuses the Uncle CRM dev container (unclecrm-db, port 5432) when it is running;
+# Avroleva Elevators reuses the Uncle CRM dev container (unclecrm-db, port 5432) when it is running;
 # otherwise start this one and point DATABASE_URL at 127.0.0.1:5436.
 services:
   db:

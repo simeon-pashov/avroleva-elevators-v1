@@ -1,4 +1,4 @@
-# Avroleva — Architecture
+# Avroleva Elevators — Architecture
 
 Date: 2026-09-07. Companion to `MVP-PLAN.md`. Domain facts come from `../Elevator Business Due Diligence/` (01 = law, 03 = operations, 04 = product benchmark); when this file and a report disagree on a legal fact, the report wins.
 

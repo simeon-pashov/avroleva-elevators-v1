@@ -1,6 +1,7 @@
 {
   "name": "@avroleva/api",
   "version": "0.1.0",
+  "description": "Avroleva Elevators API (Express 5 + Prisma + pg-boss worker)",
   "private": true,
   "type": "module",
   "engines": {

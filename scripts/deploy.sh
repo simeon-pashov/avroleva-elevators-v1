@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Avroleva - deploy on the VPS: backup -> git pull -> docker compose build -> up -d -> wait for
+# Avroleva Elevators - deploy on the VPS: backup -> git pull -> docker compose build -> up -d -> wait for
 # health -> confirm the other apps still answer 200 through nginx.
 #   ssh -o BatchMode=yes root@187.127.84.59 /var/www/avroleva/scripts/deploy.sh
 #   .../deploy.sh v0.5.0        # deploy a tag/commit instead of main (rollback = previous tag)

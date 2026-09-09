@@ -1,6 +1,7 @@
 {
   "name": "avroleva",
   "version": "0.1.0",
+  "description": "Avroleva Elevators - multi-tenant SaaS for Bulgarian elevator maintenance firms (monorepo)",
   "private": true,
   "type": "module",
   "engines": {

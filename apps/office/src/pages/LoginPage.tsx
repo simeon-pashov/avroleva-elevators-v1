@@ -37,7 +37,7 @@ export function LoginPage() {
         }}
       >
         <div className="login-head">
-          <h1>{'Avroleva'}</h1>
+          <h1>{t('app.name')}</h1>
           <LanguageSwitch />
         </div>
         <p className="muted">{t('auth.subtitle')}</p>

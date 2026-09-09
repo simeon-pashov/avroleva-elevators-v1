@@ -1,4 +1,5 @@
 {
+  "app.name": "Avroleva Elevators",
   "lang.bg": "Български",
   "lang.en": "English",
   "nav.dashboard": "Dashboard",
@@ -765,7 +766,7 @@
   "elevators.goodsOnly": "Goods-only lift (no attendant)",
   "settings.gpsCapture": "The technician app records a GPS position when saving a visit",
   "settings.techApp": "Technician app",
-  "tech.appName": "Avroleva Technician",
+  "tech.appName": "Avroleva Elevators – Technician",
   "tech.nav.today": "Today",
   "tech.nav.callbacks": "Callbacks",
   "tech.nav.outbox": "Sending",

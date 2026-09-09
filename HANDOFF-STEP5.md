@@ -1,4 +1,4 @@
-# Avroleva — Handoff after step 5 (scheduler, notifications, exports + delete-my-data, monthly report)
+# Avroleva Elevators — Handoff after step 5 (scheduler, notifications, exports + delete-my-data, monthly report)
 
 Date: 2026-09-08. Read `ARCHITECTURE.md` (§2 A5/A7/A8, §3 notifications/reporting/platform tables, §5 exports, §6 scheduled jobs + data custody stance, §9 D8/D9/D20), `MVP-PLAN.md` phases 7–9 and `HANDOFF-STEP1..4.md` first; this file says what step 5 added, how the worker runs, what every job does and when, which env vars are new, what is missing, and what the final QA/deploy step needs.
 

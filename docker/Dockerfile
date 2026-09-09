@@ -1,4 +1,4 @@
-# Avroleva - one image: API (Express 5 + Prisma + pg-boss worker, ROLE=all) + built office SPA (/)
+# Avroleva Elevators - one image: API (Express 5 + Prisma + pg-boss worker, ROLE=all) + built office SPA (/)
 # + built technician PWA (/tech/). ARCHITECTURE section 7; nginx path-prefix rules in VPS-GUIDE.md.
 #
 #   docker build -f docker/Dockerfile --build-arg VITE_BASE=/avroleva/ -t avroleva .

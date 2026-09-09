@@ -1,4 +1,4 @@
-# Avroleva — deployment runbook (VPS `srv1662742.hstgr.cloud`)
+# Avroleva Elevators — deployment runbook (VPS `srv1662742.hstgr.cloud`)
 
 Command-oriented. Conventions come from `D:\Code\VPS-GUIDE.md` and `D:\Code\GITHUB-GUIDE.md`
 (one host nginx, path prefix per app, Docker Compose, deploy key per repo, secrets only in an
@@ -73,13 +73,13 @@ restarting the app resets it.
 ssh -o BatchMode=yes root@187.127.84.59 bash -s <<'EOF'
 cd /var/www/avroleva
 docker compose -f docker-compose.prod.yml up -d --build
-docker compose -f docker-compose.prod.yml logs -f app     # Ctrl-C once you see "Avroleva API listening"
+docker compose -f docker-compose.prod.yml logs -f app     # Ctrl-C once you see "Avroleva Elevators API listening"
 EOF
 ```
 
 Expected in the log, in order: `[entrypoint] prisma migrate deploy` (5 migrations applied),
 `[entrypoint] seed` → `system checklist templates ensured`, `system notification templates ensured`,
-`platform admin ensured`, `SEED_DEMO is not true - demo tenant skipped`, then `Avroleva API listening`
+`platform admin ensured`, `SEED_DEMO is not true - demo tenant skipped`, then `Avroleva Elevators API listening`
 and `pg-boss started` / job registrations. Container health:
 
 ```bash

@@ -1,4 +1,4 @@
-# Avroleva - production stack for the VPS (VPS-GUIDE.md: one image per app, own Postgres, app bound
+# Avroleva Elevators - production stack for the VPS (VPS-GUIDE.md: one image per app, own Postgres, app bound
 # to 127.0.0.1 only, host nginx routes /avroleva/ -> 127.0.0.1:3005). Secrets come from an untracked
 # `.env` next to this file (template: .env.production.example).
 #

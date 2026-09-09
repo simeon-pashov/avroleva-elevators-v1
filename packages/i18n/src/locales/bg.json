@@ -1,4 +1,5 @@
 {
+  "app.name": "Avroleva Elevators",
   "lang.bg": "Български",
   "lang.en": "English",
   "nav.dashboard": "Табло",
@@ -765,7 +766,7 @@
   "elevators.goodsOnly": "Товарен асансьор (без придружител)",
   "settings.gpsCapture": "Приложението записва GPS позиция при запис на посещение",
   "settings.techApp": "Приложение за монтьори",
-  "tech.appName": "Avroleva Монтьор",
+  "tech.appName": "Avroleva Elevators – Монтьор",
   "tech.nav.today": "Днес",
   "tech.nav.callbacks": "Аварии",
   "tech.nav.outbox": "Изпращане",

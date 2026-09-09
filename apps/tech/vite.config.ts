@@ -26,9 +26,9 @@ export default defineConfig({
       registerType: 'prompt',
       injectRegister: null,
       manifest: {
-        name: 'Avroleva Монтьор',
+        name: 'Avroleva Elevators – Монтьор',
         short_name: 'Avroleva',
-        description: 'Avroleva - приложение за монтьори',
+        description: 'Avroleva Elevators – приложение за монтьори',
         lang: 'bg',
         display: 'standalone',
         orientation: 'portrait',

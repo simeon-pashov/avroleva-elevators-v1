@@ -1,6 +1,7 @@
 {
   "name": "@avroleva/contracts",
   "version": "0.1.0",
+  "description": "Avroleva Elevators shared zod schemas and DTO types",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",

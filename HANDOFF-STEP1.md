@@ -1,4 +1,4 @@
-# Avroleva — Handoff after step 1 (foundation)
+# Avroleva Elevators — Handoff after step 1 (foundation)
 
 Date: 2026-09-08. Read `ARCHITECTURE.md` and `MVP-PLAN.md` first; this file says what of them exists in code today, how to run it, and exactly what step 2 (dashboard) has to add.
 

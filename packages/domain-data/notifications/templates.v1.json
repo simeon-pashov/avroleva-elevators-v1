@@ -395,19 +395,19 @@
       "email": {
         "bg": {
           "subject": "{{tenant.name}}: заявено изтриване на данните",
-          "body": "Заявено е изтриване на всички данни на {{tenant.name}} от Avroleva. Изтриването ще се извърши на {{date deletion.at}}. До тази дата собственикът може да го откаже от Настройки → Данни. Препоръчваме първо да изтеглите пълния експорт."
+          "body": "Заявено е изтриване на всички данни на {{tenant.name}} от Avroleva Elevators. Изтриването ще се извърши на {{date deletion.at}}. До тази дата собственикът може да го откаже от Настройки → Данни. Препоръчваме първо да изтеглите пълния експорт."
         },
         "en": {
           "subject": "{{tenant.name}}: data deletion requested",
-          "body": "Deletion of all data of {{tenant.name}} in Avroleva was requested. The deletion will run on {{date deletion.at}}. Until then the owner can cancel it from Settings → Data. We recommend downloading the full export first."
+          "body": "Deletion of all data of {{tenant.name}} in Avroleva Elevators was requested. The deletion will run on {{date deletion.at}}. Until then the owner can cancel it from Settings → Data. We recommend downloading the full export first."
         }
       },
       "sms": {
         "bg": {
-          "body": "Avroleva: заявено изтриване на данните на {{tenant.name}}, изпълнява се на {{date deletion.at}}. Отказ: Настройки → Данни."
+          "body": "Avroleva Elevators: заявено изтриване на данните на {{tenant.name}}, изпълнява се на {{date deletion.at}}. Отказ: Настройки → Данни."
         },
         "en": {
-          "body": "Avroleva: deletion of {{tenant.name}} data requested, runs on {{date deletion.at}}. Cancel: Settings → Data."
+          "body": "Avroleva Elevators: deletion of {{tenant.name}} data requested, runs on {{date deletion.at}}. Cancel: Settings → Data."
         }
       },
       "in_app": {
@@ -433,8 +433,10 @@
         }
       },
       "sms": {
-        "bg": { "body": "Avroleva: изтриването на данните на {{tenant.name}} е отказано." },
-        "en": { "body": "Avroleva: the data deletion of {{tenant.name}} was cancelled." }
+        "bg": {
+          "body": "Avroleva Elevators: изтриването на данните на {{tenant.name}} е отказано."
+        },
+        "en": { "body": "Avroleva Elevators: the data deletion of {{tenant.name}} was cancelled." }
       },
       "in_app": {
         "bg": { "subject": "Изтриването на данните е отказано", "body": "Данните остават." },
@@ -445,16 +447,16 @@
       "email": {
         "bg": {
           "subject": "{{tenant.name}}: тестово съобщение",
-          "body": "Това е тестово съобщение от Avroleva за {{tenant.name}}, изпратено на {{datetime now}}."
+          "body": "Това е тестово съобщение от Avroleva Elevators за {{tenant.name}}, изпратено на {{datetime now}}."
         },
         "en": {
           "subject": "{{tenant.name}}: test message",
-          "body": "This is a test message from Avroleva for {{tenant.name}}, sent on {{datetime now}}."
+          "body": "This is a test message from Avroleva Elevators for {{tenant.name}}, sent on {{datetime now}}."
         }
       },
       "sms": {
-        "bg": { "body": "Avroleva тест за {{tenant.name}}, {{datetime now}}." },
-        "en": { "body": "Avroleva test for {{tenant.name}}, {{datetime now}}." }
+        "bg": { "body": "Avroleva Elevators тест за {{tenant.name}}, {{datetime now}}." },
+        "en": { "body": "Avroleva Elevators test for {{tenant.name}}, {{datetime now}}." }
       },
       "in_app": {
         "bg": { "subject": "Тестово уведомление", "body": "Изпратено на {{datetime now}}." },

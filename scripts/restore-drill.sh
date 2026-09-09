@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Avroleva - restore drill: load the newest db-*.dump (or the file given as $1) into a THROWAWAY
+# Avroleva Elevators - restore drill: load the newest db-*.dump (or the file given as $1) into a THROWAWAY
 # postgres:16-alpine container (no network, no ports), run sanity queries, print them, remove the
 # container. Never touches the production database. Run monthly, and after any Postgres upgrade.
 #   /var/www/avroleva/scripts/restore-drill.sh            # newest dump in /root/backups/avroleva

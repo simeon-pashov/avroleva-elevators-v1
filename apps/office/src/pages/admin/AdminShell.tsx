@@ -12,7 +12,7 @@ export function AdminShell() {
     <div className="shell admin">
       <header className="topbar">
         <div className="brand">
-          <span className="brand-name">{'Avroleva'}</span>
+          <span className="brand-name">{t('app.name')}</span>
           <span className="brand-tenant">{t('admin.title')}</span>
         </div>
         <nav className="nav">

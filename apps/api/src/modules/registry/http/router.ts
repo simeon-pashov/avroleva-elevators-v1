@@ -143,7 +143,7 @@ registryRouter.delete('/contracts/:id', canEdit, async (req, res) => {
 // ---- CSV import (preview -> commit)
 registryRouter.get('/imports/template.csv', (_req, res) => {
   res.setHeader('Content-Type', 'text/csv; charset=utf-8')
-  res.setHeader('Content-Disposition', 'attachment; filename="Avroleva-import.csv"')
+  res.setHeader('Content-Disposition', 'attachment; filename="Avroleva-Elevators-import.csv"')
   res.send(imports.templateCsv())
 })
 registryRouter.get('/imports', canEdit, async (req, res) => {
