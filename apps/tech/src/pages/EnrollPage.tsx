@@ -110,8 +110,13 @@ export function EnrollPage() {
   const [error, setError] = useState<string | null>(null)
   const nameRef = useRef<HTMLInputElement>(null)
 
+  // A deep link can arrive while this page is already open (native appUrlOpen -> navigate):
+  // follow the URL params, do not only seed the initial state from them.
   useEffect(() => {
-    if (fromUrl) nameRef.current?.focus()
+    if (fromUrl) {
+      setCode(fromUrl)
+      nameRef.current?.focus()
+    }
   }, [fromUrl])
   useEffect(() => {
     if (fromServer) setApiBase(fromServer)

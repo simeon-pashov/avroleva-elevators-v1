@@ -1,4 +1,4 @@
-import type { PreferencesPlugin } from '@capacitor/preferences'
+import type * as PreferencesModule from '@capacitor/preferences'
 import type { SecureStorage } from '../secureStorage'
 
 /**
@@ -9,9 +9,14 @@ import type { SecureStorage } from '../secureStorage'
 const cache = new Map<string, string>()
 const PREFIX = 'avroleva.tech.'
 
-let mod: Promise<PreferencesPlugin> | undefined
-function preferences(): Promise<PreferencesPlugin> {
-  mod ??= import('@capacitor/preferences').then((m) => m.Preferences)
+// Never let a promise settle with the plugin object: a Capacitor plugin proxy answers every
+// property, `then` included, so promise assimilation calls `Preferences.then()` -> "not
+// implemented on android" and nothing ever resolves. Always await the module namespace and read
+// `.Preferences` synchronously afterwards (an `async` function returning the plugin has the same
+// problem).
+let mod: Promise<typeof PreferencesModule> | undefined
+function preferences(): Promise<typeof PreferencesModule> {
+  mod ??= import('@capacitor/preferences')
   return mod
 }
 
@@ -22,18 +27,18 @@ export const nativeSecureStorage: SecureStorage = {
   set(key, value) {
     cache.set(key, value)
     void preferences()
-      .then((p) => p.set({ key: PREFIX + key, value }))
+      .then((m) => m.Preferences.set({ key: PREFIX + key, value }))
       .catch(() => undefined)
   },
   remove(key) {
     cache.delete(key)
     void preferences()
-      .then((p) => p.remove({ key: PREFIX + key }))
+      .then((m) => m.Preferences.remove({ key: PREFIX + key }))
       .catch(() => undefined)
   },
   async init() {
     try {
-      const p = await preferences()
+      const p = (await preferences()).Preferences
       const { keys } = await p.keys()
       for (const full of keys) {
         if (!full.startsWith(PREFIX)) continue

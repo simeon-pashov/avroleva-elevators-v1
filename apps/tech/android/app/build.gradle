@@ -1,0 +1,92 @@
+apply plugin: 'com.android.application'
+
+import groovy.json.JsonSlurper
+
+// versionName = apps/tech/package.json version (what the API compares as X-Client-Version);
+// versionCode = major*10000 + minor*100 + patch, so it stays monotonic across releases
+// (0.6.0 -> 600, 0.6.1 -> 601, 1.0.0 -> 10000).
+def techPackage = new JsonSlurper().parse(file('../../package.json'))
+def techVersionName = techPackage.version as String
+def techVersionParts = techVersionName.tokenize('.').collect { it.replaceAll(/[^0-9].*/, '').toInteger() }
+def techVersionCode = techVersionParts[0] * 10000 + techVersionParts[1] * 100 + techVersionParts[2]
+
+// Release signing (docs/ANDROID-RELEASE.md). Never in git. Two sources, first one wins:
+//   1. android/keystore.properties (untracked, see keystore.properties.example)
+//   2. Gradle properties AVROLEVA_STORE_FILE / _STORE_PASSWORD / _KEY_ALIAS / _KEY_PASSWORD
+//      (~/.gradle/gradle.properties or -P on the command line)
+// Without either, assembleRelease produces app-release-unsigned.apk.
+def keystoreProps = new Properties()
+def keystorePropsFile = rootProject.file('keystore.properties')
+if (keystorePropsFile.exists()) {
+    keystorePropsFile.withInputStream { keystoreProps.load(it) }
+}
+def signingValue = { String key ->
+    keystoreProps.getProperty(key) ?: (project.hasProperty(key) ? project.property(key) : null)
+}
+def releaseStoreFile = signingValue('AVROLEVA_STORE_FILE')
+
+android {
+    namespace "bg.avroleva.elevators.tech"
+    compileSdk rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "bg.avroleva.elevators.tech"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode techVersionCode
+        versionName techVersionName
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            if (releaseStoreFile) {
+                storeFile file(releaseStoreFile)
+                storePassword signingValue('AVROLEVA_STORE_PASSWORD')
+                keyAlias signingValue('AVROLEVA_KEY_ALIAS') ?: 'avroleva'
+                keyPassword signingValue('AVROLEVA_KEY_PASSWORD') ?: signingValue('AVROLEVA_STORE_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            if (releaseStoreFile) {
+                signingConfig signingConfigs.release
+            }
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

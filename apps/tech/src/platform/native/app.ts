@@ -1,9 +1,11 @@
-import type { AppPlugin } from '@capacitor/app'
+import type * as AppModule from '@capacitor/app'
 import type { AppHost } from '../appHost'
 
-let appMod: Promise<AppPlugin> | undefined
-function app(): Promise<AppPlugin> {
-  appMod ??= import('@capacitor/app').then((m) => m.App)
+// Resolve with the module, never with the plugin: the plugin proxy is a thenable and would hang
+// every promise settled with it (see native/preferences.ts).
+let appMod: Promise<typeof AppModule> | undefined
+function app(): Promise<typeof AppModule> {
+  appMod ??= import('@capacitor/app')
   return appMod
 }
 
@@ -19,13 +21,13 @@ function listen(register: () => Promise<{ remove: () => Promise<void> }>): () =>
 
 export const nativeAppHost: AppHost = {
   onResume(cb) {
-    return listen(async () => (await app()).addListener('resume', () => cb()))
+    return listen(async () => (await app()).App.addListener('resume', () => cb()))
   },
   onUrlOpen(cb) {
-    return listen(async () => (await app()).addListener('appUrlOpen', (e) => cb(e.url)))
+    return listen(async () => (await app()).App.addListener('appUrlOpen', (e) => cb(e.url)))
   },
   onBackButton(cb) {
-    return listen(async () => (await app()).addListener('backButton', (e) => cb(e.canGoBack)))
+    return listen(async () => (await app()).App.addListener('backButton', (e) => cb(e.canGoBack)))
   },
   ready() {
     void import('@capacitor/splash-screen')
@@ -40,7 +42,7 @@ export const nativeAppHost: AppHost = {
   },
   async takeLaunchUrl() {
     try {
-      const launch = await (await app()).getLaunchUrl()
+      const launch = await (await app()).App.getLaunchUrl()
       return launch?.url ?? null
     } catch {
       return null
@@ -48,7 +50,7 @@ export const nativeAppHost: AppHost = {
   },
   exit() {
     void app()
-      .then((a) => a.exitApp())
+      .then((m) => m.App.exitApp())
       .catch(() => undefined)
   },
 }

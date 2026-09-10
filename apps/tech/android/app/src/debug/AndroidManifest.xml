@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds only: allow plain http so the app can be pointed at a dev API on the laptop
+     (emulator: http://10.0.2.2:3005 or, after `adb reverse tcp:3005 tcp:3005`, http://localhost:3005).
+     Release builds keep android:usesCleartextTraffic="false" from the main manifest. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application
+        android:usesCleartextTraffic="true"
+        android:networkSecurityConfig="@xml/network_security_config"
+        tools:replace="android:usesCleartextTraffic" />
+</manifest>

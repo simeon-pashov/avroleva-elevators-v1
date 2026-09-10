@@ -7,7 +7,7 @@
 //   APK_OUT_DIR=D:\Code\Avroleva\Releases node scripts/gradle.mjs assembleRelease
 //     also copies the APK there as avroleva-elevators-tech-<version>.apk (outside the repo).
 import { spawnSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve } from 'node:path'
 import { homedir } from 'node:os'
@@ -18,9 +18,40 @@ const android = join(root, 'android')
 const task = process.argv[2] || 'assembleRelease'
 const local = process.env.LOCALAPPDATA || join(homedir(), 'AppData', 'Local')
 
+/** Major version from a JDK's `release` file (0 when unreadable). */
+function jdkMajor(dir) {
+  try {
+    const m = /JAVA_VERSION="(\d+)/.exec(readFileSync(join(dir, 'release'), 'utf8'))
+    return m ? Number(m[1]) : 0
+  } catch {
+    return 0
+  }
+}
+
+/**
+ * Capacitor 7.6 compiles its Android modules with Java 21, so the JVM running Gradle must be a
+ * JDK 21+ (a JDK 17 fails with "invalid source release: 21"). Candidates in order: JAVA_HOME_21,
+ * the documented user-scoped install, any JDK 21+ Gradle provisioned into ~/.gradle/jdks (Foojay
+ * resolver in android/settings.gradle), JAVA_HOME itself if it is 21+, then JDK 17 (will fail
+ * with a clear message from Gradle).
+ */
+function findJdk() {
+  const candidates = [process.env.JAVA_HOME_21, join(local, 'Programs', 'jdk-21')]
+  const jdks = join(homedir(), '.gradle', 'jdks')
+  if (existsSync(jdks)) {
+    for (const name of readdirSync(jdks)) {
+      const dir = join(jdks, name)
+      if (existsSync(join(dir, 'bin'))) candidates.push(dir)
+    }
+  }
+  candidates.push(process.env.JAVA_HOME)
+  for (const c of candidates) if (c && existsSync(join(c, 'bin')) && jdkMajor(c) >= 21) return c
+  return process.env.JAVA_HOME || join(local, 'Programs', 'jdk-17')
+}
+
 const env = {
   ...process.env,
-  JAVA_HOME: process.env.JAVA_HOME || join(local, 'Programs', 'jdk-17'),
+  JAVA_HOME: findJdk(),
   ANDROID_HOME: process.env.ANDROID_HOME || join(local, 'Android', 'Sdk'),
 }
 env.ANDROID_SDK_ROOT = env.ANDROID_HOME
@@ -35,9 +66,13 @@ if (!existsSync(android)) {
   process.exit(1)
 }
 
-const wrapper = process.platform === 'win32' ? 'gradlew.bat' : './gradlew'
-console.log(`[gradle] ${task} (JAVA_HOME=${env.JAVA_HOME}, ANDROID_HOME=${env.ANDROID_HOME})`)
-const r = spawnSync(wrapper, [task, '--no-daemon', '--console=plain'], {
+const wrapper = join(android, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew')
+console.log(
+  `[gradle] ${task} (JAVA_HOME=${env.JAVA_HOME} [JDK ${jdkMajor(env.JAVA_HOME)}], ANDROID_HOME=${env.ANDROID_HOME})`,
+)
+if (jdkMajor(env.JAVA_HOME) < 21)
+  console.warn('[gradle] warning: Capacitor 7.6 needs JDK 21+ to run Gradle (see docs/ANDROID-RELEASE.md)')
+const r = spawnSync(`"${wrapper}"`, [task, '--no-daemon', '--console=plain'], {
   cwd: android,
   env,
   stdio: 'inherit',
