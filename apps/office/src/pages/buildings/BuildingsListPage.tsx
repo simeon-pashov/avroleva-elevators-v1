@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import type { BuildingDto, GeocodeStatus, Page } from '@avroleva/contracts'
+import type { BuildingDto, GeocodeStatus, Page, ZoneDto } from '@avroleva/contracts'
 import { GeocodeStatus as GeocodeStatusEnum } from '@avroleva/contracts'
 import { get, qs } from '../../lib/api'
 import { useI18n } from '../../i18n/I18nProvider'
@@ -29,6 +29,8 @@ export function BuildingsListPage() {
   const [params, setParams] = useSearchParams()
   const q = params.get('q') ?? ''
   const customerId = params.get('customerId') ?? ''
+  const zoneId = params.get('zoneId') ?? ''
+  const [zones, setZones] = useState<ZoneDto[]>([])
   const [geocodeStatus, setGeocodeStatus] = useState<GeocodeStatus | ''>(
     params.get('geocodeStatus') === 'pending' ? 'pending' : '',
   )
@@ -37,10 +39,16 @@ export function BuildingsListPage() {
   const list = useCursorList<BuildingDto>(
     (cursor) =>
       get<Page<BuildingDto>>(
-        `/buildings${qs({ q, customerId, geocodeStatus, cursor, limit: 50 })}`,
+        `/buildings${qs({ q, customerId, geocodeStatus, zoneId, cursor, limit: 50 })}`,
       ),
-    [q, customerId, geocodeStatus],
+    [q, customerId, geocodeStatus, zoneId],
   )
+
+  useEffect(() => {
+    get<{ items: ZoneDto[] }>('/zones')
+      .then((r) => setZones(r.items))
+      .catch(() => setZones([]))
+  }, [])
 
   return (
     <div>
@@ -63,6 +71,21 @@ export function BuildingsListPage() {
           onChange={(v) => setParams((p) => (v ? (p.set('q', v), p) : (p.delete('q'), p)))}
           placeholder={t('buildings.searchPlaceholder')}
         />
+        <select
+          value={zoneId}
+          aria-label={t('buildings.zone')}
+          onChange={(e) => {
+            const v = e.target.value
+            setParams((p) => (v ? (p.set('zoneId', v), p) : (p.delete('zoneId'), p)))
+          }}
+        >
+          <option value="">{t('buildings.allZones')}</option>
+          {zones.map((z) => (
+            <option key={z.id} value={z.id}>
+              {z.name}
+            </option>
+          ))}
+        </select>
         <EnumSelect
           value={geocodeStatus}
           options={GeocodeStatusEnum.options}
@@ -101,6 +124,7 @@ export function BuildingsListPage() {
               <tr>
                 <th>{t('buildings.address')}</th>
                 <th>{t('buildings.customer')}</th>
+                <th>{t('buildings.zone')}</th>
                 <th className="num">{t('buildings.elevators')}</th>
                 <th>{t('buildings.location')}</th>
                 <th />
@@ -113,6 +137,7 @@ export function BuildingsListPage() {
                     <Link to={`/buildings/${b.id}`}>{b.addressText}</Link>
                   </td>
                   <td>{b.customerName ?? <span className="muted">—</span>}</td>
+                  <td>{b.zoneName ?? <span className="muted">—</span>}</td>
                   <td className="num">{b.elevatorCount ?? 0}</td>
                   <td>
                     <Badge kind={geocodeBadge(b.geocodeStatus)}>

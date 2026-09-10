@@ -23,6 +23,8 @@ import { SettingsPage } from './pages/SettingsPage'
 import { NotificationSettingsPage } from './pages/settings/NotificationSettingsPage'
 import { DataSettingsPage } from './pages/settings/DataSettingsPage'
 import { BillingSettingsPage } from './pages/settings/BillingSettingsPage'
+import { PlanningSettingsPage } from './pages/settings/PlanningSettingsPage'
+import { DayPlanPage } from './pages/plan/DayPlanPage'
 import { InvoicesListPage } from './pages/invoices/InvoicesListPage'
 import { InvoiceDetailPage } from './pages/invoices/InvoiceDetailPage'
 import { BankImportPage } from './pages/invoices/BankImportPage'
@@ -98,6 +100,7 @@ export function App() {
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/jobs" element={<JobsPage />} />
         <Route path="/jobs/:id" element={<JobDetailPage />} />
+        <Route path="/plan" element={<DayPlanPage />} />
         <Route element={<RequireRole roles={['owner', 'office']} />}>
           <Route path="/import" element={<ImportPage />} />
           <Route path="/jobs/new" element={<JobFormPage />} />
@@ -106,6 +109,7 @@ export function App() {
           <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
           <Route path="/settings/data" element={<DataSettingsPage />} />
           <Route path="/settings/billing" element={<BillingSettingsPage />} />
+          <Route path="/settings/planning" element={<PlanningSettingsPage />} />
           <Route path="/invoices" element={<InvoicesListPage />} />
           <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
           <Route path="/billing/bank-import" element={<BankImportPage />} />

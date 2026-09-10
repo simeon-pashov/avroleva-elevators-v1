@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
-import type { BuildingDto, CustomerDto, Page } from '@avroleva/contracts'
+import type { BuildingDto, CustomerDto, Page, ZoneDto } from '@avroleva/contracts'
 import { get, patch, post, qs } from '../../lib/api'
 import { useI18n } from '../../i18n/I18nProvider'
 import { ErrorBox, Field, PageHeader, Spinner, toast } from '../../components/ui'
@@ -10,6 +10,8 @@ import { useForm } from '../../components/useForm'
 
 interface FormValues {
   customerId: string
+  /** '' = automatic assignment (by map / district); an id = manual override. */
+  zoneId: string
   city: string
   postcode: string
   oblast: string
@@ -27,6 +29,7 @@ interface FormValues {
 
 const empty: FormValues = {
   customerId: '',
+  zoneId: '',
   city: 'София',
   postcode: '',
   oblast: 'София-град',
@@ -49,6 +52,7 @@ export function BuildingFormPage() {
   const navigate = useNavigate()
   const form = useForm<FormValues>({ ...empty, customerId: params.get('customerId') ?? '' })
   const [customers, setCustomers] = useState<CustomerDto[]>([])
+  const [zones, setZones] = useState<ZoneDto[]>([])
   const [loaded, setLoaded] = useState(!id)
   const [loadError, setLoadError] = useState<unknown>(null)
 
@@ -56,6 +60,9 @@ export function BuildingFormPage() {
     get<Page<CustomerDto>>(`/customers${qs({ limit: 200 })}`)
       .then((p) => setCustomers(p.items))
       .catch(setLoadError)
+    get<{ items: ZoneDto[] }>('/zones')
+      .then((r) => setZones(r.items.filter((z) => z.active)))
+      .catch(() => setZones([]))
   }, [])
 
   useEffect(() => {
@@ -64,6 +71,7 @@ export function BuildingFormPage() {
       .then((b) => {
         form.setValues({
           customerId: b.customerId ?? '',
+          zoneId: b.zoneManual ? (b.zoneId ?? '') : '',
           city: b.address.city,
           postcode: b.address.postcode ?? '',
           oblast: b.address.oblast ?? '',
@@ -93,6 +101,7 @@ export function BuildingFormPage() {
     form.submit(async (values) => {
       const body = {
         customerId: values.customerId || null,
+        zoneId: values.zoneId || null,
         address: {
           city: values.city,
           postcode: values.postcode,
@@ -141,6 +150,16 @@ export function BuildingFormPage() {
               {customers.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label={t('buildings.zone')} error={err.zoneId} hint={t('buildings.zoneHint')}>
+            <select value={v.zoneId} onChange={(e) => form.set('zoneId', e.target.value)}>
+              <option value="">{t('buildings.zoneAuto')}</option>
+              {zones.map((z) => (
+                <option key={z.id} value={z.id}>
+                  {z.name}
                 </option>
               ))}
             </select>

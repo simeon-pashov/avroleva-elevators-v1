@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import type { DueBoardDto, DueBuildingDto, DueElevatorDto } from '@avroleva/contracts'
 import { ApiError, get, post, qs } from '../../lib/api'
-import { tomorrowSofia } from '../../lib/dates'
+import { todaySofia, tomorrowSofia } from '../../lib/dates'
 import { useI18n } from '../../i18n/I18nProvider'
 import { useAuth } from '../../auth/AuthProvider'
 import { Badge, Empty, ErrorBox, Spinner, toast } from '../../components/ui'
@@ -154,13 +154,23 @@ export function DueWidget({
     <div className="card due-widget">
       <div className="card-head">
         <h2>{t('due.title')}</h2>
-        {c ? (
-          <div className="due-counts">
-            <Badge kind="danger">{t('due.badgeOverdue', { count: c.overdue })}</Badge>
-            <Badge kind="warn">{t('due.badgeToday', { count: c.today })}</Badge>
-            <Badge kind="info">{t('due.badgeTomorrow', { count: c.tomorrow })}</Badge>
-          </div>
-        ) : null}
+        <div className="actions">
+          {c ? (
+            <div className="due-counts">
+              <Badge kind="danger">{t('due.badgeOverdue', { count: c.overdue })}</Badge>
+              <Badge kind="warn">{t('due.badgeToday', { count: c.today })}</Badge>
+              <Badge kind="info">{t('due.badgeTomorrow', { count: c.tomorrow })}</Badge>
+            </div>
+          ) : null}
+          {canReschedule ? (
+            <Link
+              className="btn btn-small"
+              to={`/plan?date=${day === 'tomorrow' ? tomorrowSofia() : todaySofia()}`}
+            >
+              {t('dayPlan.planTheDay')}
+            </Link>
+          ) : null}
+        </div>
       </div>
       <div className="seg" role="tablist">
         <button

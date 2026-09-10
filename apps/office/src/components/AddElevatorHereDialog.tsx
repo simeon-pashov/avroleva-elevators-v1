@@ -15,6 +15,30 @@ import { useI18n } from '../i18n/I18nProvider'
 import { ErrorBox, Field, toast } from './ui'
 import { EnumSelect } from './EnumSelect'
 
+/** A nearby building, or the preselected one when the API's list does not include it. */
+type NearbyOption = NearbyBuildingDto & { preselected?: boolean }
+
+function withPreselected(
+  items: NearbyBuildingDto[],
+  id: string | undefined,
+  addressText: string | undefined,
+): NearbyOption[] {
+  if (!id || items.some((b) => b.id === id)) return items
+  return [
+    {
+      id,
+      addressText: addressText ?? id,
+      customerName: null,
+      lat: 0,
+      lng: 0,
+      elevatorCount: 0,
+      distanceM: 0,
+      preselected: true,
+    },
+    ...items,
+  ]
+}
+
 interface AddressDraft {
   city: string
   postcode: string
@@ -35,11 +59,17 @@ interface AddressDraft {
 export function AddElevatorHereDialog({
   point,
   suggestion,
+  attachToBuildingId,
+  attachToAddress,
   onClose,
   onCreated,
 }: {
   point: { lat: number; lng: number }
   suggestion: GeoSuggestionDto | null
+  /** Preselects this building in the attach list (the building page's "add an elevator here"). */
+  attachToBuildingId?: string
+  /** Its address, shown when the nearby list does not carry the building itself. */
+  attachToAddress?: string
   onClose: () => void
   onCreated: (r: BuildingWithElevatorResultDto) => void
 }) {
@@ -54,8 +84,8 @@ export function AddElevatorHereDialog({
     block: a?.block ?? '',
     entrance: a?.entrance ?? '',
   })
-  const [nearby, setNearby] = useState<NearbyBuildingDto[]>([])
-  const [attachTo, setAttachTo] = useState<string>('')
+  const [nearby, setNearby] = useState<NearbyOption[]>([])
+  const [attachTo, setAttachTo] = useState<string>(attachToBuildingId ?? '')
   const [customers, setCustomers] = useState<CustomerDto[]>([])
   const [customerId, setCustomerId] = useState('')
   const [newCustomer, setNewCustomer] = useState('')
@@ -78,12 +108,17 @@ export function AddElevatorHereDialog({
     get<{ items: NearbyBuildingDto[] }>(
       `/buildings/nearby${qs({ lat: point.lat, lng: point.lng, radiusM: 60 })}`,
     )
-      .then((r) => !cancelled && setNearby(r.items))
-      .catch(() => !cancelled && setNearby([]))
+      .then(
+        (r) =>
+          !cancelled && setNearby(withPreselected(r.items, attachToBuildingId, attachToAddress)),
+      )
+      .catch(
+        () => !cancelled && setNearby(withPreselected([], attachToBuildingId, attachToAddress)),
+      )
     return () => {
       cancelled = true
     }
-  }, [point.lat, point.lng])
+  }, [point.lat, point.lng, attachToBuildingId, attachToAddress])
   useEffect(() => {
     if (addr.entrance && !internalNo)
       setInternalNo(`${t('address.entranceShort')} ${addr.entrance}`)
@@ -180,12 +215,14 @@ export function AddElevatorHereDialog({
                   />
                   <span>
                     {b.addressText}
-                    <span className="muted small">
-                      {' '}
-                      · {t('geo.metres', { count: b.distanceM })} ·{' '}
-                      {t('buildings.elevatorsCount', { count: b.elevatorCount })}
-                      {b.customerName ? ` · ${b.customerName}` : ''}
-                    </span>
+                    {b.preselected ? null : (
+                      <span className="muted small">
+                        {' '}
+                        · {t('geo.metres', { count: b.distanceM })} ·{' '}
+                        {t('buildings.elevatorsCount', { count: b.elevatorCount })}
+                        {b.customerName ? ` · ${b.customerName}` : ''}
+                      </span>
+                    )}
                   </span>
                 </label>
               ))}

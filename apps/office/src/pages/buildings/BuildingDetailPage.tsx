@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import type { BuildingDetailDto, ContactDto, GeocodeResultDto } from '@avroleva/contracts'
+import type {
+  BuildingDetailDto,
+  BuildingWithElevatorResultDto,
+  ContactDto,
+  GeocodeResultDto,
+} from '@avroleva/contracts'
 import { BASE, del, get, post, put } from '../../lib/api'
 import { useI18n } from '../../i18n/I18nProvider'
 import { useAuth } from '../../auth/AuthProvider'
@@ -13,6 +18,8 @@ import { elevatorStatusBadge, dueBadge, overrideBadge } from '../elevators/Eleva
 import { BuildingViberCard } from './BuildingViberCard'
 import { BuildingReportCard } from './BuildingReportCard'
 import { BuildingStatementCard } from './BuildingStatementCard'
+import { BuildingAccessCard } from './BuildingAccessCard'
+import { AddElevatorHereDialog } from '../../components/AddElevatorHereDialog'
 
 export function BuildingDetailPage() {
   const { id } = useParams()
@@ -25,6 +32,7 @@ export function BuildingDetailPage() {
   const [pin, setPin] = useState<{ lat: number; lng: number } | null>(null)
   const [busy, setBusy] = useState(false)
   const [panelId, setPanelId] = useState<string | null>(null)
+  const [addingHere, setAddingHere] = useState(false)
   const canEdit = hasRole('owner', 'office')
 
   const load = useCallback(async () => {
@@ -144,6 +152,16 @@ export function BuildingDetailPage() {
                 .filter(Boolean)
                 .join(', ') || '—'}
             </dd>
+            <dt>{t('buildings.zone')}</dt>
+            <dd>
+              {b.zoneName ?? <span className="muted">—</span>}
+              {b.zoneManual ? (
+                <>
+                  {' '}
+                  <Badge kind="muted">{t('buildings.zoneManual')}</Badge>
+                </>
+              ) : null}
+            </dd>
             <dt>{t('buildings.accessNotes')}</dt>
             <dd className="pre">{b.accessNotes ?? '—'}</dd>
             <dt>{t('buildings.keysLocation')}</dt>
@@ -182,6 +200,16 @@ export function BuildingDetailPage() {
               <button type="button" className="btn" disabled={busy} onClick={geocode}>
                 {t('buildings.geocode')}
               </button>
+              {b.lat != null && b.lng != null ? (
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={busy}
+                  onClick={() => setAddingHere(true)}
+                >
+                  {t('buildings.addElevatorHere')}
+                </button>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -291,7 +319,21 @@ export function BuildingDetailPage() {
       {canSeeMoney ? (
         <div className="grid-2">
           <BuildingStatementCard building={b} />
+          <BuildingAccessCard building={b} />
         </div>
+      ) : null}
+      {addingHere && canEdit && b.lat != null && b.lng != null ? (
+        <AddElevatorHereDialog
+          point={{ lat: b.lat, lng: b.lng }}
+          suggestion={null}
+          attachToBuildingId={b.id}
+          attachToAddress={b.addressText}
+          onClose={() => setAddingHere(false)}
+          onCreated={(r: BuildingWithElevatorResultDto) => {
+            setAddingHere(false)
+            void load().then(() => setPanelId(r.elevator.id))
+          }}
+        />
       ) : null}
       {panelId ? (
         <ElevatorPanel elevatorId={panelId} onClose={() => setPanelId(null)} onChanged={load} />

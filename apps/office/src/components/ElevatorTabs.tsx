@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import type {
+  AccessLinkStatusDto,
   BuildingBillingDto,
   CallbackDto,
   DefectDto,
@@ -22,6 +23,7 @@ import { DefectList } from './defects/DefectList'
 import { RecordDefectForm } from './defects/RecordDefectForm'
 import { ElevatorInspections } from './inspections/ElevatorInspections'
 import { JobList } from './jobs/JobList'
+import { CopyButton } from './PayBlock'
 import type { JobDto } from '@avroleva/contracts'
 
 export function invoiceStatusBadge(status: InvoiceStatus): 'ok' | 'warn' | 'danger' | 'muted' {
@@ -252,7 +254,80 @@ export function PaymentsTable({
 }
 
 /** Invoices (with this elevator's share) and payments of the elevator's building. Owner/office only. */
-export function ElevatorBilling({ elevatorId, version }: { elevatorId: string; version: number }) {
+/** Payer reference of the newest invoice + the building's access-link status (step 9). */
+function BillingReferenceBlock({
+  buildingId,
+  invoice,
+  version,
+}: {
+  buildingId: string
+  invoice: InvoiceDto | null
+  version: number
+}) {
+  const { t, date, dateTime } = useI18n()
+  const [status, setStatus] = useState<AccessLinkStatusDto | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    get<AccessLinkStatusDto>(`/buildings/${buildingId}/access-link-status`)
+      .then((d) => !cancelled && setStatus(d))
+      .catch(() => !cancelled && setStatus(null))
+    return () => {
+      cancelled = true
+    }
+  }, [buildingId, version])
+
+  const ref = invoice?.paymentReference ?? null
+  return (
+    <dl className="dl access-status-dl">
+      <dt>{t('payments.payerReference')}</dt>
+      <dd className="copy-row">
+        {ref ? (
+          <>
+            <code>{ref}</code>
+            <CopyButton text={ref} />
+          </>
+        ) : (
+          <span className="muted">—</span>
+        )}
+      </dd>
+      <dt>{t('accessLinks.statusLabel')}</dt>
+      <dd className="access-status">
+        {!status ? (
+          <span className="muted">…</span>
+        ) : status.active ? (
+          <>
+            <span className="text-ok">
+              {t('accessLinks.statusActive', { expires: date(status.expiresAt) })}
+            </span>
+            <span className="muted small">
+              {' '}
+              · {t('accessLinks.opens', { count: status.useCount })}
+              {status.lastUsedAt
+                ? ` · ${t('accessLinks.lastUsed')}: ${dateTime(status.lastUsedAt)}`
+                : ''}
+            </span>
+          </>
+        ) : (
+          <span className="muted">{t('accessLinks.statusNone')}</span>
+        )}{' '}
+        <Link to={`/buildings/${buildingId}`} className="small nowrap">
+          {t('accessLinks.toBuilding')}
+        </Link>
+      </dd>
+    </dl>
+  )
+}
+
+export function ElevatorBilling({
+  elevatorId,
+  buildingId,
+  version,
+}: {
+  elevatorId: string
+  buildingId: string
+  version: number
+}) {
   const { t, moneyFull } = useI18n()
   const [b, setB] = useState<BuildingBillingDto | null>(null)
   const [error, setError] = useState<unknown>(null)
@@ -271,6 +346,11 @@ export function ElevatorBilling({ elevatorId, version }: { elevatorId: string; v
   if (!b) return <Spinner />
   return (
     <div>
+      <BillingReferenceBlock
+        buildingId={buildingId}
+        invoice={b.invoices[0] ?? null}
+        version={version}
+      />
       <div className="totals">
         <div className="total">
           <span className="muted small">{t('payments.pendingTotal')}</span>
@@ -480,7 +560,11 @@ export function ElevatorTabs({
           ))}
       </div>
       {tab === 'payments' && showBilling ? (
-        <ElevatorBilling elevatorId={elevator.id} version={version} />
+        <ElevatorBilling
+          elevatorId={elevator.id}
+          buildingId={elevator.buildingId}
+          version={version}
+        />
       ) : tab === 'callbacks' ? (
         <ElevatorCallbacks elevator={elevator} version={version} onChanged={changed} />
       ) : tab === 'defects' ? (

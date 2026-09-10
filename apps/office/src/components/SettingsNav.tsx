@@ -15,6 +15,11 @@ export function SettingsNav() {
       show: hasRole('owner', 'office'),
     },
     { to: '/settings/data', label: t('settings.navData'), show: hasRole('owner', 'office') },
+    {
+      to: '/settings/planning',
+      label: t('settings.navPlanning'),
+      show: hasRole('owner', 'office'),
+    },
   ]
   return (
     <nav className="tabs settings-nav">

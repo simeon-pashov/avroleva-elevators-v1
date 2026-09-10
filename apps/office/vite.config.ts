@@ -12,7 +12,9 @@ export default defineConfig({
     proxy: {
       '/api': { target: 'http://127.0.0.1:3005', changeOrigin: true },
       '/print': { target: 'http://127.0.0.1:3005', changeOrigin: true },
-      '/p': { target: 'http://127.0.0.1:3005', changeOrigin: true },
+      // Anchored: '/p' as a bare prefix would also catch the SPA's /plan route.
+      '^/p/': { target: 'http://127.0.0.1:3005', changeOrigin: true },
+      '^/s/': { target: 'http://127.0.0.1:3005', changeOrigin: true },
       '/files': { target: 'http://127.0.0.1:3005', changeOrigin: true },
       '/tech': { target: 'http://127.0.0.1:3005', changeOrigin: true },
     },

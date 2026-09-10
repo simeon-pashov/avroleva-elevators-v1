@@ -1798,3 +1798,432 @@ textarea:focus {
 .toolbar select {
   max-width: 260px;
 }
+
+/* ---- step 9 (A) ---- */
+/* ---- settings / Планиране (agent A): base point card, zones editor, technician pairs */
+.plan-settings-base {
+  margin-bottom: 1rem;
+}
+.plan-settings-grid {
+  align-items: start;
+}
+.plan-settings-grid .map-wrap {
+  margin-top: 0.25rem;
+}
+
+/* zones table */
+.zone-swatch-col {
+  width: 28px;
+}
+.zone-swatch {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  vertical-align: middle;
+}
+.zone-form h3,
+.pair-form h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+.zone-colour {
+  width: 64px;
+  height: 36px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+/* zone map editor */
+.zone-map-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.3rem;
+}
+.zone-map-bar .map-hint {
+  margin-top: 0;
+}
+.zone-vertex {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid #2563eb;
+  box-shadow: 0 0 0 1px #fff;
+  cursor: grab;
+}
+.zone-tooltip {
+  font-weight: 600;
+}
+
+/* technician pairs form */
+.pair-slots select {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* ---- step 9 (C) ---- */
+/* ---- Building access link card (BuildingAccessCard) + elevator billing reference block */
+.access-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.access-dl {
+  margin-bottom: 0.75rem;
+}
+.access-url-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.access-url-row .access-url {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.access-actions {
+  flex-wrap: wrap;
+}
+.access-generate .row {
+  align-items: flex-end;
+}
+.access-history {
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.5rem;
+}
+.access-history summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.9rem;
+  user-select: none;
+}
+.access-history-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  max-width: none;
+}
+.access-status-dl {
+  margin-bottom: 0.75rem;
+}
+.access-status {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+/* ---- step 9 (B) ---- */
+/* ---- step 9 (B): План за деня — board (columns per pair, DnD) + route map ---- */
+.plan-toolbar {
+  align-items: flex-end;
+}
+.plan-toolbar-actions {
+  margin-left: auto;
+  align-self: flex-end;
+}
+.plan-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.plan-totals > span + span::before {
+  content: '·';
+  margin-right: 0.5rem;
+}
+.plan-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: 12px;
+  align-items: start;
+}
+.plan-board-wrap {
+  min-width: 0;
+}
+.plan-board-wrap .empty {
+  margin-bottom: 12px;
+}
+.plan-map-wrap {
+  position: sticky;
+  top: 0.75rem;
+}
+.plan-map {
+  height: 560px;
+}
+
+/* columns */
+.plan-col {
+  flex: 0 0 276px;
+  border-top: 4px solid var(--plan-colour, #9ca3af);
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+.plan-col-locked {
+  background: #eceef2;
+}
+.plan-board-dragging .plan-col-refuse {
+  cursor: not-allowed;
+}
+.plan-board-dragging .plan-col-refuse .plan-col-body {
+  opacity: 0.5;
+}
+.plan-col-over {
+  box-shadow: inset 0 0 0 2px var(--plan-colour, #9ca3af);
+}
+.plan-col-head {
+  align-items: flex-start;
+}
+.plan-col-who {
+  min-width: 0;
+}
+.plan-col-title {
+  font-weight: 600;
+  line-height: 1.25;
+}
+.plan-col-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+.plan-col-badges .badge {
+  margin-left: 0;
+}
+.plan-lock-on {
+  background: #fff3dc;
+  border-color: #e3c58a;
+  color: var(--warn);
+}
+.plan-col-totals {
+  margin: 0 4px 8px;
+}
+.plan-col-body {
+  min-height: 44px;
+}
+.plan-drop-line {
+  height: 0;
+  border-top: 3px solid var(--plan-colour, #9ca3af);
+  border-radius: 2px;
+  margin: -4px 2px 5px;
+}
+
+/* cards */
+.plan-card {
+  cursor: grab;
+}
+.plan-card[draggable='false'] {
+  cursor: default;
+}
+.plan-card:active {
+  cursor: grabbing;
+}
+.plan-card-dragging {
+  opacity: 0.4;
+}
+.plan-card-done {
+  background: #f3f4f6;
+  color: var(--muted);
+}
+.plan-card-done .plan-seq {
+  background: var(--ok);
+}
+.plan-card-skipped {
+  background: #fffaf0;
+}
+.plan-card-hl {
+  box-shadow: 0 0 0 3px #fbbf24;
+  border-color: #f59e0b;
+}
+.plan-card-unplanned {
+  border-style: dashed;
+}
+.plan-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.plan-spacer {
+  flex: 1;
+}
+.plan-seq {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--plan-colour, #9ca3af);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+.plan-kind {
+  display: inline-block;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.plan-kind-check {
+  background: #e3ecfa;
+  color: #2563a8;
+}
+.plan-kind-callback {
+  background: #fde7e7;
+  color: #c62828;
+}
+.plan-kind-job {
+  background: #f1e6fb;
+  color: #7e22ce;
+}
+.plan-kind-inspection {
+  background: #dff4f2;
+  color: #0f766e;
+}
+.plan-chip {
+  display: inline-block;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  border: 1px dashed #9ca3af;
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.plan-eta {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.plan-card-title {
+  font-weight: 600;
+}
+.plan-card-label {
+  margin-top: 2px;
+}
+.plan-card-status {
+  margin-top: 4px;
+}
+.plan-card-status .badge {
+  margin-left: 0;
+}
+.plan-card-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.plan-btn-icon {
+  min-width: 28px;
+  padding: 0.15rem 0.4rem;
+}
+.plan-btn-remove {
+  margin-left: auto;
+  color: var(--danger);
+}
+.plan-col-unplanned {
+  background: #e9ebef;
+}
+.plan-add-select {
+  width: 100%;
+  margin-top: 6px;
+  font-size: 0.85rem;
+}
+
+/* map */
+.plan-legend-dot {
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+.plan-legend-dot-unplanned {
+  background: #fff;
+  box-shadow: 0 0 0 1px #6b7280;
+}
+.plan-pin {
+  background: transparent;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.plan-pin span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 5px;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+.plan-pin-done span {
+  opacity: 0.6;
+}
+.plan-pin-skipped span {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+.plan-pin-unplanned span {
+  min-width: 18px;
+  height: 18px;
+  padding: 0;
+  background: #fff;
+  border-color: #6b7280;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+.plan-pin-start span {
+  background: #111827;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: default;
+}
+.plan-tip {
+  font-size: 0.85rem;
+}
+.plan-tip > div:first-child {
+  font-weight: 600;
+}
+
+@media (max-width: 1100px) {
+  .plan-layout {
+    grid-template-columns: 1fr;
+  }
+  .plan-map-wrap {
+    position: static;
+  }
+  .plan-map {
+    height: 360px;
+  }
+  .plan-toolbar-actions {
+    margin-left: 0;
+  }
+}
