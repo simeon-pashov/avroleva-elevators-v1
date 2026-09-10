@@ -30,15 +30,17 @@ billingRouter.use(requireAuth)
 
 // Technicians never see money (ARCHITECTURE section 5, roles).
 const office = requireRole('owner', 'office')
+// Settings writes (dunning schedule, late-fee rules) are the owner's, like PATCH /tenant.
+const owner = requireRole('owner')
 
 billingRouter.get('/billing/config', office, async (req, res) => {
   res.json(await dunning.config(ctxOf(req)))
 })
-billingRouter.put('/billing/dunning-stages', office, async (req, res) => {
+billingRouter.put('/billing/dunning-stages', owner, async (req, res) => {
   res.json({ stages: await dunning.saveStages(ctxOf(req), parseBody(saveDunningStagesBody, req)) })
 })
 const ruleKey = z.object({ key: z.string().regex(/^[a-z0-9_]{2,40}$/) })
-billingRouter.put('/billing/late-fee-rules/:key', office, async (req, res) => {
+billingRouter.put('/billing/late-fee-rules/:key', owner, async (req, res) => {
   const { key } = ruleKey.parse(req.params)
   res.json(await dunning.saveLateFeeRule(ctxOf(req), key, parseBody(lateFeeRuleInput, req)))
 })

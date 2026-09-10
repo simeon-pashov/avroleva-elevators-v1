@@ -45,6 +45,7 @@ function LineRow({
   editable,
   onSave,
   onRemove,
+  showMoney,
 }: {
   line: JobLineDto
   editable: boolean
@@ -56,6 +57,8 @@ function LineRow({
     partRef?: string | null
   }) => Promise<void>
   onRemove: () => Promise<void>
+  /** Technicians see the lines without prices (the API zeroes them anyway). */
+  showMoney: boolean
 }) {
   const { t, money, number } = useI18n()
   const [editing, setEditing] = useState(false)
@@ -74,8 +77,12 @@ function LineRow({
           {line.partRef ? <div className="small muted">{line.partRef}</div> : null}
         </td>
         <td className="num">{number(line.qty, { maximumFractionDigits: 3 })}</td>
-        <td className="num">{money(line.unitCents)}</td>
-        <td className="num">{money(line.totalCents)}</td>
+        {showMoney ? (
+          <>
+            <td className="num">{money(line.unitCents)}</td>
+            <td className="num">{money(line.totalCents)}</td>
+          </>
+        ) : null}
         <td className="nowrap">
           {editable ? (
             <>
@@ -775,8 +782,12 @@ export function JobDetailPage() {
                   <th>{t('jobs.line.kind')}</th>
                   <th>{t('jobs.line.description')}</th>
                   <th className="num">{t('jobs.line.qty')}</th>
-                  <th className="num">{t('jobs.line.unit')}</th>
-                  <th className="num">{t('jobs.line.total')}</th>
+                  {canEdit ? (
+                    <>
+                      <th className="num">{t('jobs.line.unit')}</th>
+                      <th className="num">{t('jobs.line.total')}</th>
+                    </>
+                  ) : null}
                   <th />
                 </tr>
               </thead>
@@ -786,13 +797,14 @@ export function JobDetailPage() {
                     key={l.id}
                     line={l}
                     editable={editable}
+                    showMoney={canEdit}
                     onSave={(p) => act(() => patch(`/jobs/${job.id}/lines/${l.id}`, p))}
                     onRemove={() => act(() => del(`/jobs/${job.id}/lines/${l.id}`))}
                   />
                 ))}
                 {job.lines.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="muted">
+                    <td colSpan={canEdit ? 6 : 4} className="muted">
                       {t('jobs.lines.empty')}
                     </td>
                   </tr>
@@ -870,24 +882,26 @@ export function JobDetailPage() {
               </tbody>
             </table>
           </div>
-          <dl className="totals-dl">
-            <dt>{t('billing.doc.net')}</dt>
-            <dd>{moneyFull(job.netCents)}</dd>
-            <dt>
-              {t('billing.doc.vat')} {job.vatRatePercent}%
-            </dt>
-            <dd>{moneyFull(job.vatCents)}</dd>
-            <dt>{t('billing.doc.total')}</dt>
-            <dd>
-              <strong>{moneyFull(job.totalCents)}</strong>
-            </dd>
-            {job.invoicedCents > 0 ? (
-              <>
-                <dt>{t('jobs.invoicedSoFar')}</dt>
-                <dd>{moneyFull(job.invoicedCents)}</dd>
-              </>
-            ) : null}
-          </dl>
+          {canEdit ? (
+            <dl className="totals-dl">
+              <dt>{t('billing.doc.net')}</dt>
+              <dd>{moneyFull(job.netCents)}</dd>
+              <dt>
+                {t('billing.doc.vat')} {job.vatRatePercent}%
+              </dt>
+              <dd>{moneyFull(job.vatCents)}</dd>
+              <dt>{t('billing.doc.total')}</dt>
+              <dd>
+                <strong>{moneyFull(job.totalCents)}</strong>
+              </dd>
+              {job.invoicedCents > 0 ? (
+                <>
+                  <dt>{t('jobs.invoicedSoFar')}</dt>
+                  <dd>{moneyFull(job.invoicedCents)}</dd>
+                </>
+              ) : null}
+            </dl>
+          ) : null}
           {!editable && canEdit && !job.isTerminal ? (
             <p className="muted small">{t('jobs.linesLockedHint')}</p>
           ) : null}
@@ -908,8 +922,12 @@ export function JobDetailPage() {
                         <td>{t('jobs.quote.version', { n: l.quoteVersion })}</td>
                         <td>{l.description}</td>
                         <td className="num">{number(l.qty, { maximumFractionDigits: 3 })}</td>
-                        <td className="num">{money(l.unitCents)}</td>
-                        <td className="num">{money(l.totalCents)}</td>
+                        {canEdit ? (
+                          <>
+                            <td className="num">{money(l.unitCents)}</td>
+                            <td className="num">{money(l.totalCents)}</td>
+                          </>
+                        ) : null}
                       </tr>
                     ))}
                   </tbody>

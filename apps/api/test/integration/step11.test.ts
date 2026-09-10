@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import request from 'supertest'
 import type { Express } from 'express'
 import { disconnectDb } from '../../src/platform/db/prisma.js'
-import { app, bearer, createTenant, resetDb, seedAdmin } from '../helpers.js'
+import { CSRF, app, bearer, createTenant, resetDb, seedAdmin } from '../helpers.js'
 import type { TenantFixture } from '../helpers.js'
 
 /**
@@ -50,6 +50,38 @@ afterAll(async () => {
 
 const settings = async () =>
   (await request(server).get('/api/v1/tenant').set(bearer(A.ownerToken)).expect(200)).body.settings
+
+describe('billing settings writes are owner-only', () => {
+  it('the office reads the config but cannot rewrite dunning stages or late-fee rules', async () => {
+    await request(server)
+      .post('/api/v1/users')
+      .set(bearer(A.ownerToken))
+      .send({ username: 'office11', password: 'password123', name: 'Офис', role: 'office' })
+      .expect(201)
+    const login = await request(server)
+      .post('/api/v1/auth/login')
+      .set(CSRF)
+      .send({ username: 'office11', password: 'password123' })
+      .expect(200)
+    const office = bearer(login.body.token as string)
+    await request(server).get('/api/v1/billing/config').set(office).expect(200)
+    await request(server)
+      .put('/api/v1/billing/dunning-stages')
+      .set(office)
+      .send({ stages: [] })
+      .expect(403)
+    await request(server)
+      .put('/api/v1/billing/late-fee-rules/late_fee')
+      .set(office)
+      .send({ enabled: false })
+      .expect(403)
+    await request(server)
+      .put('/api/v1/billing/dunning-stages')
+      .set(bearer(A.ownerToken))
+      .send({ stages: [] })
+      .expect(200)
+  })
+})
 
 describe('partial settings PATCH keeps the other blocks', () => {
   it('planning-only save keeps billing (bank, provider, run day) and jobs', async () => {
