@@ -7,7 +7,8 @@ import { useToast } from '../components/Toast'
 import { Field, PageHeader } from '../components/ui'
 import { db, setMeta } from '../db'
 import { useI18n } from '../i18n/I18nProvider'
-import { effectiveApiBase } from '../platform/http'
+import { platform } from '../platform'
+import { effectiveApiBase, normalizeApiBase, persistApiBase } from '../platform/http'
 import { APP_VERSION } from '../version'
 
 export function SettingsPage() {
@@ -18,6 +19,7 @@ export function SettingsPage() {
   const elevators = useLiveQuery(() => db.elevators.count(), [], 0)
   const buildings = useLiveQuery(() => db.buildings.count(), [], 0)
   const [deviceName, setDeviceName] = useState(app.meta.deviceName ?? '')
+  const [apiBase, setApiBase] = useState(effectiveApiBase())
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
@@ -28,6 +30,19 @@ export function SettingsPage() {
     const name = deviceName.trim()
     if (!name || name === app.meta.deviceName) return
     void setMeta('deviceName', name).then(() => toast.show(t('common.saved')))
+  }
+
+  /** The server address (secureStorage): every API call, file URL and QR link follows it. */
+  const saveApiBase = () => {
+    const next = normalizeApiBase(apiBase)
+    if (!next || next === effectiveApiBase()) {
+      setApiBase(effectiveApiBase())
+      return
+    }
+    persistApiBase(next)
+    setApiBase(effectiveApiBase())
+    toast.show(t('common.saved'))
+    void app.syncNow()
   }
 
   const logout = async () => {
@@ -72,8 +87,12 @@ export function SettingsPage() {
                 {t('tech.settings.counts', { elevators, buildings })}
               </div>
             </dd>
-            <dt>{t('tech.enroll.apiBase')}</dt>
-            <dd className="muted small">{effectiveApiBase() || '/'}</dd>
+            <dt>{t('tech.settings.platform')}</dt>
+            <dd>
+              {platform.isNative
+                ? t('tech.settings.platformNative')
+                : t('tech.settings.platformWeb')}
+            </dd>
           </dl>
         </div>
 
@@ -85,6 +104,18 @@ export function SettingsPage() {
               onChange={(e) => setDeviceName(e.target.value)}
               onBlur={saveDeviceName}
               maxLength={80}
+            />
+          </Field>
+          <Field label={t('tech.settings.apiBase')} hint={t('tech.settings.apiBaseHint')}>
+            <input
+              type="url"
+              value={apiBase}
+              onChange={(e) => setApiBase(e.target.value)}
+              onBlur={saveApiBase}
+              placeholder="https://"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
             />
           </Field>
           <Field label={t('tech.settings.language')}>

@@ -5,11 +5,12 @@ import type { EnrollResponse } from '@avroleva/contracts'
 import { useApp } from '../app/AppProvider'
 import { saveSession } from '../app/session'
 import { Field } from '../components/ui'
-import { setMeta } from '../db'
 import { useI18n } from '../i18n/I18nProvider'
+import type { EnrollLink } from '../lib/enrollLink'
+import { parseEnrollLink } from '../lib/enrollLink'
 import { guessDeviceName } from '../lib/maps'
 import { ApiError, platform } from '../platform'
-import { getApiBaseOverride, setApiBaseOverride } from '../platform/http'
+import { defaultApiBase, effectiveApiBase, persistApiBase } from '../platform/http'
 import { pull } from '../sync'
 import { APP_VERSION } from '../version'
 
@@ -26,17 +27,13 @@ function canScan(): boolean {
   return !!barcodeDetector() && typeof navigator.mediaDevices?.getUserMedia === 'function'
 }
 
-/** The QR payload is the app URL with `?enroll=<code>`; a bare code is accepted too. */
-function codeFromScan(raw: string): string {
-  try {
-    const u = new URL(raw)
-    return u.searchParams.get('enroll') ?? raw
-  } catch {
-    return raw.trim()
-  }
-}
-
-function Scanner({ onResult, onError }: { onResult: (code: string) => void; onError: () => void }) {
+function Scanner({
+  onResult,
+  onError,
+}: {
+  onResult: (link: EnrollLink) => void
+  onError: () => void
+}) {
   const videoRef = useRef<HTMLVideoElement>(null)
   useEffect(() => {
     const Ctor = barcodeDetector()
@@ -68,7 +65,8 @@ function Scanner({ onResult, onError }: { onResult: (code: string) => void; onEr
             .detect(video)
             .then((codes) => {
               const hit = codes.find((c) => c.rawValue)
-              if (hit) onResult(codeFromScan(hit.rawValue))
+              const link = hit ? parseEnrollLink(hit.rawValue) : null
+              if (link) onResult(link)
             })
             .catch(() => undefined)
         }, 300)
@@ -101,9 +99,11 @@ export function EnrollPage() {
   const navigate = useNavigate()
   const [search] = useSearchParams()
   const fromUrl = search.get('enroll') ?? ''
+  // The office QR / deep link carries the server (everything before `/tech/`): prefill it.
+  const fromServer = search.get('server') ?? ''
   const [code, setCode] = useState(fromUrl)
   const [deviceName, setDeviceName] = useState(() => app.meta.deviceName ?? guessDeviceName())
-  const [apiBase, setApiBase] = useState(getApiBaseOverride())
+  const [apiBase, setApiBase] = useState(() => fromServer || effectiveApiBase())
   const [scanning, setScanning] = useState(false)
   const [cameraFailed, setCameraFailed] = useState(!canScan())
   const [busy, setBusy] = useState(false)
@@ -113,6 +113,15 @@ export function EnrollPage() {
   useEffect(() => {
     if (fromUrl) nameRef.current?.focus()
   }, [fromUrl])
+  useEffect(() => {
+    if (fromServer) setApiBase(fromServer)
+  }, [fromServer])
+
+  /** A scanned or pasted link fills both fields; a bare code only the code. */
+  const applyLink = (link: EnrollLink) => {
+    setCode(link.code)
+    if (link.server) setApiBase(link.server)
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -120,9 +129,7 @@ export function EnrollPage() {
     setBusy(true)
     setError(null)
     try {
-      const base = apiBase.trim().replace(/\/$/, '')
-      setApiBaseOverride(base)
-      await setMeta('apiBase', base)
+      persistApiBase(apiBase)
       const res = await platform.http.request<EnrollResponse>('POST', '/auth/enroll', {
         body: { token: code.trim(), deviceName: deviceName.trim(), clientVersion: APP_VERSION },
         auth: false,
@@ -156,8 +163,8 @@ export function EnrollPage() {
       {scanning ? (
         <div className="stack">
           <Scanner
-            onResult={(c) => {
-              setCode(c)
+            onResult={(link) => {
+              applyLink(link)
               setScanning(false)
               nameRef.current?.focus()
             }}
@@ -184,7 +191,11 @@ export function EnrollPage() {
             type="text"
             className="input-code"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={(e) => {
+              const link = parseEnrollLink(e.target.value)
+              if (link?.server) applyLink(link)
+              else setCode(e.target.value)
+            }}
             autoComplete="off"
             autoCapitalize="off"
             spellCheck={false}
@@ -201,22 +212,40 @@ export function EnrollPage() {
             required
           />
         </Field>
-        <details className="advanced">
-          <summary>{t('tech.enroll.apiBase')}</summary>
-          <input
-            type="url"
-            value={apiBase}
-            onChange={(e) => setApiBase(e.target.value)}
-            placeholder="https://"
-            autoCapitalize="off"
-            spellCheck={false}
-          />
-        </details>
+        {platform.isNative ? (
+          <Field label={t('tech.enroll.apiBase')} hint={t('tech.enroll.apiBaseHint')}>
+            <input
+              type="url"
+              value={apiBase}
+              onChange={(e) => setApiBase(e.target.value)}
+              placeholder={defaultApiBase() || 'https://'}
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              required
+            />
+          </Field>
+        ) : (
+          <details className="advanced">
+            <summary>{t('tech.enroll.apiBase')}</summary>
+            <input
+              type="url"
+              value={apiBase}
+              onChange={(e) => setApiBase(e.target.value)}
+              placeholder={defaultApiBase() || 'https://'}
+              autoCapitalize="off"
+              spellCheck={false}
+            />
+            <p className="muted small">{t('tech.enroll.apiBaseHint')}</p>
+          </details>
+        )}
         {error ? <div className="banner banner-danger">{error}</div> : null}
         <button
           type="submit"
           className="btn btn-primary btn-big"
-          disabled={busy || !code.trim() || !deviceName.trim()}
+          disabled={
+            busy || !code.trim() || !deviceName.trim() || (platform.isNative && !apiBase.trim())
+          }
         >
           {busy ? t('tech.enroll.working') : t('tech.enroll.submit')}
         </button>

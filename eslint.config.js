@@ -10,6 +10,9 @@ export default tseslint.config(
       '**/dist/**',
       'apps/api/src/generated/**',
       'apps/api/prisma/migrations/**',
+      // Capacitor: the generated Android project (web assets are copied into it by `cap sync`).
+      'apps/tech/android/**',
+      'apps/tech/dist-native/**',
     ],
   },
   js.configs.recommended,
@@ -17,12 +20,20 @@ export default tseslint.config(
   {
     files: ['**/*.{ts,tsx,js}'],
     rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       '@typescript-eslint/consistent-type-imports': 'error',
     },
   },
   {
     files: ['apps/api/**/*.ts', 'packages/**/*.ts', 'scripts/**/*.ts'],
+    languageOptions: { globals: globals.node },
+  },
+  {
+    // Node-side build helpers of the technician app (Capacitor).
+    files: ['apps/tech/scripts/**/*.mjs', 'apps/tech/capacitor.config.ts'],
     languageOptions: { globals: globals.node },
   },
   {
@@ -54,7 +65,8 @@ export default tseslint.config(
           patterns: [
             {
               group: ['**/modules/*/repo/**', '**/modules/*/domain/**', '**/modules/*/http/**'],
-              message: 'Import another module only through its index.ts (ARCHITECTURE §1.1 rule 1).',
+              message:
+                'Import another module only through its index.ts (ARCHITECTURE §1.1 rule 1).',
             },
           ],
         },

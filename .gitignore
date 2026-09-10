@@ -13,6 +13,23 @@ apps/*/.env.*
 # Build output
 dist/
 *.tsbuildinfo
+apps/tech/dist-native/
+
+# Android (Capacitor): project sources are committed, build outputs / secrets are not
+*.apk
+*.aab
+apps/tech/android/app/build/
+apps/tech/android/build/
+apps/tech/android/.gradle/
+apps/tech/android/.idea/
+apps/tech/android/local.properties
+apps/tech/android/keystore.properties
+apps/tech/android/app/src/main/assets/public/
+apps/tech/android/app/src/main/assets/capacitor.config.json
+apps/tech/android/app/src/main/assets/capacitor.plugins.json
+apps/tech/android/app/src/main/res/xml/config.xml
+apps/tech/android/capacitor-cordova-android-plugins/
+apps/tech/assets/*.png
 
 # Prisma generated client
 apps/api/src/generated/

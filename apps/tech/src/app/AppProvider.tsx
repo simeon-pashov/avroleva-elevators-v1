@@ -11,8 +11,8 @@ import type { ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { MetaValues } from '../db'
 import { db, getMeta, metaMap, setMeta } from '../db'
-import { UPDATE_REQUIRED_EVENT } from '../platform'
-import { setApiBaseOverride } from '../platform/http'
+import { UPDATE_REQUIRED_EVENT, platform, platformReady } from '../platform'
+import { loadApiBase, persistApiBase } from '../platform/http'
 import { drain, onSync, pull, startSyncEngine } from '../sync'
 import { useI18n } from '../i18n/I18nProvider'
 import { hasSession } from './session'
@@ -45,15 +45,8 @@ export interface AppState {
 
 const AppContext = createContext<AppState | null>(null)
 
-function subscribeOnline(cb: () => void) {
-  window.addEventListener('online', cb)
-  window.addEventListener('offline', cb)
-  return () => {
-    window.removeEventListener('online', cb)
-    window.removeEventListener('offline', cb)
-  }
-}
-const readOnline = () => navigator.onLine
+const subscribeOnline = (cb: () => void) => platform.network.subscribe(cb)
+const readOnline = () => platform.network.isOnline()
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const { suggestLocale } = useI18n()
@@ -75,16 +68,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const photosPending = useLiveQuery(() => db.blobs.count(), [], 0)
 
   const meta = useMemo(() => metaMap(metaRows), [metaRows])
-  const sessionPresent = useMemo(() => hasSession(), [sessionVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  // The token lives in secureStorage, readable only after platformReady (native Preferences).
+  const sessionPresent = useMemo(() => configLoaded && hasSession(), [sessionVersion, configLoaded]) // eslint-disable-line react-hooks/exhaustive-deps
   const needsReenroll = meta.needsReenroll === true
 
-  // Runtime config lives in meta: API base override and the chosen locale.
+  // Runtime config: the server address (secureStorage; builds before 0.6 kept it in meta, adopted
+  // once) and the chosen locale (meta).
   useEffect(() => {
     let cancelled = false
     void (async () => {
-      const [apiBase, locale] = await Promise.all([getMeta('apiBase'), getMeta('locale')])
+      await platformReady
+      const [legacyApiBase, locale] = await Promise.all([getMeta('apiBase'), getMeta('locale')])
       if (cancelled) return
-      setApiBaseOverride(apiBase ?? '')
+      if (!loadApiBase() && legacyApiBase) persistApiBase(legacyApiBase)
       suggestLocale(locale)
       setConfigLoaded(true)
     })()
@@ -115,6 +111,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const ready = configLoaded && metaRows !== undefined
   const engineActive = ready && sessionPresent && !needsReenroll
+
+  // First render is possible: hide the native splash screen (no-op on the web).
+  useEffect(() => {
+    if (ready) platform.appHost.ready()
+  }, [ready])
 
   useEffect(() => {
     if (!engineActive) return

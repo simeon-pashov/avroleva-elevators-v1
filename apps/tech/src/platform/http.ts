@@ -1,7 +1,7 @@
 import type { Problem } from '@avroleva/contracts'
 import { APP_VERSION } from '../version'
 import { compareSemver } from '../lib/semver'
-import { SESSION_TOKEN_KEY, webSecureStorage } from './secureStorage'
+import { API_BASE_KEY, SESSION_TOKEN_KEY, secureStorage } from './secureStorage'
 
 /** RFC 7807 answer of the API. */
 export class ApiError extends Error {
@@ -51,9 +51,9 @@ export const UNAUTHORIZED_EVENT = 'avroleva:unauthorized'
 let apiBaseOverride = ''
 let acceptLanguage = 'bg'
 
-/** Runtime override from Settings/Enroll (stored in meta). Empty = the build-time default. */
+/** Runtime override from Settings/Enroll (persisted in secureStorage). Empty = the build-time default. */
 export function setApiBaseOverride(base: string): void {
-  apiBaseOverride = base.trim().replace(/\/$/, '')
+  apiBaseOverride = normalizeApiBase(base)
 }
 export function getApiBaseOverride(): string {
   return apiBaseOverride
@@ -62,12 +62,39 @@ export function setHttpLocale(locale: string): void {
   acceptLanguage = locale
 }
 
+/** Trims, drops a trailing slash and a trailing `/tech/` (people paste the app URL). */
+export function normalizeApiBase(raw: string): string {
+  let s = raw.trim().replace(/\/+$/, '')
+  s = s.replace(/\/tech$/i, '').replace(/\/+$/, '')
+  return s
+}
+
+/** Applies and persists the server address chosen on the Enroll screen / in Settings. */
+export function persistApiBase(base: string): void {
+  const s = normalizeApiBase(base)
+  apiBaseOverride = s
+  if (s && s !== defaultApiBase()) secureStorage.set(API_BASE_KEY, s)
+  else secureStorage.remove(API_BASE_KEY)
+}
+
+/** Restores the persisted server address (after `platformReady`). */
+export function loadApiBase(): string {
+  apiBaseOverride = normalizeApiBase(secureStorage.get(API_BASE_KEY) ?? '')
+  return apiBaseOverride
+}
+
 /**
- * Empty VITE_API_BASE = same origin: the API lives next to the app, one level above `/tech/`
+ * Build-time default. `VITE_DEFAULT_API_ORIGIN` (the native build: origin, or origin + BASE_PATH,
+ * e.g. `https://srv1662742.hstgr.cloud/avroleva`) wins; `VITE_API_BASE` is the older name and
+ * still honoured. Empty = same origin: the API lives next to the app, one level above `/tech/`
  * (`/tech/` -> ``, `/avroleva/tech/` -> `/avroleva`). In dev the Vite proxy forwards `/api`.
  */
 export function defaultApiBase(): string {
-  const env = (import.meta.env.VITE_API_BASE ?? '').trim()
+  const env = (
+    import.meta.env.VITE_DEFAULT_API_ORIGIN ||
+    import.meta.env.VITE_API_BASE ||
+    ''
+  ).trim()
   if (env) return env.replace(/\/$/, '')
   const base = import.meta.env.BASE_URL || '/'
   return base.replace(/\/tech\/?$/, '').replace(/\/$/, '')
@@ -78,7 +105,7 @@ export function effectiveApiBase(): string {
 }
 
 function readToken(): string | null {
-  return webSecureStorage.get(SESSION_TOKEN_KEY)
+  return secureStorage.get(SESSION_TOKEN_KEY)
 }
 
 async function parseBody(res: Response): Promise<unknown> {

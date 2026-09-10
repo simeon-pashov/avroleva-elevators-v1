@@ -1,6 +1,6 @@
 {
   "name": "@avroleva/tech",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Avroleva Elevators technician app (offline-first PWA)",
   "private": true,
   "type": "module",
@@ -8,11 +8,27 @@
     "dev": "vite",
     "build": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.sw.json --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.sw.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.sw.json --noEmit",
+    "build:native": "tsc -p tsconfig.json --noEmit && node scripts/build-native.mjs",
+    "cap:sync": "npm run build:native && npx cap sync android",
+    "android:debug": "npm run cap:sync && node scripts/gradle.mjs assembleDebug",
+    "android:release": "npm run cap:sync && node scripts/gradle.mjs assembleRelease",
+    "android:assets": "node scripts/gen-assets.mjs"
   },
   "dependencies": {
     "@avroleva/contracts": "*",
     "@avroleva/i18n": "*",
+    "@capacitor/android": "^7.6.9",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/camera": "^7.0.5",
+    "@capacitor/cli": "^7.6.9",
+    "@capacitor/core": "^7.6.9",
+    "@capacitor/geolocation": "^7.1.8",
+    "@capacitor/network": "^7.0.4",
+    "@capacitor/preferences": "^7.0.4",
+    "@capacitor/share": "^7.0.4",
+    "@capacitor/splash-screen": "^7.0.5",
+    "@capacitor/status-bar": "^7.0.6",
     "dexie": "^4.4.0",
     "dexie-react-hooks": "^4.4.0",
     "react": "^19.2.0",
@@ -20,6 +36,7 @@
     "react-router": "^7.9.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.0",

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Avroleva Elevators: the office favicon's "A" (brand #1d5fd1) with an elevator up/down arrow. -->
+  <rect width="1024" height="1024" rx="224" fill="#1d5fd1"/>
+  <path d="M240 760 L432 232 H528 L720 760 H616 L568 622 H392 L344 760 Z M424 532 H536 L480 368 Z" fill="#fff"/>
+  <g fill="#fff">
+    <path d="M776 296 L840 216 L904 296 H860 V400 H820 V296 Z"/>
+    <path d="M820 456 H860 V560 H904 L840 640 L776 560 H820 Z"/>
+  </g>
+</svg>
