@@ -55,19 +55,47 @@ export interface Problem {
 }
 
 /**
- * PATCH body of a create schema. zod 4's `.partial()` keeps `.default()`s, so a partial body would
- * silently reset every defaulted field (status, kind, settings...) to its default. This strips the
- * defaults first: a missing key stays `undefined` and the service keeps the stored value.
+ * PATCH body of a create schema. zod 4's `.partial()` keeps `.default()`s and `.prefault()`s, and
+ * both still fire behind `.optional()`, so a partial body would silently reset every defaulted
+ * field (status, kind, a whole settings block...) to its default. This strips them first, recursing
+ * into nested objects (`settings.billing.bank`): a missing key stays `undefined` at every level and
+ * the service deep-merges the patch over the stored value. Nested objects that are not plain
+ * `z.object()`s (nullable / optional wrappers such as `bankCsvMapping`) are kept whole.
  */
 export function patchOf<T extends z.ZodRawShape>(
   obj: z.ZodObject<T>,
 ): z.ZodObject<{ [K in keyof T]: z.ZodOptional<T[K] extends z.ZodDefault<infer U> ? U : T[K]> }> {
   const shape: Record<string, z.ZodTypeAny> = {}
   for (const [key, schema] of Object.entries(obj.shape) as Array<[string, z.ZodTypeAny]>) {
-    const inner = (schema instanceof z.ZodDefault ? schema.removeDefault() : schema) as z.ZodTypeAny
+    let inner: z.ZodTypeAny = schema
+    while (inner instanceof z.ZodDefault || inner instanceof z.ZodPrefault) inner = inner.unwrap()
+    if (inner instanceof z.ZodObject) inner = patchOf(inner as z.ZodObject<z.ZodRawShape>)
     shape[key] = inner.optional()
   }
   return z.object(shape) as unknown as z.ZodObject<{
     [K in keyof T]: z.ZodOptional<T[K] extends z.ZodDefault<infer U> ? U : T[K]>
   }>
+}
+
+/**
+ * Applies a `patchOf()` body over a stored object: plain objects merge key by key (recursively),
+ * everything else (scalars, arrays, `null`) replaces the stored value; `undefined` keys are
+ * skipped. `null` therefore means "clear this key" for nullable fields.
+ */
+export function mergePatch<T extends Record<string, unknown>>(current: T, patch: unknown): T {
+  if (!isPlainObject(patch)) return current
+  const out: Record<string, unknown> = { ...current }
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === undefined) continue
+    const prev = out[key]
+    out[key] =
+      isPlainObject(value) && isPlainObject(prev)
+        ? mergePatch(prev as Record<string, unknown>, value)
+        : value
+  }
+  return out as T
+}
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v)
 }

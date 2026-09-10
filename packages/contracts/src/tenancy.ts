@@ -30,8 +30,8 @@ export const tenantBillingSettings = z.object({
   /** Day of month the scheduled run issues the month's invoices (clamped to the month length). */
   runDay: z.number().int().min(1).max(28).default(1),
   runEnabled: z.boolean().default(true),
-  /** Due date = issue date + N days (a contract's paymentDay still wins). Absent = invoiceDueDays. */
-  dueDays: z.number().int().min(0).max(120).optional(),
+  /** Due date = issue date + N days (a contract's paymentDay still wins). Absent / null = invoiceDueDays. */
+  dueDays: z.number().int().min(0).max(120).nullable().optional(),
   bank: tenantBankDetails.default({ beneficiary: '', iban: '', bic: '', bankName: '' }),
   paymentProvider: z.enum(['none', 'demo', 'iris', 'stripe']).default('none'),
   /** Last bank CSV column mapping used by the import page. */

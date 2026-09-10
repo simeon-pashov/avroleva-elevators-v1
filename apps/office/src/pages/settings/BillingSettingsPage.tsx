@@ -109,7 +109,7 @@ export function BillingSettingsPage() {
       const billing = {
         runDay: Number(values.runDay),
         runEnabled: values.runEnabled,
-        ...(values.dueDays.trim() !== '' ? { dueDays: Number(values.dueDays) } : {}),
+        dueDays: values.dueDays.trim() !== '' ? Number(values.dueDays) : null,
         bank: {
           beneficiary: values.beneficiary,
           iban: values.iban,

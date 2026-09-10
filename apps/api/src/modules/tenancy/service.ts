@@ -17,7 +17,7 @@ import type {
   UpdateUserBody,
   UserDto,
 } from '@avroleva/contracts'
-import { ENROLLMENT_TOKEN_TTL_MS } from '@avroleva/contracts'
+import { ENROLLMENT_TOKEN_TTL_MS, mergePatch } from '@avroleva/contracts'
 import { resolveLocale } from '@avroleva/i18n'
 import { prismaBase, transaction } from '../../platform/db/prisma.js'
 import { urls } from '../../platform/urls.js'
@@ -145,7 +145,9 @@ export async function getTenantFeatures(tenantId: string): Promise<TenantFeature
 export async function updateTenant(ctx: Ctx, body: UpdateTenantBody): Promise<TenantDto> {
   const current = await tenants.findTenant(ctx.tenantId)
   if (!current) throw notFound()
-  const settings = { ...parseSettings(current.settings), ...(body.settings ?? {}) }
+  // Deep merge: a page that saves only its own block (billing, planning, jobs...) must not reset
+  // the others; re-parsed so the stored JSON is always the full, normalised shape.
+  const settings = parseSettings(mergePatch(parseSettings(current.settings), body.settings ?? {}))
   const features = { ...parseFeatures(current.features), ...(body.features ?? {}) }
   const updated = await tenants.updateTenant(ctx.tenantId, {
     ...(body.name !== undefined ? { name: body.name } : {}),
