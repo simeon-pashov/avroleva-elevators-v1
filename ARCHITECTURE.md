@@ -16,19 +16,19 @@ Design goal in one line: **the first customer will teach us how they really work
 L0 platform   config · db (Prisma) · event-bus + outbox · jobs (pg-boss) · ports/adapters ·
               i18n · pdf · storage · audit · clock
 L1 tenancy    firms, users, roles, sessions, device enrollment, feature flags, tenant settings
-L2 registry   customers (ползватели), contacts, buildings, elevators, contracts, reference data
+L2 registry   customers (ползватели), contacts, buildings, elevators, contracts, reference data, zones (райони, step 9)
    documents  attachments (photos/files), generated documents, dossier (досие), retention
-L3 maintenance  30-day cycle engine, checklist templates, jobs, technician-pair assignment
+L3 maintenance  30-day cycle engine, checklist templates, technician pairs, day plans (план за деня, step 9)
    visits       the visit record (посещение) = the evidence
    callbacks    авария flow, response-time timer, close-out, chargeable
    defects      17-item catalogue (чл. 10), free-text defects, stop-lift, notice to the building, follow-up reminder
    calendar     inspections (технически прегледи), deadlines (срокове), alarm-device tests, hydraulic protocols
    jobs         repair jobs and quotes: lines, data-driven stages, approval evidence, repair visit, invoice (step 8)
-   billing      EUR invoices with ДДС, payments, arrears, external invoicing push
+   billing      EUR invoices with ДДС, payments, arrears, external invoicing push, building access links (step 9)
    pricing      plans, subscription state, usage snapshots
 L4 notifications  templates, rules, channel adapters, delivery log (consumes events)
    reporting      dashboard, monthly building PDF, CSV/XLSX exports (read-only)
-   facades        http/sync (offline API), http/public (QR page + fault report), http/admin
+   facades        http/sync (offline API), http/public (QR page + fault report), http/statement (/s magic link), http/admin
 ```
 
 **Dependency rules** (enforced by `dependency-cruiser` + a table-ownership script in CI, see §8):
@@ -109,6 +109,7 @@ Conventions: ids are **UUIDv7** (client-generatable offline, non-guessable, time
 - `customer` (ползвател): id, tenantId, kind (condominium|professionalManager|company|publicInstitution), name, eik?, vatNo?, billingAddress, invoiceEmail?, notes, deletedAt?
 - `contact`: id, tenantId, customerId?, buildingId?, name, role (домоуправител|касиер|manager|other), phone?, hasViber bool, email?, isPrimary, deletedAt?
 - `building`: id, tenantId, customerId (current ползвател), address JSONB {city, postcode, oblast, district, street, number, block, entrance}, addressText (canonical single line for documents), lat?, lng?, geocode {status, confidence, provider}, accessNotes (encrypted), keysLocation (encrypted), notes, deletedAt?
+- `zone` (step 9): id, tenantId, name, colour, polygon JSONB? (GeoJSON Polygon, outer ring), districts TEXT[], position, isDefault ("Всички"), active, createdBy?, updatedBy?, deletedAt?. `building.zoneId?` + `building.zoneManual` (office override); assignment = point-in-polygon → district name → default zone, recomputed on save / by cron / on demand.
 - `elevator`: id, tenantId, buildingId, internalNo (e.g. "вх. Б, ляв"), regNo? (регистрационен номер at the supervision body), regNoNormalized?, inspectionBodyId?, serialNo?, manufacturer?, installer?, year?, driveType (electric|hydraulic|mrl), doorType (manual|semiAuto|auto), goodsOnly bool, stops, loadKg?, persons?, speedMs?, controllerBrand?, commissioningDate?, checkIntervalDays? (null → tenant default), alarmDevice JSONB {model, phone, operator, simOwner (user|firm), contractType (postpaid|prepaid), lastTestAt}, retrofit JSONB {loadControl, emergencyLight, shaftLight, roofPitStops, alarmDevice, underCabinShield: ok|missing|na}, status (inService|stoppedByFirm|stoppedByAuthority|outOfContract|scrapped), stopReason?, stoppedAt?, restartAuthority?, lastCheckAt (denormalised), nextCheckDue (denormalised), lastInspectionAt?, nextInspectionDue?, stickerYear?, publicCode (8-char, for QR), notes, deletedAt?. Warn (not block) on duplicate `(tenantId, regNoNormalized)`.
 - `contract`: id, tenantId, customerId, buildingId, startDate, endDate?, terminationNoticeRule?, status (active|terminated|draft), priceBasis (perStop|flat|perElevator), includes JSONB, documentId? (signed contract), intakeProtocolDocumentId?, instructionSignedAt? (чл. 9 ал. 1 т. 1), terminatedReason?
 - `contract_elevator`: contractId, elevatorId, monthlyPriceCents, fromDate, toDate?  (history = rows; a building that changes firm ends up with `contract.endDate` set and elevators `outOfContract`; a takeover starts a new contract with `intakeProtocolDocumentId`).
@@ -122,6 +123,8 @@ Conventions: ids are **UUIDv7** (client-generatable offline, non-guessable, time
 
 **maintenance**
 - `checklist_template`: id, tenantId?, key, version, name, items JSONB [{code, group, textBg, method?, appliesTo {driveType[], doorType[], goodsOnly?}, resultType: okDefectNa}], active
+- `technician_pair` (step 9): id, tenantId, name, userIds UUID[] (1–3 technicians), vehicle?, defaultZoneId?, position, active, deletedAt?.
+- `day_plan` (step 9): id, tenantId, date, pairId? → technician_pair, userIds UUID[], zoneId?, stops JSONB [{id, kind check|callback|job|inspection, refId, elevatorId, buildingId, order, plannedAt?, status planned|done|skipped, completedAt?, manual?, notes?}], status draft|published, lockedAt?, publishedAt?, generatedAt?, startLat?/startLng?, estKm?, notes?; unique (tenantId, date, pairId). Stops are references without FKs (rule 4); completion arrives by events (VisitRecorded / CallbackClosed / JobCompleted) or the phone's `plan.stop` push.
 - `maintenance_job`: id, tenantId, elevatorId, kind (functionalCheck|technicalMaintenance|hydraulicProtocol|preInspection), dueDate, windowStart, status (planned|assigned|done|missed|cancelled), assignedUserIds uuid[], routeId?, plannedDate?, completedVisitId?, completedAt?, generatedBy (cron|event|manual). Partial unique `(elevatorId, kind) WHERE status IN (planned, assigned)`.
 - `route`: id, tenantId, name, technicianUserIds, buildingIds (ordered), active
 
@@ -147,6 +150,7 @@ Conventions: ids are **UUIDv7** (client-generatable offline, non-guessable, time
 **billing**
 - `invoice_sequence`: tenantId, series, nextNumber (row lock on issue; gapless 10-digit numbers per ЗДДС чл. 114)
 - `invoice`: id, tenantId, series, number? (assigned at issue), status (draft|issued|paid|partiallyPaid|void), issueDate, taxEventDate, dueDate, customerId, buildingId?, contractId?, supplierSnapshot JSONB, recipientSnapshot JSONB {name, address, eik, vatNo}, period? (YYYY-MM), subtotalCents, vatRate (20|0), vatCents, totalCents, currency='EUR', bgnReferenceCents? (×1.95583, display only), vatRegime (standard|notRegisteredArt113), paymentMethod (bank|cash), paidCents, pdfDocumentId?, externalProvider?, externalId?, voidedAt?, voidReason?, creditNoteId?
+- `building_access_link` (step 9): id, tenantId, buildingId → building, token (128-bit, unique), scope statement|statement_and_visits, createdBy?, createdAt, expiresAt, revokedAt?, revokedBy?, lastUsedAt?, useCount, lastIpHash?. Behind `/s/:token` (http/statement facade); one active link per building, rotate = new token + revoke old.
 - `invoice_line`: invoiceId, position, elevatorId?, description, qty, unitPriceCents, vatRate, lineTotalCents
 - `payment`: id, tenantId, invoiceId, amountCents, method (cash|bank|card), receivedAt, fiscalReceiptNo?, reference?, recordedBy
 - `credit_note`: id, tenantId, invoiceId, number, issueDate, amountCents, reason, pdfDocumentId
