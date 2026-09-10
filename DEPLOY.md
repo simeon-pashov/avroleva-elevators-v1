@@ -6,7 +6,7 @@ untracked `.env` on the VPS). Everything below runs as `root@187.127.84.59` unle
 
 | What | Value |
 |---|---|
-| Public URL | `https://srv1662742.hstgr.cloud/avroleva/` (office), `/avroleva/tech/` (technician PWA), `/avroleva/api/v1/` |
+| Public URL | `https://srv1662742.hstgr.cloud/avroleva/` (office), `/avroleva/tech/` (technician PWA), `/avroleva/downloads/` (Android APK + install page), `/avroleva/api/v1/` |
 | Code on the VPS | `/var/www/avroleva` (clone of the GitHub repo — name to be confirmed with the founder) |
 | Compose | `docker-compose.prod.yml` → services `db` (postgres:16-alpine, volume `avroleva_db`) and `app` (`127.0.0.1:3005`, volume `avroleva_data` at `/data`) |
 | Image | `docker/Dockerfile` (multi-stage; ~600 MB; entrypoint = `prisma migrate deploy` → bootstrap seed → `node dist/main.js`, worker inside via `ROLE=all`) |
@@ -159,6 +159,20 @@ ssh -o BatchMode=yes root@187.127.84.59 /var/www/avroleva/scripts/deploy.sh
 status of `/avroleva/`, `/avroleva/tech/` and the five other apps through nginx. Deploy window
 06:00–07:00 Sofia (ARCHITECTURE section 7); the swap costs 10–30 s. Migrations run inside the
 container before the API starts (`prisma migrate deploy`).
+
+**Android app (step 10).** The server does not build the APK; it serves whatever sits at
+`DATA_DIR/releases/tech.apk` on the `avroleva_data` volume as `/avroleva/downloads/tech.apk`
+(install page with QR at `/avroleva/downloads/`). After building a release on the laptop
+(`docs/ANDROID-RELEASE.md` §3) copy it there:
+
+```bash
+scp "D:\Code\Avroleva\Releases\avroleva-elevators-tech-<version>.apk" root@187.127.84.59:/tmp/tech.apk
+ssh root@187.127.84.59 "docker run --rm -v avroleva_avroleva_data:/d -v /tmp:/s:ro alpine sh -c 'mkdir -p /d/releases && cp /s/tech.apk /d/releases/tech.apk' && rm /tmp/tech.apk"
+curl -sI https://srv1662742.hstgr.cloud/avroleva/downloads/tech.apk | grep -i -E "^HTTP|content-type|content-length"
+```
+
+Keep `MIN_CLIENT_VERSION` in `.env` at or below the shipped app version. The APK is part of the
+data volume backup (`scripts/backup.sh`), so a restore brings it back.
 
 ## 8. Backups, restore drill, rollback
 

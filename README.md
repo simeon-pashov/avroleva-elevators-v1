@@ -21,6 +21,7 @@ The office app is a desktop-first React SPA in Bulgarian (English available) wit
 - **Notifications**: rule matrix per event × channel (in-app, e-mail, SMS, Viber deep link) × recipient (building contact, owner, office, technician); Handlebars templates in bg/en with per-tenant overrides; delivery log; bell inbox.
 - **Reports and exports**: monthly building report (print + e-mail attachment), 13 CSV datasets, full zip export with SHA-256 manifest, delete-my-data with 30-day grace.
 - **Technician PWA**: QR enrollment with device sessions, Today list with the published day plan (Готово / Пропусни offline), call/navigate buttons and the repair jobs assigned to me (start, notes, photos, complete — offline, through the outbox), visit form with checklist, camera, second technician, outbox with retries, forced-update header.
+- **Android app** (step 10): the same technician app wrapped with Capacitor 7 — native camera, geolocation, preferences, share, network and deep links behind the platform seams; runtime-configurable server ("Сървър" on the Enroll screen, prefilled from the office QR); signed APK sideloaded from `/downloads/` (install page in Bulgarian with a QR), no store account needed.
 - **Platform admin**: register/deactivate tenants, reset owner passwords, system page (health, worker jobs, failed deliveries, scheduled deletions), demo mode per tenant (a year of believable data generated on demand, reset nightly).
 - **Scheduler**: pg-boss in the same Postgres (no Redis) — hourly recompute, daily billing run, daily dunning, daily overdue roll, calendar alerts, quote-approval reminders, SLA watch every minute, retention sweep, orphan cleanup, tenant purge, nightly demo reset, outbox catch-up.
 
@@ -60,7 +61,8 @@ npm test                  # i18n + API unit/integration tests against avroleva_t
 apps/api/         Express 5 + Prisma + pg-boss: src/{main.ts, app.ts, worker.ts, jobs.ts, subscribers.ts,
                   http/, modules/<m>/{domain,repo,http,index.ts}, platform/}; prisma/ (schema, migrations, seed); test/
 apps/office/      React 19 + Vite 7 office SPA (desktop-first, Leaflet map), built with VITE_BASE
-apps/tech/        React 19 + Vite 7 + vite-plugin-pwa + Dexie technician app, served by the API at /tech/
+apps/tech/        React 19 + Vite 7 + vite-plugin-pwa + Dexie technician app, served by the API at /tech/;
+                  also wrapped as a native Android app (Capacitor 7, android/, docs/ANDROID-RELEASE.md)
 packages/contracts/   zod schemas and DTO types shared by API and clients
 packages/domain-data/ checklists, defect catalogue, notification templates, calendar rules, billing and job-stage defaults
 packages/i18n/        bg.json (source) + en.json, t() for server and clients
@@ -78,7 +80,8 @@ docs/             screenshots, QA log
 | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Modular monolith design: modules and boundaries, adjustability, data model, offline-first PWA, API, cross-cutting concerns, deployment, testing, decisions log. |
 | [`MVP-PLAN.md`](./MVP-PLAN.md) | Build plan: phases 0–9, the 2-week demo, the founding-customer import plan, risks, definition of done. |
 | [`DEPLOY.md`](./DEPLOY.md) | VPS runbook: deploy key, `.env`, compose, nginx include, backups, restore drill, rollback, decisions before go-live. |
-| [`HANDOFF-STEP1.md`](./HANDOFF-STEP1.md) … [`HANDOFF-STEP9.md`](./HANDOFF-STEP9.md) | Per-step handoffs: foundation; dashboard; callbacks/defects/calendar/public page; offline technician app; scheduler/notifications/exports/reports; billing that runs itself, payments, demo mode; repair jobs and quotes, address search; zones, day plan, building statement link. |
+| [`HANDOFF-STEP1.md`](./HANDOFF-STEP1.md) … [`HANDOFF-STEP10.md`](./HANDOFF-STEP10.md) | Per-step handoffs: foundation; dashboard; callbacks/defects/calendar/public page; offline technician app; scheduler/notifications/exports/reports; billing that runs itself, payments, demo mode; repair jobs and quotes, address search; zones, day plan, building statement link; native Android app. |
+| [`docs/ANDROID-RELEASE.md`](./docs/ANDROID-RELEASE.md) | Android release procedure: rebuild the signed APK, keystore custody, ship it to `/downloads/`, deep links, versioning. |
 | [`docs/adr/0001-billing-jobs-payments.md`](./docs/adr/0001-billing-jobs-payments.md) | ADR: billing runs, dunning as data, state machines, payment port, reconciliation, demo mode. |
 | [`docs/QA-2026-09-08.md`](./docs/QA-2026-09-08.md) | The QA pass: bugs found and fixed, what was exercised, security quick-check. |
 | `../Elevator Business Due Diligence/` | The research this design rests on (start with `00-SYNTHESIS.md`). |
