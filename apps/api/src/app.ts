@@ -8,6 +8,7 @@ import { config } from './platform/config.js'
 import { logger } from './platform/logger.js'
 import { requestId } from './platform/http/requestId.js'
 import { csrfGuard } from './platform/http/ctx.js'
+import { appCors } from './platform/http/cors.js'
 import { errorHandler, notFound } from './platform/http/errors.js'
 import { authenticate } from './modules/tenancy/index.js'
 import { filesRouter } from './modules/documents/index.js'
@@ -16,6 +17,7 @@ import { wireModules } from './wiring.js'
 import { printRouter } from './http/print.js'
 import { publicRouter } from './http/public.js'
 import { statementRouter } from './http/statement.js'
+import { downloadsRouter } from './http/downloads.js'
 import { payRouter, webhookRouter } from './http/pay.js'
 import { apiV1 } from './http/router.js'
 import { mountOffice, mountTech } from './http/static.js'
@@ -87,6 +89,8 @@ export function createApp(opts: AppOptions = {}): Express {
     res.setHeader(MIN_CLIENT_VERSION_HEADER, config.MIN_CLIENT_VERSION)
     next()
   })
+  // Native technician app (Capacitor WebView origin): CORS with credentials, preflights first.
+  app.use('/api', appCors)
   app.use('/api', apiLimiter, authenticate, csrfGuard)
   app.use('/api/v1', apiV1)
   app.use('/api', (_req, _res, next) => next(notFound('error.routeNotFound')))
@@ -101,8 +105,11 @@ export function createApp(opts: AppOptions = {}): Express {
   app.use('/webhooks/payments', webhookRouter)
   // Signed file URLs: the signature is the authorisation (no cookie, no CSRF header), so <img>
   // tags in the office and in the technician app just work.
+  app.use('/files', appCors)
   app.use('/files/export', exportFilesRouter)
   app.use('/files', filesRouter)
+  // Sideloading page + APK of the native technician app (DATA_DIR/releases/tech.apk).
+  app.use('/downloads', downloadsRouter)
 
   if (opts.techDist) mountTech(app, opts.techDist)
   if (opts.officeDist) mountOffice(app, opts.officeDist)

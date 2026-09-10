@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { EnrollmentTokenDto, SessionDto, UserDto, UserRole } from '@avroleva/contracts'
 import { UserRole as UserRoleEnum } from '@avroleva/contracts'
-import { get, patch, post } from '../lib/api'
+import { BASE, get, patch, post } from '../lib/api'
 import { useI18n } from '../i18n/I18nProvider'
 import { useAuth } from '../auth/AuthProvider'
 import {
@@ -327,6 +327,12 @@ export function UsersPage() {
       <div className="card">
         <h2>{t('users.sessions')}</h2>
         <p className="muted small">{t('users.sessionsHint')}</p>
+        <p className="small">
+          <a href={`${BASE}/downloads/`} target="_blank" rel="noopener">
+            {t('users.downloadAndroid')}
+          </a>
+          <span className="muted"> – {t('users.downloadAndroidHint')}</span>
+        </p>
         {!sessions ? (
           <Spinner />
         ) : sessions.length === 0 ? (

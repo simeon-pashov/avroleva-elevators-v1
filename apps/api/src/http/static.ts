@@ -19,7 +19,7 @@ export function mountOffice(app: Express, distDir: string): void {
   }
   app.use(express.static(distDir, { index: false, maxAge: '1h' }))
   app.get(
-    /^(?!\/api\/|\/print\/|\/p\/|\/pay\/|\/webhooks\/|\/files\/|\/tech(\/|$)).*/,
+    /^(?!\/api\/|\/print\/|\/p\/|\/pay\/|\/webhooks\/|\/files\/|\/downloads(\/|$)|\/tech(\/|$)).*/,
     (_req, res) => {
       res.setHeader('Cache-Control', 'no-cache')
       res.sendFile(index)
