@@ -6,7 +6,7 @@ import { NotificationsBell } from './NotificationsBell'
 import { ToastHost } from './ui'
 
 export function Shell() {
-  const { me, logout, hasRole } = useAuth()
+  const { me, logout, hasRole, changeLocale } = useAuth()
   const { t, date } = useI18n()
   const navigate = useNavigate()
 
@@ -54,7 +54,7 @@ export function Shell() {
         </nav>
         <div className="topbar-right">
           <NotificationsBell />
-          <LanguageSwitch />
+          <LanguageSwitch onChange={changeLocale} />
           <span className="user-name" title={me?.user.username}>
             {me?.user.name}
           </span>

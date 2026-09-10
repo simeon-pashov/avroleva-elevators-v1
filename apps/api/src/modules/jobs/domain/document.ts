@@ -63,7 +63,7 @@ export function renderQuoteHtml(
     ? `<div class="toolbar screen-only"><button type="button" class="btn" data-print>${esc(t('print.print'))}</button></div>`
     : ''
   const validity = o.validUntil ?? job.quoteValidUntil
-  return `<!doctype html><html lang="${esc(lang)}"><head><meta charset="utf-8"><title>${esc(t('jobs.quote.title'))} · ${esc(job.title)}</title><style>${QUOTE_CSS}</style></head><body>
+  return `<!doctype html><html lang="${esc(lang)}"><head><meta charset="utf-8"><link rel="icon" href="data:,"><title>${esc(t('jobs.quote.title'))} · ${esc(job.title)}</title><style>${QUOTE_CSS}</style></head><body>
   ${toolbar}
   <div class="head">
     <div><div class="firm">${esc(tenant.name)}</div><div class="small">${esc(tenant.address)}</div><div class="small">${esc(t('print.eik'))} ${esc(tenant.eik)}${tenant.vatNo ? ` · ${esc(t('print.vatNo'))} ${esc(tenant.vatNo)}` : ''}</div></div>

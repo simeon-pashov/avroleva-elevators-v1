@@ -83,6 +83,8 @@ function relatedLink(n: NotificationDto): string | null {
 /** "Уведомления": the delivery log with channel/status filters and the manual Viber send block. */
 export function NotificationsLogPage() {
   const { t, dateTime } = useI18n()
+  // Skipped deliveries store an i18n key as the reason (e.g. notifications.noEmail).
+  const errorText = (e: string) => (/^[a-z]+(\.[A-Za-z]+)+$/.test(e) ? t(e) : e)
   const [channel, setChannel] = useState<NotificationChannel | ''>('')
   const [status, setStatus] = useState<NotificationStatus | ''>('')
   const [openViber, setOpenViber] = useState<string | null>(null)
@@ -195,7 +197,9 @@ export function NotificationsLogPage() {
                       <Badge kind={notificationStatusBadge(n.status)}>
                         {t(`enum.notificationStatus.${n.status}`)}
                       </Badge>
-                      {n.error ? <div className="small text-danger">{n.error}</div> : null}
+                      {n.error ? (
+                        <div className="small text-danger">{errorText(n.error)}</div>
+                      ) : null}
                     </td>
                     <td>
                       {link ? (
