@@ -60,6 +60,11 @@ export function createApp(opts: AppOptions = {}): Express {
         },
       },
       crossOriginEmbedderPolicy: false,
+      // OpenStreetMap's tile servers need a Referer to identify the calling app;
+      // helmet's default 'no-referrer' makes them serve a 403 "Access blocked" tile
+      // instead of the map. 'strict-origin-when-cross-origin' sends only our origin
+      // cross-site - never a path, query string or tenant-identifying data.
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     }),
   )
   if (config.NODE_ENV !== 'test') {
