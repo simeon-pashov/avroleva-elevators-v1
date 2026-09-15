@@ -131,6 +131,7 @@ export function BillingSettingsPage() {
     <div>
       <PageHeader title={t('billingSettings.title')} subtitle={t('billingSettings.subtitle')} />
       <SettingsNav />
+      <p className="muted small">{t('billing.settings.nonCashNote')}</p>
       <form
         className="grid-2"
         onSubmit={(e) => {

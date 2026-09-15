@@ -65,7 +65,7 @@ export async function seedDemoBilling(
     paidAt: string
     amountCents: number
     bank: boolean
-    method: 'bank' | 'cash'
+    method: 'bank' | 'other'
   }
   const planned: Planned[] = []
   for (const inv of all.items) {
@@ -92,7 +92,7 @@ export async function seedDemoBilling(
       paidAt,
       amountCents: amount,
       bank: viaBank.has(key),
-      method: idx % 3 === 0 ? 'cash' : 'bank',
+      method: idx % 3 === 0 ? 'other' : 'bank',
     })
   }
   planned.sort((a, b) => a.paidAt.localeCompare(b.paidAt))
@@ -238,7 +238,7 @@ export async function seedDemoBilling(
 
   // Two unallocated payments (advance / rounding) and one over-payment, only once.
   const extra = [
-    { key: 'b1', amountCents: 2000, method: 'cash' as const, note: 'Аванс от домоуправителя' },
+    { key: 'b1', amountCents: 2000, method: 'other' as const, note: 'Аванс от домоуправителя' },
     { key: 'b7', amountCents: 10000, method: 'bank' as const, note: 'Превод без посочена фактура' },
   ]
   for (const x of extra) {

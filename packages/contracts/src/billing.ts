@@ -16,6 +16,16 @@ export type InvoiceStatus = z.infer<typeof InvoiceStatus>
 export const PaymentMethod = z.enum(['cash', 'bank', 'other'])
 export type PaymentMethod = z.infer<typeof PaymentMethod>
 
+/**
+ * The methods a NEW payment may be recorded with. Наредба Н-18 ("СУПТО"): software that handles
+ * sales needing a fiscal receipt becomes regulated sales-management software, so the app records
+ * only non-cash payments (bank transfer, or another non-cash channel such as a payment provider).
+ * `cash` stays in {@link PaymentMethod} because existing rows may hold it and read paths must keep
+ * parsing them - it is simply never accepted on a request that creates a payment.
+ */
+export const NewPaymentMethod = z.enum(['bank', 'other'], { error: 'billing.cashNotAllowed' })
+export type NewPaymentMethod = z.infer<typeof NewPaymentMethod>
+
 export const PaymentSource = z.enum(['manual', 'bank_import', 'provider'])
 export type PaymentSource = z.infer<typeof PaymentSource>
 
@@ -52,7 +62,7 @@ export type InvoiceListQuery = z.infer<typeof invoiceListQuery>
 
 export const payInvoiceBody = z.object({
   paidAt: isoDate,
-  method: PaymentMethod.default('bank'),
+  method: NewPaymentMethod.default('bank'),
   /** Defaults to the open balance. Less keeps the invoice open; more leaves the rest unallocated. */
   amountCents: z.number().int().min(1).max(100_000_000).optional(),
   note: nullableText(500),
@@ -65,7 +75,7 @@ export const createPaymentBody = z.object({
   invoiceId: uuid.nullable().optional(),
   amountCents: z.number().int().min(1).max(100_000_000),
   paidAt: isoDate,
-  method: PaymentMethod.default('bank'),
+  method: NewPaymentMethod.default('bank'),
   note: nullableText(500),
   reference: nullableText(60),
 })
@@ -87,7 +97,7 @@ export const bulkInvoiceBody = z.object({
   action: z.enum(['remind', 'pay']),
   ids: z.array(uuid).min(1).max(200),
   paidAt: isoDate.optional(),
-  method: PaymentMethod.optional(),
+  method: NewPaymentMethod.optional(),
 })
 export type BulkInvoiceBody = z.infer<typeof bulkInvoiceBody>
 

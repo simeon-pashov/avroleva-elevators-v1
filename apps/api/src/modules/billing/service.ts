@@ -506,6 +506,18 @@ export async function detail(ctx: Ctx, id: string): Promise<InvoiceDetailDto> {
   }
 }
 
+/**
+ * Наредба Н-18 ("СУПТО"): the app records only non-cash payments, so `cash` may never arrive on a
+ * request that creates one. The request schemas already refuse it (`NewPaymentMethod`); this is the
+ * defence in depth for anything that reaches the service another way.
+ */
+function assertNonCash(method: PaymentDto['method'] | undefined): void {
+  if (method === 'cash')
+    throw new AppError(400, 'billing.cashNotAllowed', {
+      fields: [{ path: 'method', code: 'billing.cashNotAllowed' }],
+    })
+}
+
 export interface RecordPaymentInput {
   invoiceId: string | null
   buildingId: string
@@ -669,6 +681,7 @@ async function publishPaymentEvents(ctx: Ctx, p: PaymentRow, inv: InvoiceRow | n
 
 /** "Отбележи като платено": records a payment against the invoice; full open balance by default. */
 export async function pay(ctx: Ctx, id: string, body: PayInvoiceBody): Promise<InvoiceDto> {
+  assertNonCash(body.method)
   await rollStatuses(ctx.tenantId)
   const inv = await repo.findInvoice(ctx.tenantId, id)
   if (!inv) throw notFound()
@@ -687,6 +700,7 @@ export async function pay(ctx: Ctx, id: string, body: PayInvoiceBody): Promise<I
 
 /** Unallocated (or invoice-linked) payment for a building. */
 export async function createPayment(ctx: Ctx, body: CreatePaymentBody): Promise<PaymentDto> {
+  assertNonCash(body.method)
   const r = await recordPayment(ctx, {
     invoiceId: body.invoiceId ?? null,
     buildingId: body.buildingId,
@@ -927,6 +941,7 @@ export async function bulk(
   body: BulkInvoiceBody,
   remind: (ctx: Ctx, ids: string[]) => Promise<number>,
 ): Promise<BulkInvoiceResultDto> {
+  assertNonCash(body.method)
   const rows = await repo.findInvoices(ctx.tenantId, body.ids)
   if (body.action === 'remind') {
     const open = rows.filter((r) => isOpenStatus(r.status)).map((r) => r.id)

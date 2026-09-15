@@ -486,10 +486,17 @@ describe('billing: generate (idempotent, gapless), pay, summary, building/elevat
     expect(pending.body.items[0].openCents).toBe(12000)
 
     const july = pending.body.items.find((i: { period: string }) => i.period === '2026-07')
-    const partial = await request(server)
+    // Н-18 / СУПТО: only non-cash payments may be recorded.
+    const inCash = await request(server)
       .post(`/api/v1/billing/invoices/${july.id}/pay`)
       .set(bearer(A.ownerToken))
       .send({ paidAt: today, method: 'cash', amountCents: 2000 })
+    expect(inCash.status).toBe(400)
+    expect(JSON.stringify(inCash.body)).toContain('billing.cashNotAllowed')
+    const partial = await request(server)
+      .post(`/api/v1/billing/invoices/${july.id}/pay`)
+      .set(bearer(A.ownerToken))
+      .send({ paidAt: today, method: 'other', amountCents: 2000 })
     expect(partial.status).toBe(200)
     expect(partial.body.status).toBe('overdue')
     expect(partial.body.paidCents).toBe(2000)
@@ -541,7 +548,7 @@ describe('billing: generate (idempotent, gapless), pay, summary, building/elevat
         buildingId: bld.buildingId,
         amountCents: 500,
         paidAt: today,
-        method: 'cash',
+        method: 'other',
         note: 'аванс',
       })
     expect(unallocated.status).toBe(201)
@@ -674,7 +681,7 @@ describe('tenant isolation for step 2 (visits, reschedule, billing, dashboard)',
         await request(server)
           .post(`/api/v1/billing/invoices/${invoiceId}/pay`)
           .set(b)
-          .send({ paidAt: today, method: 'cash' })
+          .send({ paidAt: today, method: 'bank' })
       ).status,
     ).toBe(404)
     expect(
@@ -682,7 +689,7 @@ describe('tenant isolation for step 2 (visits, reschedule, billing, dashboard)',
         await request(server)
           .post('/api/v1/billing/payments')
           .set(b)
-          .send({ buildingId: f.buildingId, amountCents: 100, paidAt: today, method: 'cash' })
+          .send({ buildingId: f.buildingId, amountCents: 100, paidAt: today, method: 'bank' })
       ).status,
     ).toBe(404)
     // B's own invoice with A's user as technician -> 404 too

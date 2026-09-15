@@ -7,10 +7,10 @@ import type {
   GenerateInvoicesResultDto,
   InvoiceDto,
   Page,
+  NewPaymentMethod,
   PaymentDto,
-  PaymentMethod,
 } from '@avroleva/contracts'
-import { PaymentMethod as PaymentMethodEnum } from '@avroleva/contracts'
+import { NewPaymentMethod as NewPaymentMethodEnum } from '@avroleva/contracts'
 import { ApiError, get, post, qs } from '../../lib/api'
 import { currentMonthSofia, todaySofia } from '../../lib/dates'
 import { useI18n } from '../../i18n/I18nProvider'
@@ -39,7 +39,7 @@ function PayForm({
 }) {
   const { t, moneyFull } = useI18n()
   const [paidAt, setPaidAt] = useState(todaySofia)
-  const [method, setMethod] = useState<PaymentMethod>('bank')
+  const [method, setMethod] = useState<NewPaymentMethod>('bank')
   const [note, setNote] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<unknown>(null)
@@ -79,10 +79,10 @@ function PayForm({
             required
           />
         </Field>
-        <Field label={t('payments.method')} error={errors.method}>
+        <Field label={t('payments.method')} error={errors.method} hint={t('payments.nonCashOnly')}>
           <EnumSelect
             value={method}
-            options={PaymentMethodEnum.options}
+            options={NewPaymentMethodEnum.options}
             prefix="enum.paymentMethod"
             onChange={(v) => v && setMethod(v)}
           />

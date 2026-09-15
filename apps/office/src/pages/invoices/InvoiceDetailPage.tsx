@@ -5,11 +5,11 @@ import type {
   BillingConfigDto,
   CreatePaymentLinkResultDto,
   InvoiceDetailDto,
+  NewPaymentMethod,
   PaymentDto,
-  PaymentMethod,
   PaymentSource,
 } from '@avroleva/contracts'
-import { PaymentMethod as PaymentMethodEnum } from '@avroleva/contracts'
+import { NewPaymentMethod as NewPaymentMethodEnum } from '@avroleva/contracts'
 import { ApiError, BASE, get, post } from '../../lib/api'
 import { todaySofia } from '../../lib/dates'
 import { useI18n } from '../../i18n/I18nProvider'
@@ -43,7 +43,7 @@ function PayForm({
 }) {
   const { t } = useI18n()
   const [paidAt, setPaidAt] = useState(todaySofia)
-  const [method, setMethod] = useState<PaymentMethod>('bank')
+  const [method, setMethod] = useState<NewPaymentMethod>('bank')
   const [amountEur, setAmountEur] = useState((invoice.openCents / 100).toFixed(2))
   const [reference, setReference] = useState('')
   const [note, setNote] = useState('')
@@ -89,10 +89,10 @@ function PayForm({
             required
           />
         </Field>
-        <Field label={t('payments.method')} error={errors.method}>
+        <Field label={t('payments.method')} error={errors.method} hint={t('payments.nonCashOnly')}>
           <EnumSelect
             value={method}
-            options={PaymentMethodEnum.options}
+            options={NewPaymentMethodEnum.options}
             prefix="enum.paymentMethod"
             onChange={(v) => v && setMethod(v)}
           />

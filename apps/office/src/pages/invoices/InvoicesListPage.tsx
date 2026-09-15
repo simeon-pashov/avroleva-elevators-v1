@@ -7,10 +7,10 @@ import type {
   GenerateInvoicesResultDto,
   InvoiceDto,
   InvoiceStatus,
+  NewPaymentMethod,
   Page,
-  PaymentMethod,
 } from '@avroleva/contracts'
-import { PaymentMethod as PaymentMethodEnum } from '@avroleva/contracts'
+import { NewPaymentMethod as NewPaymentMethodEnum } from '@avroleva/contracts'
 import { get, post, qs } from '../../lib/api'
 import { currentMonthSofia, todaySofia } from '../../lib/dates'
 import { useI18n } from '../../i18n/I18nProvider'
@@ -61,7 +61,7 @@ export function InvoicesListPage() {
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<unknown>(null)
   const [payDate, setPayDate] = useState(todaySofia)
-  const [payMethod, setPayMethod] = useState<PaymentMethod>('bank')
+  const [payMethod, setPayMethod] = useState<NewPaymentMethod>('bank')
   const [payOpen, setPayOpen] = useState(false)
   const tone = useInvoiceTones(config)
 
@@ -124,7 +124,7 @@ export function InvoicesListPage() {
     action: 'remind' | 'pay'
     ids: string[]
     paidAt?: string
-    method?: PaymentMethod
+    method?: NewPaymentMethod
   }) => {
     setBusy(true)
     setActionError(null)
@@ -366,7 +366,7 @@ export function InvoicesListPage() {
               />
               <EnumSelect
                 value={payMethod}
-                options={PaymentMethodEnum.options}
+                options={NewPaymentMethodEnum.options}
                 prefix="enum.paymentMethod"
                 onChange={(v) => v && setPayMethod(v)}
               />
@@ -380,6 +380,7 @@ export function InvoicesListPage() {
               >
                 {t('payments.confirmPay')}
               </button>
+              <span className="muted small">{t('payments.nonCashOnly')}</span>
             </span>
           ) : null}
         </div>

@@ -516,7 +516,7 @@ describe('payments, references and partial / over-payments', () => {
     const p1 = await request(server)
       .post(`/api/v1/billing/invoices/${inv.id}/pay`)
       .set(bearer(A.ownerToken))
-      .send({ paidAt: today, method: 'cash', amountCents: 1000 })
+      .send({ paidAt: today, method: 'other', amountCents: 1000 })
     expect(p1.status, p1.text).toBe(200)
     expect(p1.body.status).toBe('partially_paid')
     expect(p1.body.openCents).toBe(open - 1000)

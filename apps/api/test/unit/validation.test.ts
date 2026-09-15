@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
+  PaymentMethod,
+  bulkInvoiceBody,
   createBuildingBody,
   createContractBody,
   createElevatorBody,
+  createPaymentBody,
   createUserBody,
   loginBody,
+  payInvoiceBody,
   registerTenantBody,
   tenantSettings,
 } from '@avroleva/contracts'
@@ -146,5 +150,41 @@ describe('tenancy validation', () => {
       owner: { username: 'owner', password: 'password1', name: 'Собственик' },
     })
     expect(ok.locale).toBe('bg')
+  })
+})
+
+describe('payments are non-cash only (Наредба Н-18 / СУПТО)', () => {
+  const cashIssue = (
+    body: {
+      safeParse: (v: unknown) => {
+        success: boolean
+        error?: { issues: Array<{ message: string }> }
+      }
+    },
+    value: unknown,
+  ) => {
+    const r = body.safeParse(value)
+    expect(r.success).toBe(false)
+    expect(r.error!.issues.map((i) => i.message)).toContain('billing.cashNotAllowed')
+  }
+  it('pay / create payment / bulk refuse cash with billing.cashNotAllowed', () => {
+    cashIssue(payInvoiceBody, { paidAt: '2026-09-15', method: 'cash' })
+    cashIssue(createPaymentBody, {
+      buildingId: uuid,
+      amountCents: 1000,
+      paidAt: '2026-09-15',
+      method: 'cash',
+    })
+    cashIssue(bulkInvoiceBody, { action: 'pay', ids: [uuid], method: 'cash' })
+  })
+  it('bank is the default and other is accepted', () => {
+    expect(payInvoiceBody.parse({ paidAt: '2026-09-15' }).method).toBe('bank')
+    expect(payInvoiceBody.parse({ paidAt: '2026-09-15', method: 'other' }).method).toBe('other')
+    expect(
+      createPaymentBody.parse({ buildingId: uuid, amountCents: 1000, paidAt: '2026-09-15' }).method,
+    ).toBe('bank')
+  })
+  it('the read enum still parses legacy cash rows', () => {
+    expect(PaymentMethod.parse('cash')).toBe('cash')
   })
 })
