@@ -58,7 +58,7 @@ fi
 compose build app
 
 log "3b/6 smoke-testing the new image before switching"
-if ! docker run --rm --entrypoint node avroleva-app:latest     -e "import('/app/packages/domain-data/dist/index.js').then(()=>import('/app/apps/api/dist/app.js')).then(()=>{console.log('smoke ok');process.exit(0)}).catch(e=>{console.error(e);process.exit(1)})"; then
+if ! docker run --rm --entrypoint node avroleva-app:latest     -e "Promise.all([import('/app/packages/domain-data/dist/index.js'),import('/app/packages/i18n/dist/index.js'),import('/app/packages/contracts/dist/index.js')]).then(()=>{console.log('smoke ok');process.exit(0)}).catch(e=>{console.error(e);process.exit(1)})"; then
   log "  FAILED: the new image cannot load its modules; the running container was NOT replaced."
   log "  (avroleva-app:previous still holds the last good image)"
   exit 1
