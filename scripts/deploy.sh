@@ -50,7 +50,19 @@ fi
 log "  $BEFORE -> $(git rev-parse --short HEAD) ($(git log -1 --format=%s))"
 
 log "3/6 docker compose build"
+# Keep the running image as a rollback target: a failed health check below must never leave us
+# with only the broken image (2026-09-15: the v0.2.0 image crash-looped and prod was down ~10 min).
+if docker image inspect avroleva-app:latest >/dev/null 2>&1; then
+  docker tag avroleva-app:latest avroleva-app:previous
+fi
 compose build app
+
+log "3b/6 smoke-testing the new image before switching"
+if ! docker run --rm --entrypoint node avroleva-app:latest     -e "import('/app/packages/domain-data/dist/index.js').then(()=>import('/app/apps/api/dist/app.js')).then(()=>{console.log('smoke ok');process.exit(0)}).catch(e=>{console.error(e);process.exit(1)})"; then
+  log "  FAILED: the new image cannot load its modules; the running container was NOT replaced."
+  log "  (avroleva-app:previous still holds the last good image)"
+  exit 1
+fi
 
 log "4/6 docker compose up -d"
 compose up -d --remove-orphans
@@ -65,6 +77,7 @@ for _ in $(seq 1 60); do
 done
 if [ "$STATUS" != "200" ]; then
   log "  FAILED: health is $STATUS after 180s - last app logs:"
+  log "  ROLLBACK: docker tag avroleva-app:previous avroleva-app:latest && docker compose -f docker-compose.prod.yml up -d app"
   compose logs --tail=80 app
   exit 1
 fi

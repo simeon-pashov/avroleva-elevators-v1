@@ -3,7 +3,7 @@ import { prismaBase } from '../platform/db/prisma.js'
 import { bossRunning, queueEnabled, queuedCount, workEnabled } from '../platform/jobs/boss.js'
 import { jobStatuses } from '../platform/jobs/registry.js'
 
-export const APP_VERSION = '0.5.0'
+export const APP_VERSION = '0.2.1'
 
 /** Health (ARCHITECTURE section 6): db, worker status, last run per cron, queue depth. */
 export async function health(): Promise<HealthDto> {
