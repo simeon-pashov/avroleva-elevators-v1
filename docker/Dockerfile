@@ -85,11 +85,9 @@ COPY --from=prod-deps --chown=node:node /app ./
 # Shared packages: compiled output + the JSON/data files domain-data reads next to its dist.
 COPY --from=build --chown=node:node /app/packages/i18n/dist packages/i18n/dist
 COPY --from=build --chown=node:node /app/packages/contracts/dist packages/contracts/dist
-COPY --from=build --chown=node:node /app/packages/domain-data/dist packages/domain-data/dist
-COPY --from=build --chown=node:node /app/packages/domain-data/defects packages/domain-data/defects
-COPY --from=build --chown=node:node /app/packages/domain-data/checklists packages/domain-data/checklists
-COPY --from=build --chown=node:node /app/packages/domain-data/notifications packages/domain-data/notifications
-COPY --from=build --chown=node:node /app/packages/domain-data/calendar-rules.json packages/domain-data/
+# Copy the whole package (dist + every JSON data folder) so a new data folder can never be
+# forgotten again: 2026-09-15 the release image lacked billing/ and jobs/ and crash-looped.
+COPY --from=build --chown=node:node /app/packages/domain-data/ packages/domain-data/
 # API: compiled app, compiled seed, generated Prisma client (imported as dist/../generated), schema
 # + migrations for `prisma migrate deploy`.
 COPY --from=build --chown=node:node /app/apps/api/dist apps/api/dist
