@@ -83,8 +83,24 @@ docs/             screenshots, QA log
 | [`HANDOFF-STEP1.md`](./HANDOFF-STEP1.md) … [`HANDOFF-STEP10.md`](./HANDOFF-STEP10.md) | Per-step handoffs: foundation; dashboard; callbacks/defects/calendar/public page; offline technician app; scheduler/notifications/exports/reports; billing that runs itself, payments, demo mode; repair jobs and quotes, address search; zones, day plan, building statement link; native Android app. |
 | [`docs/ANDROID-RELEASE.md`](./docs/ANDROID-RELEASE.md) | Android release procedure: rebuild the signed APK, keystore custody, ship it to `/downloads/`, deep links, versioning. |
 | [`docs/adr/0001-billing-jobs-payments.md`](./docs/adr/0001-billing-jobs-payments.md) | ADR: billing runs, dunning as data, state machines, payment port, reconciliation, demo mode. |
-| [`docs/QA-2026-09-08.md`](./docs/QA-2026-09-08.md) | The QA pass: bugs found and fixed, what was exercised, security quick-check. |
+| [`PHASE2-REPORT.md`](./PHASE2-REPORT.md) | Phase 2 (steps 7–10 + QA): what was added, bugs fixed, test counts, APK rebuild / sideload, what stays stubbed, open decisions. |
+| [`docs/QA-2026-09-08.md`](./docs/QA-2026-09-08.md), [`docs/QA-2026-09-10.md`](./docs/QA-2026-09-10.md) | The QA passes (phase 1, phase 2): bugs found and fixed, what was exercised, security quick-checks. |
 | `../Elevator Business Due Diligence/` | The research this design rests on (start with `00-SYNTHESIS.md`). |
 | `../Elevator Businesses Data/` | ДАМТН register of licensed firms — the lead list. |
+
+## Changelog
+
+### 0.2.0 — 2026-09-10 (phase 2)
+
+- Billing that runs itself: scheduled monthly / quarterly / yearly invoices, dunning as data (reminder stages, optional late fee), credit notes, partial and unallocated payments, bank-statement CSV import with auto-match and manual match, building statement (print + e-mail), EPC QR + IBAN block on every document, payment-provider port with a demo adapter (IRIS / Stripe stubs), demo mode per tenant with nightly reset.
+- Repair jobs and quotes: data-driven stages with approval evidence, quote versions, printable quote sent by e-mail / Viber, scheduling with a technician pair, completion (also from the phone, offline) recording a repair visit, full / deposit invoices through billing, dashboard strip with the "done, not invoiced" value.
+- Address search and "add an elevator here" on the map; "place on the map" for buildings without coordinates.
+- Zones, technician pairs and the day plan (generate, drag-and-drop, lock, publish to the phones); building statement magic link (`/s/:token`).
+- Native Android app of the technician PWA (Capacitor, signed APK sideloaded from `/downloads/`), bearer-only device sessions, CORS for the app origin.
+- QA pass 2026-09-10: partial settings saves no longer reset the other settings blocks (bank details, provider, jobs, planning); language switch persists; missing notification labels; billing settings writes owner-only; technicians see quote lines without money; quote print favicon. Tests: 367.
+
+### 0.1.0 — 2026-09-08 (phase 1)
+
+Register, maintenance cycle, callbacks, defects, calendar, public QR page, offline technician PWA, scheduler and notifications, exports and reports, monthly invoices, platform admin. See `MORNING-REPORT.md`.
 
 Conventions that apply to all code here: `D:\Code\VPS-GUIDE.md` (Docker, path-based nginx, ports, backups) and `D:\Code\GITHUB-GUIDE.md` (repo-local identity, deploy keys). The GitHub repo name is still to be confirmed with the founder.

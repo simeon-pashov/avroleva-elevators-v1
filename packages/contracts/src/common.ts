@@ -68,7 +68,8 @@ export function patchOf<T extends z.ZodRawShape>(
   const shape: Record<string, z.ZodTypeAny> = {}
   for (const [key, schema] of Object.entries(obj.shape) as Array<[string, z.ZodTypeAny]>) {
     let inner: z.ZodTypeAny = schema
-    while (inner instanceof z.ZodDefault || inner instanceof z.ZodPrefault) inner = inner.unwrap()
+    while (inner instanceof z.ZodDefault || inner instanceof z.ZodPrefault)
+      inner = inner.unwrap() as z.ZodTypeAny
     if (inner instanceof z.ZodObject) inner = patchOf(inner as z.ZodObject<z.ZodRawShape>)
     shape[key] = inner.optional()
   }
