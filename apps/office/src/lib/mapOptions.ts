@@ -4,16 +4,11 @@ import L from 'leaflet'
  * Leaflet options shared by every map in the office app (dashboard, building picker,
  * place-on-map dialog, day-plan route map, zone editor) so they all behave the same.
  *
- * Leaflet's defaults zoom a whole level per wheel notch, which feels like a jump. Fractional
- * zoom (`zoomSnap` < 1, supported since Leaflet 1.0 and stable in 1.9) plus a larger
- * `wheelPxPerZoomLevel` turns the wheel into a smooth quarter/half-level glide.
+ * Wheel zoom uses Leaflet's defaults (one level per wheel notch): a fractional-zoom variant
+ * (zoomSnap 0.25, wheelPxPerZoomLevel 120) was tried on 2026-09-16 and felt too slow.
  * `scrollWheelZoom` is Leaflet's default but is spelled out here so nothing silently drops it.
  */
 export const MAP_OPTIONS: L.MapOptions = {
-  zoomSnap: 0.25,
-  zoomDelta: 0.5,
-  wheelPxPerZoomLevel: 120,
-  wheelDebounceTime: 40,
   zoomAnimation: true,
   scrollWheelZoom: true,
 }
