@@ -6,6 +6,7 @@ import { useI18n } from '../../i18n/I18nProvider'
 import type { I18n } from '../../i18n/I18nProvider'
 import { elevatorStatusBadge } from '../elevators/ElevatorsListPage'
 import { AddressSearch } from '../../components/AddressSearch'
+import { MAP_OPTIONS, tameMapOverlay } from '../../lib/mapOptions'
 
 const TILES =
   (import.meta.env.VITE_MAP_TILES_URL as string | undefined) ||
@@ -231,6 +232,7 @@ export function DashboardMap({
     if (!el.current || map.current) return
     const stored = readViewport()
     const m = L.map(el.current, {
+      ...MAP_OPTIONS,
       center: stored ? [stored.lat, stored.lng] : SOFIA,
       zoom: stored?.zoom ?? 12,
     })
@@ -301,7 +303,7 @@ export function DashboardMap({
             }}
           />
           {dropped ? (
-            <div className="map-search-actions">
+            <div ref={tameMapOverlay} className="map-search-actions">
               <button type="button" className="btn btn-small btn-primary" onClick={onAddHere}>
                 {t('geo.addHere')}
               </button>

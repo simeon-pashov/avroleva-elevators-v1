@@ -1737,7 +1737,20 @@ textarea:focus {
 }
 .dash-map {
   position: relative;
+  /* A drag that starts on the map chrome must pan, not highlight text (the input opts back in). */
+  -webkit-user-select: none;
+  user-select: none;
 }
+.dash-map input,
+.dash-map textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+/*
+ * The search overlay covers a wide band of the map, most of it visually empty. It must be
+ * transparent to the mouse so drags and the wheel reach Leaflet; only its real controls below
+ * take pointer events back (they also call L.DomEvent.disable*Propagation, see lib/mapOptions).
+ */
 .map-search {
   position: absolute;
   z-index: 1000;
@@ -1747,7 +1760,22 @@ textarea:focus {
   max-width: 520px;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 6px;
+  pointer-events: none;
+}
+.map-search .address-search {
+  /* In this column flex the basis would otherwise stretch the box 320px down the map. */
+  flex: 0 0 auto;
+  align-self: stretch;
+  pointer-events: none;
+}
+.map-search .address-search input,
+.map-search .address-search-loading,
+.map-search .field-error,
+.map-search .search-results,
+.map-search .map-search-actions {
+  pointer-events: auto;
 }
 .map-search .address-search input {
   background: #fff;

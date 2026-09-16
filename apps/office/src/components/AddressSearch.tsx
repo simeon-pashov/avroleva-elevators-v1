@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { GeoSuggestionDto } from '@avroleva/contracts'
 import { get, qs } from '../lib/api'
 import { useI18n } from '../i18n/I18nProvider'
+import { tameMapOverlay } from '../lib/mapOptions'
 
 /**
  * As-you-type address search (step 8): 300 ms debounce, `GET /geo/search` (Nominatim behind
@@ -69,6 +70,7 @@ export function AddressSearch({
   return (
     <div className={`address-search${compact ? ' compact' : ''}`}>
       <input
+        ref={tameMapOverlay}
         type="search"
         autoFocus={autoFocus}
         value={q}
@@ -78,10 +80,18 @@ export function AddressSearch({
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         aria-label={t('geo.search')}
       />
-      {loading ? <span className="address-search-loading muted small">…</span> : null}
-      {error ? <span className="field-error">{error}</span> : null}
+      {loading ? (
+        <span ref={tameMapOverlay} className="address-search-loading muted small">
+          …
+        </span>
+      ) : null}
+      {error ? (
+        <span ref={tameMapOverlay} className="field-error">
+          {error}
+        </span>
+      ) : null}
       {open && items.length > 0 ? (
-        <ul className="search-results">
+        <ul ref={tameMapOverlay} className="search-results">
           {items.map((s, i) => (
             <li key={`${s.lat},${s.lng},${i}`}>
               <button
@@ -103,7 +113,7 @@ export function AddressSearch({
           ))}
         </ul>
       ) : open && !loading && q.trim().length >= 2 && !error ? (
-        <ul className="search-results">
+        <ul ref={tameMapOverlay} className="search-results">
           <li className="muted small search-results-empty">{t('geo.noResults')}</li>
         </ul>
       ) : null}

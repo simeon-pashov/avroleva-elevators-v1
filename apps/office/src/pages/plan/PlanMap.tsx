@@ -3,6 +3,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { DayPlanDto, PlanStopDto, UnplannedStopDto } from '@avroleva/contracts'
 import { useI18n } from '../../i18n/I18nProvider'
+import { MAP_OPTIONS } from '../../lib/mapOptions'
 import { planColour } from './planColours'
 import { unplannedKey } from './planUtils'
 
@@ -136,7 +137,7 @@ export function PlanMap({
   // Create the map once; keep Leaflet's size in step with the layout (board beside / below).
   useEffect(() => {
     if (!el.current || map.current) return
-    const m = L.map(el.current, { center: SOFIA, zoom: 12 })
+    const m = L.map(el.current, { ...MAP_OPTIONS, center: SOFIA, zoom: 12 })
     L.tileLayer(TILES, { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(m)
     layer.current = L.layerGroup().addTo(m)
     map.current = m

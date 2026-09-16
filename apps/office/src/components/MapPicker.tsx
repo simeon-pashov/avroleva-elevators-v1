@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useI18n } from '../i18n/I18nProvider'
+import { MAP_OPTIONS } from '../lib/mapOptions'
 
 const TILES =
   (import.meta.env.VITE_MAP_TILES_URL as string | undefined) ||
@@ -33,6 +34,7 @@ export function MapPicker({ lat, lng, onChange, height = 320 }: MapPickerProps) 
   useEffect(() => {
     if (!el.current || map.current) return
     const m = L.map(el.current, {
+      ...MAP_OPTIONS,
       center: lat != null && lng != null ? [lat, lng] : SOFIA,
       zoom: lat != null ? 16 : 11,
     })

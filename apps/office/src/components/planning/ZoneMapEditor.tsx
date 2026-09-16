@@ -3,6 +3,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { BuildingPinDto, GeoJsonPolygon, ZoneDto } from '@avroleva/contracts'
 import { useI18n } from '../../i18n/I18nProvider'
+import { MAP_OPTIONS } from '../../lib/mapOptions'
 
 const TILES =
   (import.meta.env.VITE_MAP_TILES_URL as string | undefined) ||
@@ -76,7 +77,7 @@ export function ZoneMapEditor({
   // Map once; the view fits the polygon being edited, else the tenant's pins, else Sofia.
   useEffect(() => {
     if (!el.current || map.current) return
-    const m = L.map(el.current, { center: SOFIA, zoom: 11 })
+    const m = L.map(el.current, { ...MAP_OPTIONS, center: SOFIA, zoom: 11 })
     L.tileLayer(TILES, { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(m)
     othersLayer.current = L.layerGroup().addTo(m)
     pinsLayer.current = L.layerGroup().addTo(m)
