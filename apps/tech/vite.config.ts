@@ -12,7 +12,13 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 // VITE_NATIVE=1): base "/", output in dist-native (the Capacitor webDir), and the server comes
 // from VITE_DEFAULT_API_ORIGIN (overridable at runtime on the Enroll screen).
 const native = process.env.VITE_NATIVE === '1'
-const base = process.env.VITE_BASE || process.env.VITE_TECH_BASE || (native ? '/' : '/tech/')
+// The web build must prefer VITE_TECH_BASE: the Docker build sets both VITE_BASE (office, e.g.
+// /avroleva/) and VITE_TECH_BASE (/avroleva/tech/), and reading VITE_BASE first shipped the tech
+// app with the office's asset path (blank page in production, 2026-09-16). The native build script
+// sets VITE_BASE=/ and unsets VITE_TECH_BASE.
+const base = native
+  ? process.env.VITE_BASE || '/'
+  : process.env.VITE_TECH_BASE || process.env.VITE_BASE || '/tech/'
 const proxyTarget = 'http://127.0.0.1:3005'
 
 export default defineConfig({
