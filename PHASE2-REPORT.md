@@ -31,19 +31,19 @@ Security quick-check: `/s/:token` 60/min limiter and revoked → 404; `/pay/demo
 
 ## 4. Android app: rebuild and sideload
 
-Not rebuilt for 0.2.0 — nothing under `apps/tech` changed; the app stays **0.6.0** (`D:\Code\Avroleva\Releases\avroleva-elevators-tech-0.6.0.apk`). To rebuild (PowerShell, repo root; `docs/ANDROID-RELEASE.md` §3):
+Not rebuilt for 0.2.0 — nothing under `apps/tech` changed; the app stays **0.6.0** (`D:\Code\Avroleva\Avroleva Elevators\Releases\avroleva-elevators-tech-0.6.0.apk`). To rebuild (PowerShell, repo root; `docs/ANDROID-RELEASE.md` §3):
 
 ```powershell
 npm run build:packages
 cd apps\tech            # bump "version" in package.json first (versionCode derives from it)
-$env:APK_OUT_DIR = 'D:\Code\Avroleva\Releases'
+$env:APK_OUT_DIR = 'D:\Code\Avroleva\Avroleva Elevators\Releases'
 npm run android:release # build:native -> cap sync android -> gradlew assembleRelease -> copy
 & "$env:LOCALAPPDATA\Android\Sdk\build-tools\35.0.0\apksigner.bat" verify --print-certs android\app\build\outputs\apk\release\app-release.apk
 ```
 
 `android/keystore.properties` must exist (password in `%USERPROFILE%\.avroleva\android-keystore.txt`). **Losing the keystore or its password means no future build installs over the existing ones** — back both up outside the laptop.
 
-Sideload: copy the APK to `DATA_DIR/releases/tech.apk` on the `avroleva_data` volume (`DEPLOY.md` §7); on the phone open `https://srv1662742.hstgr.cloud/avroleva/downloads/`, "Изтегли приложението", open the file, allow installs from the browser, "Инсталирай въпреки това" at Play Protect, open Avroleva Elevators, scan the enrollment QR from Потребители → "Свържи телефон". Developer install: `adb install -r <apk>`.
+Sideload: copy the APK to `DATA_DIR/releases/tech.apk` on the `avroleva_data` volume (`DEPLOY.md` §7); on the phone open `https://srv1662742.hstgr.cloud/avroleva/elevators-v1/downloads/`, "Изтегли приложението", open the file, allow installs from the browser, "Инсталирай въпреки това" at Play Protect, open Avroleva Elevators, scan the enrollment QR from Потребители → "Свържи телефон". Developer install: `adb install -r <apk>`.
 
 ## 5. Still stubbed (by design for 0.2.0)
 
@@ -54,7 +54,7 @@ Sideload: copy the APK to `DATA_DIR/releases/tech.apk` on the `avroleva_data` vo
 
 ## 6. Open decisions for the founder
 
-1. **Domain** — QR labels, the APK's baked-in server and the statement links all carry `srv1662742.hstgr.cloud/avroleva`; a custom domain before the first customer avoids re-printing and re-enrolling (`DEPLOY.md` §9).
+1. **Domain** — QR labels, the APK's baked-in server and the statement links all carry `srv1662742.hstgr.cloud/avroleva/elevators-v1`; a custom domain before the first customer avoids re-printing and re-enrolling (`DEPLOY.md` §9).
 2. **Payment provider** — IRIS, Stripe, or neither (IBAN + EPC QR already lets a house manager pay from mobile banking in one scan).
 3. **Play Store** — sideloading needs no account; a listing needs a developer account, the keystore held for life, a privacy page.
 4. **Public arrears** — `showPaymentOnPublicPage` stays off by default; each firm opts in.
@@ -64,5 +64,5 @@ Sideload: copy the APK to `DATA_DIR/releases/tech.apk` on the `avroleva_data` vo
 
 - Push `main`, deploy per `DEPLOY.md` §7. Migrations applied by `prisma migrate deploy` (all additive): `20260909000000_billing_payments_demo`, `20260910000000_invoice_contract_nullable`, `20260910000100_jobs_stages`, `20260910000200_step9_zones_day_plans_access_links`.
 - VPS `.env`: **no new variable required** — `DATA_DIR=/data` and the volume come from `docker-compose.prod.yml`; keep `MIN_CLIENT_VERSION=0.4.0` until every phone runs 0.6.0. Optional, leave unset: `IRIS_API_KEY`, `IRIS_WEBHOOK_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
-- Copy the APK to `DATA_DIR/releases/tech.apk`; check `…/avroleva/downloads/tech.apk` answers 200 with `application/vnd.android.package-archive`.
+- Copy the APK to `DATA_DIR/releases/tech.apk`; check `…/avroleva/elevators-v1/downloads/tech.apk` answers 200 with `application/vnd.android.package-archive`.
 - Optional: `/.well-known/assetlinks.json` at the host root with the certificate SHA-256 from `HANDOFF-STEP10.md`; then the real-phone pass of `HANDOFF-STEP10.md` §8.

@@ -29,7 +29,7 @@
                 <data android:scheme="avroleva-elevators" android:host="enroll" />
             </intent-filter>
 
-            <!-- Office QR / e-mail link https://<host>/avroleva/tech/?enroll=... opens the app when
+            <!-- Office QR / e-mail link https://<host>/avroleva/elevators-v1/tech/?enroll=... opens the app when
                  installed. Android 12+ only auto-opens verified App Links: the server must publish
                  /.well-known/assetlinks.json with the release cert (docs/ANDROID-RELEASE.md);
                  until then the user can enable it under "Open by default", and the PWA URL keeps
@@ -41,7 +41,7 @@
                 <data
                     android:scheme="https"
                     android:host="srv1662742.hstgr.cloud"
-                    android:pathPrefix="/avroleva/tech/"
+                    android:pathPrefix="/avroleva/elevators-v1/tech/"
                 />
             </intent-filter>
         </activity>

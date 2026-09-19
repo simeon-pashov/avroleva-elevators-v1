@@ -35,7 +35,7 @@ export function parseEnrollLink(raw: string): EnrollLink | null {
       const u = new URL(s)
       const code = (u.searchParams.get('enroll') ?? '').trim()
       if (!code) return null
-      // `/avroleva/tech/` -> `/avroleva`; `/tech/` -> ``.
+      // `/avroleva/elevators-v1/tech/` -> `/avroleva/elevators-v1`; `/tech/` -> ``.
       const path = u.pathname.replace(/\/tech\/?.*$/i, '').replace(/\/$/, '')
       return { code, server: `${u.origin}${path}` }
     } catch {

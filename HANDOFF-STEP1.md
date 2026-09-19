@@ -12,7 +12,7 @@ npm-workspaces monorepo (`packages/*` build before `apps/*`):
 | `packages/contracts` | zod 4 schemas for every request body / query + TS DTO interfaces shared by API and office (`enums.ts` values = Postgres enum values). |
 | `apps/api` | Express 5 + Prisma 6 + PostgreSQL. `platform/` (config, prisma + tenant guard, RFC 7807 errors, ctx/guards/CSRF, request-id, pino, events bus, audit, ports+adapters, i18n), `modules/tenancy`, `modules/registry`, skeleton `index.ts` for every other module, `http/` facade (router, admin, static SPA). |
 | `apps/office` | React 19 + Vite 7 + react-router 7, plain CSS, Leaflet map. Login, shell with nav + language switch, list/detail/edit for buildings, elevators, customers (+contacts), contracts, users (owner), settings, CSV import, platform-admin pages under `/admin`. |
-| `docker/Dockerfile`, `docker-compose.prod.yml` | UNTESTED sketches for the VPS (port 3005, `/avroleva/` prefix). `docker-compose.yml` = optional local Postgres. |
+| `docker/Dockerfile`, `docker-compose.prod.yml` | UNTESTED sketches for the VPS (port 3005, `/avroleva/elevators-v1/` prefix). `docker-compose.yml` = optional local Postgres. |
 
 Module rules from ARCHITECTURE §1.1 are followed: modules import lower layers only, through `index.ts`; ESLint blocks imports of another module's `repo/`, `domain/`, `http/`. Table ownership map: `apps/api/src/platform/db/ownership.ts`.
 
@@ -32,7 +32,7 @@ npm run build                 # packages -> api (prisma generate + tsc) -> offic
 
 Ports: API **3005**, Vite dev **5175**, Postgres per `DATABASE_URL`. Health: `GET http://localhost:3005/api/v1/health` → `{ok, db, version, time}`.
 
-Env vars (`.env.example` documents every one): `DATABASE_URL`, `TEST_DATABASE_URL` (default: `…/avroleva_test`), `PORT`, `NODE_ENV`, `LOG_LEVEL`, `BASE_PATH` + `VITE_BASE` (A11; both default `/`; behind nginx use `/avroleva` and `/avroleva/`), `PUBLIC_BASE_URL`, `COOKIE_SECURE` (`true` behind HTTPS → also `trust proxy`), `SESSION_SECRET` (must change in production), `ADMIN_USERNAME`/`ADMIN_PASSWORD`, `SEED_DEMO`, `GEOCODER=nominatim|stub`, `NOMINATIM_URL`, `EMAIL_PROVIDER`/`SMS_PROVIDER` (console only), `VITE_MAP_TILES_URL`, `OFFICE_DIST`.
+Env vars (`.env.example` documents every one): `DATABASE_URL`, `TEST_DATABASE_URL` (default: `…/avroleva_test`), `PORT`, `NODE_ENV`, `LOG_LEVEL`, `BASE_PATH` + `VITE_BASE` (A11; both default `/`; behind nginx use `/avroleva/elevators-v1` and `/avroleva/elevators-v1/`), `PUBLIC_BASE_URL`, `COOKIE_SECURE` (`true` behind HTTPS → also `trust proxy`), `SESSION_SECRET` (must change in production), `ADMIN_USERNAME`/`ADMIN_PASSWORD`, `SEED_DEMO`, `GEOCODER=nominatim|stub`, `NOMINATIM_URL`, `EMAIL_PROVIDER`/`SMS_PROVIDER` (console only), `VITE_MAP_TILES_URL`, `OFFICE_DIST`.
 
 ### Seeded credentials (dev only)
 

@@ -32,7 +32,7 @@ Logins: owner `demo` / `demo1234`, office `maria` / `demo1234`, technician `ivan
 - `npm run lint`: green (eslint + prettier).
 - `npm test`: **215 passed** (i18n 12; API unit 94 + integration 109), 0 failed. Three new regression tests tonight.
 - `npm run build`: green (packages, api, office, tech incl. service worker).
-- Docker: `docker/Dockerfile` built and run as a throwaway stack (`avroleva-verify`, port 3105) with the real nginx snippet in front: health with the worker running and `callbacks.slaWatch` ticking, login, dashboard with 19 pins, elevator page with photo thumbnails, `/avroleva/tech/` loads and enrolls a phone, logbook print page, public QR page, CSV export with BOM, `backup.sh` + `restore-drill.sh` (dump restored into a scratch container: 1 tenant, 20 elevators, 347 visits, 15 attachments). Stack removed afterwards. **Not verified:** service-worker registration inside the embedded browser (the file serves correctly; confirm the PWA install on a real phone after deploy), and the CI workflow has never run (no GitHub remote yet).
+- Docker: `docker/Dockerfile` built and run as a throwaway stack (`avroleva-verify`, port 3105) with the real nginx snippet in front: health with the worker running and `callbacks.slaWatch` ticking, login, dashboard with 19 pins, elevator page with photo thumbnails, `/avroleva/elevators-v1/tech/` loads and enrolls a phone, logbook print page, public QR page, CSV export with BOM, `backup.sh` + `restore-drill.sh` (dump restored into a scratch container: 1 tenant, 20 elevators, 347 visits, 15 attachments). Stack removed afterwards. **Not verified:** service-worker registration inside the embedded browser (the file serves correctly; confirm the PWA install on a real phone after deploy), and the CI workflow has never run (no GitHub remote yet).
 
 ## Verified in the browser tonight (owner, office, technician, admin)
 
@@ -40,7 +40,7 @@ Every office route in Bulgarian and English at 1280 px and in Bulgarian at 820 p
 
 ## Bugs found and fixed in QA (11)
 
-The two that mattered: (1) the overdue roll ran before every billing read, so concurrent page loads emitted `InvoiceOverdue` 3–5 times per invoice — the bell showed 99+ right after a reset; now one atomic `UPDATE … RETURNING`. (2) The seed's months of history were re-delivered by the outbox sweep as 266 fresh notifications on the first API start; the seed now acknowledges its own events. Also: the technician app was unreachable in the container (`/tech/` redirect loop) and photo URLs were double-prefixed behind `/avroleva/`; the top nav was clipped at 1280 px; technicians could see contract prices; there was no UI button to generate the month's invoices; small things (raw link label, favicons, a typecheck error, a gitignore rule). Full table in `docs/QA-2026-09-08.md`.
+The two that mattered: (1) the overdue roll ran before every billing read, so concurrent page loads emitted `InvoiceOverdue` 3–5 times per invoice — the bell showed 99+ right after a reset; now one atomic `UPDATE … RETURNING`. (2) The seed's months of history were re-delivered by the outbox sweep as 266 fresh notifications on the first API start; the seed now acknowledges its own events. Also: the technician app was unreachable in the container (`/tech/` redirect loop) and photo URLs were double-prefixed behind `/avroleva/elevators-v1/`; the top nav was clipped at 1280 px; technicians could see contract prices; there was no UI button to generate the month's invoices; small things (raw link label, favicons, a typecheck error, a gitignore rule). Full table in `docs/QA-2026-09-08.md`.
 
 ## Deviations from ARCHITECTURE / MVP-PLAN and why
 
@@ -48,7 +48,7 @@ The two that mattered: (1) the overdue roll ran before every billing read, so co
 - **Notifications**: Viber is deep-link only (office taps the link, confirms "sent"); SMS has a generic HTTP adapter only, rules start OFF; e-mail is plain text turned into paragraphs. No per-contact opt-out yet.
 - **`calendar_item` and `maintenance_job` tables** are not materialised: the deadlines view derives from the read model and the cron only emits events. Simpler, and nothing needed the rows yet.
 - **Audit log is not hash-chained** (`prevHash/hash` columns still open); the full export's `manifest.json` covers zip integrity.
-- **`PUBLIC_BASE_URL` is the origin only** (`https://srv1662742.hstgr.cloud`), not `…/avroleva` as §7 says: the code appends `BASE_PATH` itself. `DEPLOY.md` and the env example are right; ARCHITECTURE §7 still has the old value.
+- **`PUBLIC_BASE_URL` is the origin only** (`https://srv1662742.hstgr.cloud`), not `…/avroleva/elevators-v1` as §7 says: the code appends `BASE_PATH` itself. `DEPLOY.md` and the env example are right; ARCHITECTURE §7 still has the old value.
 - **Pricing/subscription module is a skeleton**: no plan rows, no `trialing` state, no usage snapshots — the demo tenant has no subscription concept at all. This is the largest open item from MVP-PLAN phase 6.
 - **No Playwright suite committed** (the architecture calls for one nightly smoke). Tonight's browser scripts lived in a scratch folder; porting them is ~1 day.
 - **Row-level security** not used (as decided in §6); isolation is enforced in the repos and covered by tests.
@@ -73,12 +73,12 @@ The two that mattered: (1) the overdue roll ran before every billing read, so co
 2. On the VPS: deploy key + `/root/.ssh/config` alias, clone to `/var/www/avroleva`, `cp .env.production.example .env` and fill the three secrets with `openssl rand -hex 32`, `SEED_DEMO=false` (or `true` for a demo tenant), `PUBLIC_BASE_URL=https://srv1662742.hstgr.cloud`.
 3. `docker compose -f docker-compose.prod.yml up -d --build` → the container migrates, seeds the admin, starts API + worker on `127.0.0.1:3005`.
 4. Copy `deploy/nginx-avroleva.conf` to `/etc/nginx/snippets/`, add one `include` line inside the existing `listen 443 ssl` server block, `nginx -t && systemctl reload nginx`; check the other five apps still return 200.
-5. Health: `https://srv1662742.hstgr.cloud/avroleva/api/v1/health` shows `worker.running: true`. Log in at `/avroleva/admin/login`, register the first firm.
+5. Health: `https://srv1662742.hstgr.cloud/avroleva/elevators-v1/api/v1/health` shows `worker.running: true`. Log in at `/avroleva/elevators-v1/admin/login`, register the first firm.
 6. Cron `scripts/backup.sh` nightly; run `scripts/restore-drill.sh` once; rollback = `git checkout <previous tag> && up -d --build`.
 
 ## Decisions needed from you (in priority order)
 
-1. **Domain, before any QR label is printed or any technician installs the app.** The PWA identity, its offline data and every printed QR code are bound to the origin. Path-prefix `srv…/avroleva/` is fine for demos; the founding customer must start on `app.<yourdomain>` (new server block + certbot). Also: the GitHub repo name.
+1. **Domain, before any QR label is printed or any technician installs the app.** The PWA identity, its offline data and every printed QR code are bound to the origin. Path-prefix `srv…/avroleva/elevators-v1/` is fine for demos; the founding customer must start on `app.<yourdomain>` (new server block + certbot). Also: the GitHub repo name.
 2. **Production secrets and the admin account**: `SESSION_SECRET`, `POSTGRES_PASSWORD`, `ADMIN_PASSWORD` generated on the VPS (commands in `DEPLOY.md`); whether the platform admin username stays `admin`.
 3. **Pricing configuration values**: per-elevator price, tiers (0/1–100/101–200), flat-plan option, VAT display, currency (EUR with BGN reference is what the UI shows now). Nothing is coded until you decide — see the gap table.
 4. **3-month trial mechanics**: trial start = registration or first import? What happens at the end (read-only, grace, e-mail sequence)? Who flips a tenant to paying (you in /admin)?

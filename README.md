@@ -1,6 +1,6 @@
 # Avroleva Elevators
 
-Avroleva Elevators is the elevator product of Avroleva; technical identifiers (package scopes, database and container names, the `/avroleva` base path, cookie names) keep the short name.
+Avroleva Elevators is the elevator product of Avroleva; technical identifiers (package scopes, database and container names, the `/avroleva/elevators-v1` base path, cookie names) keep the short name.
 
 Avroleva Elevators is a multi-tenant SaaS for Bulgarian elevator-maintenance firms (асансьорни сервизи). It is the business-operations and customer-evidence layer on top of the paper logbook (дневник): the 30-day functional checks with two technicians, the emergency-call response timer, the 17-item stop-defect catalogue, inspection dates, the monthly report to the building, light invoicing, and the long-term dossier a firm keeps for every lift. Each firm is a tenant with strict data isolation, can export all of its data at any time as CSV or a full zip, and can delete it after a 30-day grace period — the product holds the firm's own operational record for the firm alone.
 
@@ -67,7 +67,7 @@ packages/contracts/   zod schemas and DTO types shared by API and clients
 packages/domain-data/ checklists, defect catalogue, notification templates, calendar rules, billing and job-stage defaults
 packages/i18n/        bg.json (source) + en.json, t() for server and clients
 docker/           Dockerfile (multi-stage) + entrypoint (migrate -> seed -> start)
-deploy/           nginx snippet for the /avroleva/ path prefix
+deploy/           nginx snippet for the /avroleva/elevators-v1/ path prefix
 scripts/          deploy.sh, backup.sh, restore-drill.sh (VPS)
 docs/             screenshots, QA log
 ```

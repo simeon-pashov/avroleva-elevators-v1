@@ -23,6 +23,16 @@ function barcodeDetector(): BarcodeDetectorCtor | undefined {
   return (globalThis as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector
 }
 
+/**
+ * Example server for the hint under the "Server" field: the build's default (`DEFAULT_API_ORIGIN`
+ * in the native build), made absolute for the web build where it is only BASE_PATH.
+ */
+function apiBaseExample(): string {
+  const base = defaultApiBase()
+  if (/^https?:\/\//i.test(base) || typeof window === 'undefined') return base
+  return `${window.location.origin}${base}`
+}
+
 function canScan(): boolean {
   return !!barcodeDetector() && typeof navigator.mediaDevices?.getUserMedia === 'function'
 }
@@ -218,7 +228,10 @@ export function EnrollPage() {
           />
         </Field>
         {platform.isNative ? (
-          <Field label={t('tech.enroll.apiBase')} hint={t('tech.enroll.apiBaseHint')}>
+          <Field
+            label={t('tech.enroll.apiBase')}
+            hint={t('tech.enroll.apiBaseHint', { example: apiBaseExample() })}
+          >
             <input
               type="url"
               value={apiBase}
@@ -241,7 +254,9 @@ export function EnrollPage() {
               autoCapitalize="off"
               spellCheck={false}
             />
-            <p className="muted small">{t('tech.enroll.apiBaseHint')}</p>
+            <p className="muted small">
+              {t('tech.enroll.apiBaseHint', { example: apiBaseExample() })}
+            </p>
           </details>
         )}
         {error ? <div className="banner banner-danger">{error}</div> : null}

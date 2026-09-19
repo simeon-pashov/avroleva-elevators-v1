@@ -826,7 +826,7 @@
   "tech.enroll.failed": "Connection failed. Check the code and your network.",
   "tech.enroll.reenroll": "The session expired or was ended by the office. Records on the phone are kept – connect the phone again to send them.",
   "tech.enroll.apiBase": "Server",
-  "tech.enroll.apiBaseHint": "Address of the system, e.g. https://srv1662742.hstgr.cloud/avroleva. Filled in automatically from the office QR code.",
+  "tech.enroll.apiBaseHint": "Address of the system, e.g. {example}. Filled in automatically from the office QR code.",
   "tech.today.title": "Today",
   "tech.today.overdue": "Overdue",
   "tech.today.today": "Today",

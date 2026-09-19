@@ -1,10 +1,10 @@
 // Runs a Gradle task of the Android project with the user-scoped toolchain of
-// D:\Code\Avroleva\ANDROID-TOOLCHAIN.md (JDK 17 + Android SDK under %LOCALAPPDATA%). JAVA_HOME /
+// D:\Code\Avroleva\Avroleva Elevators\ANDROID-TOOLCHAIN.md (JDK 17 + Android SDK under %LOCALAPPDATA%). JAVA_HOME /
 // ANDROID_HOME from the environment win; the defaults below are the documented install paths.
 //
 //   node scripts/gradle.mjs assembleRelease      -> android/app/build/outputs/apk/release/app-release.apk
 //   node scripts/gradle.mjs assembleDebug        -> android/app/build/outputs/apk/debug/app-debug.apk
-//   APK_OUT_DIR=D:\Code\Avroleva\Releases node scripts/gradle.mjs assembleRelease
+//   APK_OUT_DIR=D:\Code\Avroleva\Avroleva Elevators\Releases node scripts/gradle.mjs assembleRelease
 //     also copies the APK there as avroleva-elevators-tech-<version>.apk (outside the repo).
 import { spawnSync } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs'

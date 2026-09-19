@@ -1,7 +1,7 @@
 # Avroleva Elevators - one image: API (Express 5 + Prisma + pg-boss worker, ROLE=all) + built office SPA (/)
 # + built technician PWA (/tech/). ARCHITECTURE section 7; nginx path-prefix rules in VPS-GUIDE.md.
 #
-#   docker build -f docker/Dockerfile --build-arg VITE_BASE=/avroleva/ -t avroleva .
+#   docker build -f docker/Dockerfile --build-arg VITE_BASE=/avroleva/elevators-v1/ -t avroleva .
 #
 # Stages
 #   deps       full `npm ci` (all workspaces), cached on the package.json + lock layer
@@ -34,7 +34,7 @@ RUN npm ci --no-audit --no-fund
 # --------------------------------------------------------------------------------------- build
 FROM deps AS build
 # Path prefix baked into both SPAs (must equal BASE_PATH + "/"). Tech app lives under <base>tech/.
-ARG VITE_BASE=/avroleva/
+ARG VITE_BASE=/avroleva/elevators-v1/
 ENV VITE_BASE=${VITE_BASE}
 ENV VITE_TECH_BASE=${VITE_BASE}tech/
 # Empty = same origin (the API serves the PWA itself).

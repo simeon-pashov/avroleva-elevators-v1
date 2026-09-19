@@ -826,7 +826,7 @@
   "tech.enroll.failed": "Свързването не успя. Проверете кода и връзката.",
   "tech.enroll.reenroll": "Сесията е изтекла или е прекратена от офиса. Записите на телефона са запазени – свържете телефона отново, за да се изпратят.",
   "tech.enroll.apiBase": "Сървър",
-  "tech.enroll.apiBaseHint": "Адресът на системата, напр. https://srv1662742.hstgr.cloud/avroleva. От QR кода на офиса се попълва сам.",
+  "tech.enroll.apiBaseHint": "Адресът на системата, напр. {example}. От QR кода на офиса се попълва сам.",
   "tech.today.title": "Днес",
   "tech.today.overdue": "Просрочени",
   "tech.today.today": "За днес",

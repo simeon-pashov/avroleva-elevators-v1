@@ -1,7 +1,7 @@
 // Builds the web assets for the Capacitor shell: base "/", VITE_NATIVE=1, output in dist-native
 // (capacitor.config.ts webDir). The PWA build in dist/ (served at /tech/) is untouched.
 //
-//   npm run build:native                         -> server https://srv1662742.hstgr.cloud/avroleva
+//   npm run build:native                         -> server https://srv1662742.hstgr.cloud/avroleva/elevators-v1
 //   VITE_DEFAULT_API_ORIGIN=https://x/y npm run build:native
 //
 // The server is only the default: the technician can change it on the Enroll screen.
@@ -12,7 +12,7 @@ import { dirname, resolve } from 'node:path'
 const here = dirname(fileURLToPath(import.meta.url))
 const root = resolve(here, '..')
 
-export const DEFAULT_API_ORIGIN = 'https://srv1662742.hstgr.cloud/avroleva'
+export const DEFAULT_API_ORIGIN = 'https://srv1662742.hstgr.cloud/avroleva/elevators-v1'
 
 const env = {
   ...process.env,

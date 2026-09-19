@@ -9,7 +9,7 @@ set -euo pipefail
 APP_DIR="${APP_DIR:-/var/www/avroleva}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 PUBLIC_HOST="${PUBLIC_HOST:-srv1662742.hstgr.cloud}"
-APP_PATH="${APP_PATH:-/avroleva}"
+APP_PATH="${APP_PATH:-/avroleva/elevators-v1}"
 OTHER_APPS="${OTHER_APPS:-/uncle-crm/ /smart-flower-pots/ /kontira/ /food-tracker/ /rumen-site/}"
 SKIP_BACKUP="${SKIP_BACKUP:-false}"
 GIT_REF="${1:-}"

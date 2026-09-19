@@ -1,6 +1,6 @@
 # Avroleva Elevators - production stack for the VPS (VPS-GUIDE.md: one image per app, own Postgres, app bound
-# to 127.0.0.1 only, host nginx routes /avroleva/ -> 127.0.0.1:3005). Secrets come from an untracked
-# `.env` next to this file (template: .env.production.example).
+# to 127.0.0.1 only, host nginx routes /avroleva/elevators-v1/ -> 127.0.0.1:3005). Secrets come from
+# an untracked `.env` next to this file (template: .env.production.example).
 #
 #   docker compose -f docker-compose.prod.yml up -d --build
 #
@@ -34,7 +34,7 @@ services:
       dockerfile: docker/Dockerfile
       args:
         # Path prefix baked into the office SPA and (as VITE_BASE + "tech/") the technician PWA.
-        VITE_BASE: ${VITE_BASE:-/avroleva/}
+        VITE_BASE: ${VITE_BASE:-/avroleva/elevators-v1/}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -44,7 +44,7 @@ services:
       SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env (openssl rand -hex 32)}
       # true behind the HTTPS nginx (cookies Secure + trust proxy). Only false for a local run without TLS.
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
-      BASE_PATH: ${BASE_PATH:-/avroleva}
+      BASE_PATH: ${BASE_PATH:-/avroleva/elevators-v1}
       # Origin only: the app appends BASE_PATH to it (platform/urls.ts).
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://srv1662742.hstgr.cloud}
       # Platform admin, upserted at every start; demo tenant only when SEED_DEMO=true.

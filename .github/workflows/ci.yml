@@ -46,8 +46,8 @@ jobs:
       SMS_PROVIDER: console
       LOG_LEVEL: silent
       # Same values the image bakes in, so `npm run build` exercises the production base paths.
-      VITE_BASE: /avroleva/
-      VITE_TECH_BASE: /avroleva/tech/
+      VITE_BASE: /avroleva/elevators-v1/
+      VITE_TECH_BASE: /avroleva/elevators-v1/tech/
       VITE_API_BASE: ""
     steps:
       - uses: actions/checkout@v4
@@ -90,7 +90,7 @@ jobs:
           context: .
           file: docker/Dockerfile
           build-args: |
-            VITE_BASE=/avroleva/
+            VITE_BASE=/avroleva/elevators-v1/
           push: false
           load: true
           tags: avroleva:ci
@@ -107,7 +107,7 @@ jobs:
             test -f /app/apps/office/dist/index.html
             test -f /app/apps/tech/dist/index.html
             test -x /app/node_modules/.bin/prisma
-            grep -q "/avroleva/assets/" /app/apps/office/dist/index.html
-            grep -q "/avroleva/tech/" /app/apps/tech/dist/index.html
+            grep -q "/avroleva/elevators-v1/assets/" /app/apps/office/dist/index.html
+            grep -q "/avroleva/elevators-v1/tech/assets/" /app/apps/tech/dist/index.html
             echo image ok'
           docker image inspect avroleva:ci --format "size: {{.Size}} bytes"

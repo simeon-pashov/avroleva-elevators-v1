@@ -13,9 +13,9 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 // from VITE_DEFAULT_API_ORIGIN (overridable at runtime on the Enroll screen).
 const native = process.env.VITE_NATIVE === '1'
 // The web build must prefer VITE_TECH_BASE: the Docker build sets both VITE_BASE (office, e.g.
-// /avroleva/) and VITE_TECH_BASE (/avroleva/tech/), and reading VITE_BASE first shipped the tech
-// app with the office's asset path (blank page in production, 2026-09-16). The native build script
-// sets VITE_BASE=/ and unsets VITE_TECH_BASE.
+// /avroleva/elevators-v1/) and VITE_TECH_BASE (/avroleva/elevators-v1/tech/), and reading
+// VITE_BASE first shipped the tech app with the office's asset path (blank page in production,
+// 2026-09-16). The native build script sets VITE_BASE=/ and unsets VITE_TECH_BASE.
 const base = native
   ? process.env.VITE_BASE || '/'
   : process.env.VITE_TECH_BASE || process.env.VITE_BASE || '/tech/'

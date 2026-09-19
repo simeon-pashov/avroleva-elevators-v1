@@ -85,9 +85,10 @@ export function loadApiBase(): string {
 
 /**
  * Build-time default. `VITE_DEFAULT_API_ORIGIN` (the native build: origin, or origin + BASE_PATH,
- * e.g. `https://srv1662742.hstgr.cloud/avroleva`) wins; `VITE_API_BASE` is the older name and
- * still honoured. Empty = same origin: the API lives next to the app, one level above `/tech/`
- * (`/tech/` -> ``, `/avroleva/tech/` -> `/avroleva`). In dev the Vite proxy forwards `/api`.
+ * e.g. `https://srv1662742.hstgr.cloud/avroleva/elevators-v1`) wins; `VITE_API_BASE` is the older
+ * name and still honoured. Empty = same origin: the API lives next to the app, one level above
+ * `/tech/` (`/tech/` -> ``, `/avroleva/elevators-v1/tech/` -> `/avroleva/elevators-v1`). In dev
+ * the Vite proxy forwards `/api`.
  */
 export function defaultApiBase(): string {
   const env = (

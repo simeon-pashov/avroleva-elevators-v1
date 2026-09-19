@@ -27,7 +27,7 @@ Order of principles when phases collide: (1) evidence capture never blocks, (2) 
 
 **Out of scope.** Any feature screen; Capacitor; S3; Viber Business.
 
-**Outcome.** `https://srv…/avroleva/` shows a login; the demo owner sees an empty register; a technician enrolls a phone by QR; health is green; a Cyrillic PDF downloads.
+**Outcome.** `https://srv…/avroleva/elevators-v1/` shows a login; the demo owner sees an empty register; a technician enrolls a phone by QR; health is green; a Cyrillic PDF downloads.
 
 **Acceptance.** Owner logs in on desktop and the technician on a phone (home-screen install works on Android Chrome and iOS Safari). Deploy from a clean clone to the VPS is one command. CI green on `main`. `SEED_DEMO=true` creates the demo tenant idempotently. The isolation test fails when a route is added without a tenant guard (proved by adding one on purpose).
 

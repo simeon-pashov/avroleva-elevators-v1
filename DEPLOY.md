@@ -6,38 +6,42 @@ untracked `.env` on the VPS). Everything below runs as `root@187.127.84.59` unle
 
 | What | Value |
 |---|---|
-| Public URL | `https://srv1662742.hstgr.cloud/avroleva/` (office), `/avroleva/tech/` (technician PWA), `/avroleva/downloads/` (Android APK + install page), `/avroleva/api/v1/` |
-| Code on the VPS | `/var/www/avroleva` (clone of the GitHub repo — name to be confirmed with the founder) |
+| Public URL | `https://srv1662742.hstgr.cloud/avroleva/elevators-v1/` (office), `/avroleva/elevators-v1/tech/` (technician PWA), `/avroleva/elevators-v1/downloads/` (Android APK + install page), `/avroleva/elevators-v1/api/v1/` |
+| Code on the VPS | `/var/www/avroleva` (clone of `github.com/simeon-pashov/avroleva-elevators-v1`, private) |
 | Compose | `docker-compose.prod.yml` → services `db` (postgres:16-alpine, volume `avroleva_db`) and `app` (`127.0.0.1:3005`, volume `avroleva_data` at `/data`) |
 | Image | `docker/Dockerfile` (multi-stage; ~600 MB; entrypoint = `prisma migrate deploy` → bootstrap seed → `node dist/main.js`, worker inside via `ROLE=all`) |
-| Health | `https://srv1662742.hstgr.cloud/avroleva/api/v1/health` → `{"ok":true,"db":"up",...,"worker":{"running":true,...}}` |
+| Health | `https://srv1662742.hstgr.cloud/avroleva/elevators-v1/api/v1/health` → `{"ok":true,"db":"up",...,"worker":{"running":true,...}}` |
 | Backups | `scripts/backup.sh` → `/root/backups/avroleva/`, log `/var/log/backup-avroleva.log`, 30 days |
 
 ## 1. One-time: deploy key + clone (GITHUB-GUIDE pattern)
 
+The repo is `simeon-pashov/avroleva-elevators-v1` (moved from `elevator-business` on 2026-09-19). GitHub
+forbids reusing a deploy key across repos, so the new repo gets its own key + alias
+(`github-avroleva-elevators-v1`); the old `github-avroleva` alias stays bound to the old repo.
+
 ```bash
 ssh -o BatchMode=yes root@187.127.84.59 bash -s <<'EOF'
-ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_avroleva -N "" -C "vps-deploy-avroleva"
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_avroleva-elevators-v1 -N "" -C "vps-deploy-avroleva-elevators-v1"
 cat >> ~/.ssh/config <<'CFG'
 
-Host github-avroleva
+Host github-avroleva-elevators-v1
     HostName github.com
     User git
-    IdentityFile ~/.ssh/id_ed25519_avroleva
+    IdentityFile ~/.ssh/id_ed25519_avroleva-elevators-v1
     IdentitiesOnly yes
 CFG
 chmod 600 ~/.ssh/config
 echo "=== ADD AS READ-ONLY DEPLOY KEY ON THE REPO: ==="
-cat ~/.ssh/id_ed25519_avroleva.pub
+cat ~/.ssh/id_ed25519_avroleva-elevators-v1.pub
 EOF
 ```
 
-Add the printed key at `github.com/simeon-pashov/<repo>/settings/keys` (Add deploy key, **write access unchecked**), then:
+Add the printed key at `github.com/simeon-pashov/avroleva-elevators-v1/settings/keys` (Add deploy key, **write access unchecked**), then:
 
 ```bash
 ssh -o BatchMode=yes root@187.127.84.59 bash -s <<'EOF'
-ssh -o StrictHostKeyChecking=accept-new -T git@github-avroleva || true   # "Hi simeon-pashov/<repo>!"
-git clone git@github-avroleva:simeon-pashov/<repo>.git /var/www/avroleva
+ssh -o StrictHostKeyChecking=accept-new -T git@github-avroleva-elevators-v1 || true   # "Hi simeon-pashov/avroleva-elevators-v1!"
+git clone git@github-avroleva-elevators-v1:simeon-pashov/avroleva-elevators-v1.git /var/www/avroleva
 cd /var/www/avroleva && chmod +x scripts/*.sh
 ss -tlnp | grep -E ':(3005|3004)\b' || echo "port 3005 free"
 EOF
@@ -57,7 +61,7 @@ grep -E '^(APP_HOST_PORT|BASE_PATH|VITE_BASE|PUBLIC_BASE_URL|COOKIE_SECURE|SEED_
 EOF
 ```
 
-Expected: `APP_HOST_PORT=3005`, `BASE_PATH=/avroleva`, `VITE_BASE=/avroleva/`,
+Expected: `APP_HOST_PORT=3005`, `BASE_PATH=/avroleva/elevators-v1`, `VITE_BASE=/avroleva/elevators-v1/`,
 `PUBLIC_BASE_URL=https://srv1662742.hstgr.cloud` (origin only — the app appends `BASE_PATH` itself
 when it builds QR, enrollment and e-mail links), `COOKIE_SECURE=true`, `SEED_DEMO=false`.
 `COOKIE_SECURE=true` is mandatory behind the HTTPS nginx (the local Docker verification runs with
@@ -88,9 +92,11 @@ ssh -o BatchMode=yes root@187.127.84.59 'curl -s http://127.0.0.1:3005/api/v1/he
 
 ## 4. nginx: include the snippet in the `listen 443 ssl` server block
 
-`deploy/nginx-avroleva.conf` holds the location blocks (`= /avroleva` → 302, `/avroleva/assets/` and
-`/avroleva/tech/assets/` immutable cache, `/avroleva/` → `proxy_pass http://127.0.0.1:3005/` with
-`client_max_body_size 25M`, `proxy_read_timeout 120s`, no websocket).
+`deploy/nginx-avroleva.conf` holds the location blocks (`= /avroleva/elevators-v1` → 302, `/avroleva/elevators-v1/assets/` and
+`/avroleva/elevators-v1/tech/assets/` immutable cache, `/avroleva/elevators-v1/` → `proxy_pass http://127.0.0.1:3005/` with
+`client_max_body_size 25M`, `proxy_read_timeout 120s`, no websocket). It also carries a **temporary**
+exact-match redirect `/avroleva/` → `/avroleva/elevators-v1/` (plus the old `/avroleva` → `/avroleva/`) for
+links from before the move; remove both when the brand landing page lands at `/avroleva/`.
 
 ```bash
 ssh -o BatchMode=yes root@187.127.84.59 bash -s <<'EOF'
@@ -123,12 +129,12 @@ needs no new certificate. certbot is only needed later for a **custom domain** (
 
 ```bash
 H=https://srv1662742.hstgr.cloud
-curl -s -o /dev/null -w "avroleva health %{http_code}\n" $H/avroleva/api/v1/health
-curl -s $H/avroleva/api/v1/health | head -c 300; echo
-curl -s -o /dev/null -w "office %{http_code}\n"  $H/avroleva/
-curl -s -o /dev/null -w "tech %{http_code}\n"    $H/avroleva/tech/
-curl -s $H/avroleva/ | grep -o '/avroleva/assets/[^"]*' | head -2        # asset links carry the prefix
-curl -s -o /dev/null -w "admin login page %{http_code}\n" $H/avroleva/admin/login
+curl -s -o /dev/null -w "avroleva health %{http_code}\n" $H/avroleva/elevators-v1/api/v1/health
+curl -s $H/avroleva/elevators-v1/api/v1/health | head -c 300; echo
+curl -s -o /dev/null -w "office %{http_code}\n"  $H/avroleva/elevators-v1/
+curl -s -o /dev/null -w "tech %{http_code}\n"    $H/avroleva/elevators-v1/tech/
+curl -s $H/avroleva/elevators-v1/ | grep -o '/avroleva/elevators-v1/assets/[^"]*' | head -2        # asset links carry the prefix
+curl -s -o /dev/null -w "admin login page %{http_code}\n" $H/avroleva/elevators-v1/admin/login
 for p in /uncle-crm/ /smart-flower-pots/ /kontira/ /food-tracker/ /rumen-site/; do
   curl -s -o /dev/null -w "$p %{http_code}\n" $H$p
 done
@@ -141,9 +147,9 @@ start, `callbacks.slaWatch` with a recent `lastFinishedAt`.
 
 The platform admin (`ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env`) is **upserted at every
 start** — there is no separate "create admin" command. Log in at
-`https://srv1662742.hstgr.cloud/avroleva/admin/login`, create the first tenant (firm) and its owner
-user there; the owner then logs in at `/avroleva/` and connects technicians' phones from
-**Users → connect a phone** (QR / one-time code) in the PWA at `/avroleva/tech/`.
+`https://srv1662742.hstgr.cloud/avroleva/elevators-v1/admin/login`, create the first tenant (firm) and its owner
+user there; the owner then logs in at `/avroleva/elevators-v1/` and connects technicians' phones from
+**Users → connect a phone** (QR / one-time code) in the PWA at `/avroleva/elevators-v1/tech/`.
 
 To rotate the admin password: edit `ADMIN_PASSWORD` in `.env`, then
 `docker compose -f docker-compose.prod.yml up -d app` (recreates the container; the seed upserts).
@@ -156,19 +162,19 @@ ssh -o BatchMode=yes root@187.127.84.59 /var/www/avroleva/scripts/deploy.sh
 
 `scripts/deploy.sh` = backup → `git pull --ff-only origin main` → `docker compose build app` →
 `up -d` → wait for `/api/v1/health` = 200 on `127.0.0.1:3005` → prints the health JSON and the
-status of `/avroleva/`, `/avroleva/tech/` and the five other apps through nginx. Deploy window
+status of `/avroleva/elevators-v1/`, `/avroleva/elevators-v1/tech/` and the five other apps through nginx. Deploy window
 06:00–07:00 Sofia (ARCHITECTURE section 7); the swap costs 10–30 s. Migrations run inside the
 container before the API starts (`prisma migrate deploy`).
 
 **Android app (step 10).** The server does not build the APK; it serves whatever sits at
-`DATA_DIR/releases/tech.apk` on the `avroleva_data` volume as `/avroleva/downloads/tech.apk`
-(install page with QR at `/avroleva/downloads/`). After building a release on the laptop
+`DATA_DIR/releases/tech.apk` on the `avroleva_data` volume as `/avroleva/elevators-v1/downloads/tech.apk`
+(install page with QR at `/avroleva/elevators-v1/downloads/`). After building a release on the laptop
 (`docs/ANDROID-RELEASE.md` §3) copy it there:
 
 ```bash
-scp "D:\Code\Avroleva\Releases\avroleva-elevators-tech-<version>.apk" root@187.127.84.59:/tmp/tech.apk
+scp "D:\Code\Avroleva\Avroleva Elevators\Releases\avroleva-elevators-tech-<version>.apk" root@187.127.84.59:/tmp/tech.apk
 ssh root@187.127.84.59 "docker run --rm -v avroleva_avroleva_data:/d -v /tmp:/s:ro alpine sh -c 'mkdir -p /d/releases && cp /s/tech.apk /d/releases/tech.apk' && rm /tmp/tech.apk"
-curl -sI https://srv1662742.hstgr.cloud/avroleva/downloads/tech.apk | grep -i -E "^HTTP|content-type|content-length"
+curl -sI https://srv1662742.hstgr.cloud/avroleva/elevators-v1/downloads/tech.apk | grep -i -E "^HTTP|content-type|content-length"
 ```
 
 Keep `MIN_CLIENT_VERSION` in `.env` at or below the shipped app version. The APK is part of the
@@ -252,13 +258,13 @@ server {
 
 and in `.env`: `BASE_PATH=/`, `VITE_BASE=/`, `PUBLIC_BASE_URL=https://app.avroleva.bg` (origin), then
 `docker compose -f docker-compose.prod.yml up -d --build` (the SPAs must be rebuilt for the new base).
-Keep the `/avroleva/` blocks for a while with a redirect to the domain so old links keep working.
+Keep the `/avroleva/elevators-v1/` blocks for a while with a redirect to the domain so old links keep working.
 
 ## 10. Decisions before go-live
 
 1. **Custom domain first — before the first printed QR labels and before technicians install the
    PWA.** The PWA's identity, its service-worker scope and its IndexedDB are bound to the origin;
-   printed QR codes carry `PUBLIC_BASE_URL`. Moving from `srv1662742.hstgr.cloud/avroleva/` to a
+   printed QR codes carry `PUBLIC_BASE_URL`. Moving from `srv1662742.hstgr.cloud/avroleva/elevators-v1/` to a
    domain later means every phone reinstalls and re-syncs, and every printed label needs a
    permanent redirect. The prefix is right for demos; the founding customer starts on the domain
    (section 9).
