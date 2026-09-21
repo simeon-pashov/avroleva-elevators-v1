@@ -94,9 +94,11 @@ ssh -o BatchMode=yes root@187.127.84.59 'curl -s http://127.0.0.1:3005/api/v1/he
 
 `deploy/nginx-avroleva.conf` holds the location blocks (`= /avroleva/elevators-v1` → 302, `/avroleva/elevators-v1/assets/` and
 `/avroleva/elevators-v1/tech/assets/` immutable cache, `/avroleva/elevators-v1/` → `proxy_pass http://127.0.0.1:3005/` with
-`client_max_body_size 25M`, `proxy_read_timeout 120s`, no websocket). It also carries a **temporary**
-exact-match redirect `/avroleva/` → `/avroleva/elevators-v1/` (plus the old `/avroleva` → `/avroleva/`) for
-links from before the move; remove both when the brand landing page lands at `/avroleva/`.
+`client_max_body_size 25M`, `proxy_read_timeout 120s`, no websocket). It defines **only**
+`/avroleva/elevators-v1…` locations. The bare brand path `/avroleva/` belongs to the Avroleva brand site
+(repo `simeon-pashov/avroleva`, its own snippet `/etc/nginx/snippets/avroleva-site.conf` with its own
+`include` in `apps.conf`) — never add `/avroleva` or `/avroleva/` locations here. (The temporary 302 that
+lived here between 2026-09-21 and the brand-site launch is gone.)
 
 ```bash
 ssh -o BatchMode=yes root@187.127.84.59 bash -s <<'EOF'
